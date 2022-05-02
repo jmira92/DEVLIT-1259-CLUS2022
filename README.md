@@ -7,6 +7,6 @@ https://developer.cisco.com/docs/nso/#!getting-and-installing-nso/download-your-
 
 ```javascript
 cd NSOFOLDER
-source ncsrc
 
-test
+source ncsrc
+```
