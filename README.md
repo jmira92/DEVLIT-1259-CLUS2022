@@ -2,6 +2,7 @@ Repository that will hold session files and guide
 
 #### Source NSO
 
-`cd NSOFOLDER`
+```javascript
+cd NSOFOLDER`
 
-`source ncsrc`
+source ncsrc`
