@@ -1,0 +1,109 @@
+
+This example shows some aspects of the MAAPI and NAVU API
+
+
+This example uses two NCS packages. The router package introduced in
+../0-router-network and a package called just 'maapi' with some Java
+code examples and a model maapi-types.yang loaded at startup of
+NCS. The model maapi-types.yang in ./packages/maapi/src/yang is just
+a hypothetical model to illustrate the concepts of Maapi/Navu
+
+
+$ ls ./packages
+maapi    router
+
+To build the two packages, do
+
+$ make all
+
+To start the ncs-netsim network, follow the instructions in
+../0-router-network, it's the same network here. If you have already started
+the simulated network you can omit this step.
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+
+Start ncs:
+
+$ ncs
+
+Start the cli towards ncs and get configuration data from the devices. This
+is essential for the examples to have some data to work with:
+
+$ ncs_cli -u admin
+admin@zork> request devices sync-from
+
+Eclipse:
+=======
+If you are using eclipse you can use ncs-setup to scan packages to set up
+a working environment.
+
+$ ncs-setup --eclipse-setup
+
+The command 'ncs-setup --eclipse-setup' can be executed many times when you
+change/add packages unless you want to set up class paths manually from
+eclipse itself.
+
+Start eclipse and create a new java project, File:New:Java Project
+Uncheck 'Use default location' and browse to this directory: 8-maapi
+and press 'Finish'
+
+You can now examine the examples  and run the code from inside eclipse.
+
+Console:
+=======
+To study this example, first take a look at the file:
+
+packages/maapi/src/java/build.xml
+
+Java code in a package gets compiled into jar files, the jar files
+that reside in either ./shared-jar or ./private-jar in the package
+gets loaded by the NCS Java VM classloader. This example contains
+standalone code which we do not want loaded into the NCS Java VM
+
+All the examples are started through different ant targets, to execute
+for example the code in ./src/java/src/com/example/maapi/Query.java do
+
+$ cd ./packages/maapi/src/java/
+$ ant cursor
+
+to list the specified targets
+
+$ ant -p
+
+Main targets:
+
+ cursor          Exemplify use of Maapi Cursor
+ dns             Illustrates the usage of move in NavuList
+ prepset         Setting values to devices using Navu and PreparedXML
+ printdevschema  Prints tree structure over schema nodes and values
+ query           XPathQuery (usage: ant query -Darg="'<Query>:XPath-expr' \
+                 '<selects>:node0,node1...,nodeN' -n '<num>:result-iterations' \
+                 -c '<chunksize>:num' -o '<offset>:1..N' \
+                 -x  '<initial-context>:QueryCTX(default '/')' \
+                 -r <[t:ConfXMLParam|v:KeyPath and \
+                 ConfValue|p:KeyPath|s:String]>'")
+ setelems        Maapi.setElem() examples for different types
+ setvalues       Maapi setValues() examples
+ simplequery1    Simple XPath Query 1
+ valtodevices    Set values to devices using Navu/Maapi and PreparedXML
+ xmlshow         Shows values in XML-format for devices
+
+
+- To start the emulated network, do ncs-netsim start | help
+- To start NCS, do ncs  [--verbose --foreground]
+- To stop NCS, do ncs --stop
+- To get a Juniper CLI into NCS, do ncs_cli -u admin
+
+- To restart NCS from scratch, ncs-setup --reset
+    this will ensure NCS is reinitialized from the ncs-cdb/*.xml files
+    when restarted
+
+- To restart the netsim network from scratch, do
+    ncs-netsim stop
+    ncs-netsim reset
+    ncs-netsim start
+       or in one swoop
+    ncs-netsim restart

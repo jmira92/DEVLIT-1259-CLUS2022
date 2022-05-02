@@ -1,0 +1,5364 @@
+module tailf-ncs-config {
+  namespace "http://tail-f.com/yang/tailf-ncs-config";
+  prefix ncs_cfg;
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import tailf-xsd-types {
+    prefix xs;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  organization "Tail-f Systems";
+
+  description
+    "This module defines the syntax of the ncs.conf file.";
+
+  revision 2021-12-17 {
+    description
+      "Released as part of NCS-5.7.
+
+       Updated description for /ncs-config/cli/action-call-no-list-instance.";
+  }
+
+  revision 2021-09-02 {
+    description
+      "Released as part of NCS-5.6.
+
+       Removed /ncs-config/db-mode.
+
+       Removed /ncs-config/candidate.
+
+       Removed /ncs-config/large-scale.
+
+       Removed /ncs-config/logs/syslog-config/version,
+       /ncs-config/logs/syslog-config/udp, and
+       /ncs-config/logs/syslog-config/syslog-servers.
+
+       Removed /ncs-config/cli/show-ned-error-as-info.
+
+       Added /ncs-config/validate-utf8/enabled.
+
+       Updated descriptions for /ncs-config/cli/prompt1,
+       /ncs-config/cli/prompt2, /ncs-config/cli/c-prompt1, and
+       /ncs-config/cli/c-prompt2.
+
+       Added /ncs-config/java-vm/restart-on-error/enabled,
+             /ncs-config/java-vm/restart-on-error/count and
+             /ncs-config/java-vm/restart-on-error/duration.
+
+       Added /ncs-config/webui/resources/enabled.
+
+       Added /ncs-config/webui/transport/keepalive
+       Added /ncs-config/webui/transport/keepalive-timeout.";
+  }
+
+  revision 2020-11-25 {
+    description
+      "Released as part of NCS-5.5.
+
+       Added /ncs-config/netconf/capabilities/url/ftp/source-address.
+
+       Added /ncs-config/netconf/capabilities/url/sftp/source-address.
+
+       Added /ncs-config/netconf/transport/ssh-call-home-source-address.
+
+       Updated type of /ncs-config/webui/transport/ssl/verify to uint32.";
+  }
+
+  revision 2020-06-25 {
+    description
+      "Released as part of NCS-5.4.
+
+       Added /ncs-config/logs/webui-access-log/syslog.
+
+       Removed 'diffie-hellman-group1-sha1' in /ncs-config/ssh/algorithms/kex.
+
+       Updated the default values for the leaves under
+       /ncs-config/ssh/algorithms, they are no longer
+       empty. Configuring a leaf to empty still means all supported
+       algorithms.
+
+       Removed option 'always' in /ncs-config/aaa/audit-user-name.
+
+       Added /ncs-config/enable-origin.
+
+       Renamed /ncs-config/aaa/rest to /ncs-config/aaa/restconf.";
+  }
+
+  revision 2019-11-28 {
+    description
+      "Released as part of NCS-5.3.
+
+       Added /ncs-config/cli/show-operational-state.
+
+       The length restriction in hex8-value-type and hex16-value-type are now
+       taken into consideration. This correction is non-backwards
+       compatible.
+
+       Added /ncs-config/logs/external and updated log configuration
+       with external/enabled leaf.";
+  }
+
+  revision 2019-06-13 {
+    description
+      "Released as part of NCS-5.2.
+
+       Obsoleted /ncs-config/cli/show-ned-error-as-info.";
+  }
+
+  revision 2019-03-21 {
+    description
+      "Released as part of NCS-5.1.
+
+       Obsoleted /ncs-config/logs/syslog-config/version,
+       /ncs-config/logs/syslog-config/udp, and
+       /ncs-config/logs/syslog-config/syslog-servers.
+
+       Updated the list of cipher suites for
+       /ncs-config/webui/transport/ssl/ciphers.
+
+       Added /ncs-config/webui/transport/ssl/elliptic-curves.
+
+       Updated the list of algorithms for /ncs-config/ssh/algorithms/kex
+       and /ncs-config/ssh/algorithms/mac.
+
+       Removed sslv3, and excluded tlsv1 from the default,
+       for /ncs-config/webui/transport/ssl/protocols.
+
+       Added /ncs-config/aaa/max-password-length.
+
+       Added /ncs-config/parser-limits.
+
+       Deprecated /ncs-config/netconf-north-bound/capabilities/inactive.
+       This capability will be advertised if /ncs-config/enable-inactive
+       is set.
+
+       Added JSON-RPC traffic log,
+       /ncs-config/logs/jsonrpc-log.
+
+       Added /java-vm/auto-start, /java-vm/auto-restart and
+       /java-vm/run-in-terminal/enabled.
+
+       Added default value for /java-vm/run-in-terminal/terminal-command.
+
+       Added /ncs-config/restconf/require-module-name.
+
+       Added /ncs-config/logs/netconf-log/log-reply-status.";
+  }
+
+  revision 2019-03-07 {
+    description
+      "Released as part of NCS-4.7.3.
+
+       Added /ncs-config/netconf-call-home.
+
+       Added /ncs-config/cdb/operational/replication-mode.";
+  }
+
+  revision 2018-06-14 {
+    description
+      "Released as part of NCS-4.7.
+
+       Added /ncs-config/ha/extra-listen.";
+  }
+
+  revision 2018-04-19 {
+    description
+      "Released as part of NCS-4.6.1.
+
+       Added /ncs-config/enable-compressed-schema.";
+  }
+
+  revision 2018-03-02 {
+    description
+      "Released as part of NCS-4.6.
+
+       Added /ncs-config/aaa/validation-order.
+
+       Added /ncs-config/aaa/external-validation.
+
+       Added /ncs-config/aaa/external-validation/enabled.
+
+       Added /ncs-config/aaa/external-validation/executable.
+
+       Added /ncs-config/aaa/external-validation/use-base64.
+
+       Added /ncs-config/aaa/external-validation/include-extra.
+
+       Added /ncs-config/restconf/token-response.
+
+       Added /ncs-config/restconf/token-response/x-auth-token.
+
+       Added /ncs-config/restconf/token-response/token-cookie.
+
+       Added /ncs-config/restconf/token-response/token-cookie/name.
+
+       Added /ncs-config/restconf/token-response/token-cookie/directives.
+
+       Changed default value for /ncs-config/ssh/client-alive-interval
+       from infinity to PT20S.
+
+       Added /ncs-config/logs/progress-trace/dir.
+
+       Added /ncs-config/aaa/authorization/nacm-compliant.
+
+       Added /ncs-config/restconf/custom-headers.
+
+       Updated /ncs-config/smart-license.";
+  }
+
+  revision 2017-10-11 {
+    description
+      "Released as part of NCS-4.5.1.
+
+       Added /ncs-config/cli/allow-case-insensitive-enums.
+
+       Added /ncs-config/cli/allow-abbrev-enums.";
+  }
+
+  revision 2017-08-28 {
+    description
+      "Released as part of NCS-4.5.
+
+       Added /ncs-config/java-vm, /ncs-config/python-vm, and
+       /ncs-config/smart-license.
+
+       Added /ncs-config/cli/mode-info-in-aaa.";
+  }
+
+  revision 2017-02-21 {
+    description
+      "Released as part of NCS-4.4.
+
+       Changed default for /ncs-config/webui/audit to 'false'.";
+  }
+
+  revision 2017-01-16 {
+    description
+      "Released as part of NCS-4.3.1.
+
+       Added /ncs-config/netconf-north-bound/write-timeout.";
+  }
+
+  revision 2016-11-15 {
+    description
+      "Released as part of NCS-4.3.
+
+       Added /ncs-config/ssh/algorithms/dh-group/{min-size,max-size}.
+
+       Changed default commit-retry-timeout to infinity,
+       from 15 seconds.";
+  }
+
+  revision 2016-08-25 {
+    description
+      "Released as a part of NCS-4.2.1.
+
+       Added /ncs-config/aaa/audit-user-name.
+
+       Clarified description of
+       /ncs-config/aaa/authentication-callback and
+       /ncs-config/aaa/authorization/callback.";
+  }
+
+  revision 2016-02-12 {
+    description
+      "Released as a part of NCS-4.2.
+
+       Added /ncs-config/webui/audit.
+
+       Clarified description of
+       /ncs-config/webui/idle-timeout and
+       /ncs-config/webui/absolute-timeout.
+
+       Updated the description of /ncs-config/encrypted-strings/DES3CBC
+       and /ncs-config/encrypted-strings/AESCFB128, deprecated
+       /ncs-config/encrypted-strings/DES3CBC/initVector and
+       /ncs-config/encrypted-strings/AESCFB128/initVector.";
+  }
+
+  revision 2015-12-10 {
+    description
+      "Released as a part of NCS-4.1.
+
+       Added /ncs-config/netconf-north-bound/capabilities";
+  }
+
+  revision 2015-11-24 {
+    description
+      "Released as a part of NCS-4.1.
+
+       Added /ncs-config/aaa/expiration-warning.";
+  }
+
+  revision 2015-11-21 {
+    description
+      "Released as a part of NCS-4.1.
+
+       Added /ncs-config/webui/rate-limiting.";
+  }
+
+  revision 2015-11-20 {
+    description
+      "Released as a part of NCS-4.1.
+
+       Added /ncs-config/webui/absolute-timeout.";
+  }
+
+  revision 2015-06-16 {
+    description
+      "Released as a part of NCS-4.0.
+
+       Removed deprecated value 'candidate' for /ncs-config/db-mode.
+
+       Removed the value 'full' for /ncs-config/rollback/type.";
+  }
+
+  revision 2015-03-19 {
+    description
+      "Released as part of ConfD-5.4 / NCS-3.4.
+
+       Added /ncs-config/rest/custom-headers.
+
+       The leaf-list /ncs-config/webui/custom-headers/header has
+       been changed to a list.";
+  }
+
+  revision 2015-01-30 {
+    description
+      "Released as part of NCS-3.3.2
+
+       Added /ncs-config/webui/custom-headers.";
+  }
+
+  revision 2014-12-10 {
+    description
+      "Released as part of NCS-3.3.1
+
+       Added /ncs-config/aaa/pam/timeout.";
+  }
+
+  revision 2014-11-19 {
+    description
+      "Released as part of NCS-3.3.
+
+       Restricted
+       /ncs-config/notifications/event-streams/stream/builtin-replay-store
+       /max-files
+       to a minimum of 2.
+
+       Added /ncs-config/japi/event-reply-timeout.";
+  }
+
+  revision 2014-06-30 {
+    description
+      "Released as part of NCS-3.2.
+
+       Added /ncs-config/crypt-hash.";
+  }
+
+  revision 2014-04-02 {
+    description
+      "Released as part of NCS-3.1.
+
+       Added /ncs-config/cdb/journal-compaction.
+
+       Made /ncs-config/webui/transport/ssl/key-file and
+       /ncs-config/webui/transport/ssl/cert-file non-mandatory.";
+  }
+
+  revision 2013-11-12 {
+    description
+      "Released as part of NCS-3.0.
+
+       Added /ncs-config/aaa/authentication-callback.
+
+       Added /ncs-config/aaa/authorization/callback.";
+  }
+
+  revision 2013-06-18 {
+    description
+      "Released as part of NCS-2.3.
+
+       Added /ncs-config/webui/transport/ssl/ciphers.
+
+       Added /ncs-config/webui/transport/ssl/protocols.";
+  }
+
+  revision 2013-01-18 {
+    description
+      "Released as part of NCS-2.2.
+
+       Removed /ncs-config/webui/custom-dir.";
+  }
+
+  revision 2012-11-13 {
+    description
+      "Released as part of NCS-2.1.
+
+       Added /ncs-config/logs/snmp-log-level.
+
+       Added /ncs-config/aaa/ssh-pubkey-authentication.
+
+       Added /ncs-config/webui/login-dir.
+
+       Added /ncs-config/webui/custom-dir.";
+  }
+
+  revision 2012-10-04 {
+    description
+      "Released as part of NCS-2.0.2.
+
+       Clarified description of
+       /ncs-config/logs/syslog-config/syslog-servers";
+  }
+
+  revision 2011-09-27 {
+    description
+      "Released as part of NCS-1.7.
+
+       Changed default commit-retry-timeout to 15 seconds,
+       from 0 (no timeout).";
+  }
+
+  revision 2010-05-15 {
+    description
+      "Initial revision, released as part of NCS 1.0";
+  }
+
+  /*
+   * Common data types
+   */
+  typedef cli-max {
+    type uint32 {
+      range "5 .. 2147483647";
+    }
+  }
+  typedef compressed-schema-level-type {
+    type uint8 {
+      range "1 .. 2";
+    }
+  }
+  typedef limit-type {
+    type union {
+      type uint32;
+      type unbounded-type;
+    }
+  }
+  typedef parser-limit-type {
+    type union {
+      type limit-type;
+      type enumeration {
+        enum model { value 1; }
+      }
+    }
+  }
+  typedef unbounded-type {
+    type enumeration {
+      enum unbounded;
+    }
+  }
+  typedef infinity-type {
+    type enumeration {
+      enum infinity;
+    }
+  }
+  typedef timeout-type {
+    type union {
+      type xs:duration;
+      type infinity-type;
+    }
+  }
+
+  typedef syslog-facility-type {
+    type union {
+      type bsd-facility-type;
+      type uint32 {
+        range "min .. 2147483647";
+      }
+    }
+  }
+
+  typedef completion-meta-info-type {
+    type enumeration {
+      enum false;
+      enum alt1;
+      enum alt2;
+    }
+  }
+
+  typedef bsd-facility-type {
+    type enumeration {
+      enum daemon;
+      enum authpriv;
+      enum local0;
+      enum local1;
+      enum local2;
+      enum local3;
+      enum local4;
+      enum local5;
+      enum local6;
+      enum local7;
+    }
+    description
+      "The  facility  argument is used to specify what type of
+       program is logging the message.  This lets the
+       syslog configuration file specify  that  messages from
+       different facilities will be handled differently";
+  }
+
+  typedef hex8-value-type {
+    type xs:hexBinary {
+      tailf:value-length 8;
+    }
+  }
+  typedef hex16-value-type {
+    type xs:hexBinary {
+      tailf:value-length 16;
+    }
+  }
+  typedef hex32-value-type {
+    type xs:hexBinary {
+      tailf:value-length 32;
+    }
+  }
+  typedef encrypted-string-type {
+    type enumeration {
+      enum des3-cbc;
+      enum aes-cfb-128;
+      enum aes-256-cfb-128;
+    }
+  }
+  typedef crypt-hash-algorithm-type {
+    type enumeration {
+      enum md5;
+      enum sha-256;
+      enum sha-512;
+    }
+  }
+  typedef crypt-hash-rounds-type {
+    type uint32 {
+      range "1000 .. 999999999";
+    }
+  }
+  typedef dh-group-size-type {
+    type uint32 {
+        range "1024 .. 8192";
+    }
+  }
+  typedef mode-info-in-aaa-type {
+    type enumeration {
+      enum true;
+      enum false;
+      enum path;
+    }
+  }
+
+  typedef cli-action-no-list-inst {
+    type enumeration {
+      enum deny-call;
+      enum create-instance;
+    }
+  }
+
+  typedef dscp-type {
+    type uint8 {
+      range "0 .. 63";
+    }
+  }
+
+  typedef disabled-schema-uri-agents {
+    type enumeration {
+      enum netconf;
+      enum rest;
+    }
+  }
+
+  typedef unauthenticated-message-limit-type {
+    type union {
+      type uint32;
+      type enumeration {
+        enum nolimit;
+      }
+    }
+  }
+
+  /*
+   * Common groupings
+   */
+
+  grouping log-type {
+    leaf enabled {
+      type boolean;
+      default true;
+      description
+        "If set to true, the log is enabled.";
+    }
+    container file {
+      presence "";
+      leaf name {
+        type string;
+        description
+          "Name is the full path to the actual log file.";
+      }
+      leaf enabled {
+        type boolean;
+        default false;
+        description
+          "If set to true, file logging is enabled";
+      }
+    }
+    container syslog {
+      presence "";
+      leaf enabled {
+        type boolean;
+        default false;
+        description
+          "If set to true, syslog messages are sent.";
+      }
+      leaf facility {
+        type syslog-facility-type;
+        description
+          "This optional value overrides the
+           /ncs-config/logs/syslog-config/facility for this
+           particular log. ";
+      }
+    }
+    container external {
+      presence "";
+      leaf enabled {
+        type boolean;
+        default false;
+        description
+          "enabled is either 'true' or 'false'. If 'true', send log data
+           to external command for processing.";
+      }
+    }
+  }
+
+  grouping customHTTPHeaders {
+    container custom-headers {
+      presence "";
+      description
+        "The custom-headers element contains any number of header
+         elements, with a valid header-field as defined in RFC7230.
+
+         The headers will be part of all HTTP responses.
+        ";
+        list header {
+          key name;
+          leaf name{
+            type string;
+          }
+          leaf value {
+            type string;
+            mandatory true;
+          }
+        }
+      }
+      leaf x-frame-options {
+        type enumeration {
+          enum DENY;
+          enum SAMEORIGIN;
+          enum ALLOW-FROM;
+        }
+        default DENY;
+        description
+          "By default the X-Frame-Options header is set to DENY for
+           the /login.html and /index.html pages. With this header
+           it can be set to SAMEORIGIN or ALLOW-FROM instead.
+          ";
+      }
+      leaf x-content-type-options {
+        type string;
+        default "nosniff";
+        description
+          "The X-Content-Type-Options response HTTP header is a marker
+           used by the server to indicate that the MIME types advertised
+           in the Content-Type headers should not be changed and be
+           followed. This allows to opt-out of MIME type sniffing, or,
+           in other words, it is a way to say that the webmasters knew
+           what they were doing.
+
+           This header is always sent in HTTP responses.
+           By setting the value to the empty string will cause the
+           header not to be sent.
+          ";
+      }
+      leaf x-xss-protection {
+        type string;
+        default "1; mode=block";
+        description
+          "The HTTP X-XSS-Protection response header is a feature of
+           Internet Explorer, Chrome and Safari that stops pages from
+           loading when they detect reflected cross-site scripting
+           (XSS) attacks. Although these protections are largely
+           unnecessary in modern browsers when sites implement a strong
+           Content-Security-Policy that disables the use of inline
+           JavaScript ('unsafe-inline'), they can still provide
+           protections for users of older web browsers that don't yet
+           support CSP.
+
+           This header is always sent in HTTP responses.
+           By setting the value to the empty string will cause the
+           header not to be sent.
+          ";
+      }
+      leaf strict-transport-security {
+        type string;
+        default "max-age=15552000; includeSubDomains";
+        description
+          "The HTTP Strict-Transport-Security response header
+           (often abbreviated as HSTS) lets a web site tell
+           browsers that it should only be accessed using HTTPS,
+           instead of using HTTP.
+
+           This header is always sent in HTTP responses.
+           By setting the value to the empty string will cause the
+           header not to be sent.
+          ";
+      }
+      leaf content-security-policy {
+        type string;
+        default "default-src 'self'; block-all-mixed-content; "
+        + "base-uri 'self'; frame-ancestors 'none';";
+        description
+          "The HTTP Content-Security-Policy response header allows
+           web site administrators to control resources the user agent
+           is allowed to load for a given page.
+
+           The default value means that: Resources like fonts, scripts,
+           connections, images, and styles will all only load from
+           the same origin as the protected resource.
+           All mixed contents will be blocked and frame-ancestors like
+           iframes and applets is prohibited.
+           See also:
+
+             https://www.w3.org/TR/CSP3/
+
+           This header is always sent in HTTP responses.
+           By setting the value to the empty string will cause the
+           header not to be sent.
+          ";
+      }
+  }
+
+  container ncs-config {
+    description "NCS configuration.";
+
+    container validate-utf8 {
+      presence "";
+
+      description
+        "This section defines settings which affect UTF-8 validation.";
+      leaf enabled {
+        type boolean;
+        default false;
+        description
+          "By default (false) NCS will not validate any data modeled
+           as 'string' to be valid UTF-8 and conform to yang-string.
+
+           NOTE: String data from data providers and in the
+           ncs.conf file itself are not validated.
+
+           The possibility to disable UTF-8 validation is supplied
+           because it can help in certain situations if there is
+           data which is invalid UTF-8 or does not conform to
+           yang-string. Disabling UTF-8 and yang-string validation
+           allows invalid data input.
+
+           It is possible to check CDB contents for invalid UTF-8
+           string data with the following
+
+               ncs --cdb-debug-dump cdb-dir validate_utf8
+
+           Invalid data will need to be corrected manually with
+           UTF-8 validation disabled.
+
+           For further details see:
+
+           o RFC 3629 UTF-8, a transformation format of ISO 10646
+             and the Unicode standard.
+           o RFC 7950 The YANG 1.1 Data Modeling Language,
+             Section 14 YANG ABNF Grammar, yang-string definition.";
+      }
+    }
+
+    container ncs-ipc-address {
+      presence "";
+
+      description
+        "NCS listens by default on 127.0.0.1:4569 for incoming TCP
+         connections from NCS client libraries, such as CDB, MAAPI,
+         the CLI, the external database
+         API, as well as commands from the ncs script (such as
+         'ncs --reload').
+
+         The IP address and port can be changed. If they are changed
+         all clients using MAAPI, CDB et.c. must be re-compiled to
+         handle this. See the deployment user-guide on how to do this.
+
+         Note that there are severe security implications involved if
+         NCS is instructed to bind(2) to anything but localhost. Read
+         more about this in the NCS IPC section in the System Managent
+         Topics section of the User Guide. Use the IP 0.0.0.0 if you
+         want NCS to listen(2) on all IPv4 addresses.";
+      leaf ip {
+        type ip-address;
+        default 127.0.0.1;
+        description
+          "The IP address which NCS listens on for incoming
+           connections from the Java library";
+      }
+      leaf port {
+        type port-number;
+        default 4569;
+        description
+          "The port number which NCS listens on for incoming
+           connections from the Java library";
+      }
+    }
+    leaf-list ncs-ipc-extra-listen-ip {
+      type ip-address;
+      max-elements 32;
+      description
+        "A list of additional IPs to which we wish to bind the NCS
+         IPC listener. This is useful if we don't want to use the
+         wildcard 0.0.0.0 address in order to never expose the NCS IPC
+         to certain interfaces.";
+    }
+    container ncs-ipc-access-check {
+      presence "";
+      description
+        "NCS can be configured to restrict access for incoming
+         connections to the IPC listener sockets. The access check
+         requires that connecting clients prove possession of a
+         shared secret.";
+      leaf enabled {
+        type boolean;
+        default false;
+        description
+          "If set to 'true', access check for IPC connections is
+          enabled.";
+      }
+      leaf filename {
+        type string;
+        mandatory true;
+        description
+          "filename is the full path to a file containing the shared
+           secret for the IPC access check. The file should be protected
+           via OS file permissions, such that it can only be read by
+           the NCS daemon and client processes that are allowed to
+           connect to the IPC listener sockets.";
+      }
+    }
+
+    leaf enable-shared-memory-schema {
+      type boolean;
+      default true;
+      description
+        "enabled is either true or false. If true, then
+         a C program will be started that loads the schema into
+         shared memory (which then can be accessed by e.g Python)";
+    }
+
+    container load-path {
+      presence "";
+      leaf-list dir {
+        type string;
+        max-elements unbounded;
+        description
+          "The load-path element contains any number of dir
+           elements. Each dir element points to a directory path on
+           disk which is searched for compiled and imported YANG files
+           (.fxs files) and compiled clispec files (.ccl files) during
+           daemon startup. NCS also searches the load path for packages
+           at initial startup, or when requested by the /packages/reload
+           action.";
+      }
+    }
+    leaf enable-compressed-schema {
+      type boolean;
+      default false;
+      description
+        "If set to true, NCS's internal storage of the schema
+         information from the .fxs files will be compressed. This will
+         reduce the memory usage for large data models, but may also
+         cause reduced performance when looking up the schema
+         information. The trade off depends on the total amount of
+         schema information and typical usage patterns, thus the effect
+         should be evaluated before enabling this functionality.";
+    }
+    leaf compressed-schema-level {
+      type compressed-schema-level-type;
+      default 1;
+      description
+        "Controls the level of compression when enable-compressed-schema
+         is set to true. Setting the value to 1 results in more aggressive
+         compression at the cost of performance, 2 results in slightly
+         less memory saved, but at higher performance.";
+    }
+    leaf state-dir {
+      type string;
+      mandatory true;
+      description
+        "This is where NCS writes persistent state data.  Currently
+         it is used to store a private copy of all packages found in the
+         load path, in a directory tree rooted at 'packages-in-use.cur'
+         (also referenced by a symlink 'packages-in-use'). It is also
+         used for the state files 'running.invalid', which exists only
+         if the running database status is invalid, which it will be if
+         one of the database implementation fails during the two-phase
+         commit protocol, and 'global.data' which is used to store some
+         data that needs to be retained across reboots.";
+    }
+    leaf commit-retry-timeout {
+      type timeout-type;
+      default infinity;
+      description
+        "Commit timeout in the NCS backplane. This timeout controls
+         for how long the commit operation in the CLI and the JSON-RPC
+         API will attempt to complete the operation when some other
+         entity is locking the database, e.g. some other commit is in
+         progress or some managed object is locking the database.";
+    }
+    leaf max-validation-errors {
+      type union {
+        type uint32;
+        type unbounded-type;
+      }
+      default 1;
+      description
+        "Controls how many validation errors are collected and
+         presented to the user at a time.";
+    }
+
+    container notifications {
+      presence "NETCONF and RESTCONF northbound notification settings";
+      description
+      "This section defines settings which affect notifications.";
+
+      container event-streams {
+        description
+          "Lists all available notification event streams.";
+
+        list stream {
+          key name;
+          description "Parameters for a single notification event stream.";
+          leaf name {
+            type string;
+            description
+              "The name attached to a specific event stream.";
+          }
+          leaf description {
+            type string;
+            mandatory true;
+            description
+              "A descriptive text attached to a specific event stream.";
+          }
+          leaf replay-support {
+            type boolean;
+            mandatory true;
+            description
+              "Signals if replay support is available for a specific
+               event stream.";
+          }
+          container builtin-replay-store {
+            presence "";
+            description
+              "Parameters for the built in replay store for this event
+               stream.
+
+               If replay support is enabled NCS automatically stores
+               all notifications on disk ready to be replayed should a
+               NETCONF manager or RESTCONF event notification subscriber ask
+               for logged notifications. The replay store uses a set of
+               wrapping log files on disk (of a certain number and size) to
+               store the notifications.
+
+               The max size of each wrap log file (see below) should
+               not be too large. This to acheive fast replay of
+               notifications in a certain time range. If possible use a
+               larger number of wrap log files instead.
+
+               If in doubt use the recommended settings (see below).";
+
+            leaf enabled {
+              type boolean;
+              default false;
+              description
+                "If set to 'false', the
+                 application must implement its own replay support.";
+            }
+            leaf dir {
+              type string;
+              mandatory true;
+              description
+                "The wrapping log files will be put in this disk location";
+            }
+            leaf max-size {
+              type tailf:size;
+              mandatory true;
+              description
+                "The max size of each log wrap file. The recommended
+                 setting is approximately S10M.";
+            }
+            leaf max-files {
+              type int64 {
+                range "2 .. max";
+              }
+              mandatory true;
+              description
+                "The max number of log wrap files. The recommended
+                 setting is around 50 files.";
+            }
+          }
+        }
+      }
+    }
+    container opcache {
+      presence "";
+      description
+        "This section defines settings which affect the behavior of the
+         operational data cache.";
+
+      leaf enabled {
+        type boolean;
+        default false;
+        description
+          "If set to 'true', the cache is enabled.";
+      }
+      leaf timeout {
+        type uint64 {
+          range "0 .. max";
+        }
+        mandatory true;
+        description
+          "The amount of time to keep data in the cache, in seconds.";
+      }
+    }
+
+
+    list hide-group {
+      key name;
+      description
+        "Hide groups that can be unhidden must be listed here. There
+         can be zero, one or many hide-group entries in the
+         configuraion.
+
+         If a hide group does not have a hide-group entry, then it
+         cannot be unhidden using the CLI 'unhide' command. However, it
+         is possible to add a hide-group entry to the ncs.conf file
+         and then use ncs --reload to make it available in the CLI.
+         This may be useful to enable for example a diagnostics hide
+         groups that you do not even want accessible using a password.";
+      leaf name {
+        type string;
+        description
+          "Name of hide group. This name should correspond to a hide
+           group name defined in some YANG module with 'tailf:hidden'.";
+      }
+      leaf password {
+        type tailf:md5-digest-string;
+        default "";
+        description
+          "A password can optionally be specified for a hide group. If
+           no password or callback is given then the hide group can be
+           unhidden without giving a password.
+
+           If a password is specified then the hide group cannot be
+           enabled unless the password is entered.
+
+           To completely disable a hide group, ie make it impossible to
+           unhide it, remove the entire hide-group container for that
+           hide group.";
+      }
+      leaf callback {
+        type string;
+        description
+          "A callback can optionally be specified for a hide group. If
+           no callback or password is given then the hide group can be
+           unhidden without giving a password.
+
+           If a callback is specified then the hide group cannot be enabled
+           unless a password is entered and the successfully verifies the
+           password. The callback receives both the name of the hide group,
+           the name of the user issuing the unhide command, and the passowrd.
+
+           Using a callback it is possible to have short lived unhide passwords
+           and per-user unhide passwords.";
+      }
+    }
+
+    container cdb {
+      presence "";
+
+      leaf db-dir {
+        type string;
+        description
+          "db-dir is the directory on disk which CDB use for its storage
+           and any temporary files being used. It is also the directory
+           where CDB searches for initialization files.";
+
+      }
+      container init-path {
+        presence "";
+        leaf-list dir {
+          type string;
+          max-elements unbounded;
+          description
+            "The init-path can contain any number of dir
+             elements.  Each dir element points to a directory path
+             which CDB will search for .xml files before looking in
+             db-dir.  The directories are searched in the order they
+             are listed.";
+        }
+      }
+      leaf client-timeout {
+        type timeout-type;
+        default infinity;
+        description
+          "Specifies how long CDB should wait for a
+           response to e.g. a subscription notification before
+           considering a client unresponsive. If a client fails to call
+           Cdb.syncSubscriptionSocket() within the timeout period,
+           CDB will syslog this failure and then, considering the
+           client dead, close the socket and proceed with the
+           subscription notifications. If set to infinity, CDB will
+           never timeout waiting for a response from a client.";
+      }
+      container subscription-replay {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+            "If enabled it is possible to request a replay of the
+             previous subscription notification to a new cdb
+             subscriber.";
+        }
+      }
+
+      leaf replication {
+        type enumeration {
+          enum async;
+          enum sync;
+        }
+        default sync;
+        description
+          "When CDB replication is enabled (which it is when high-availability
+           mode is enabled, see /ncs-config/ha) the CDB configuration
+           stores can be replicated either asynchronously or
+           synchronously.  With asynchronous replication, a
+           transaction updating the configuration is allowed to
+           complete as soon as the updates have been sent to the
+           connected slaves.  With the default synchronous
+           replication, the transaction is suspended until the updates
+           have been completely propagated to the slaves, and the
+           subscribers on the slaves (if any) have acknowledged their
+           subscription notifications";
+      }
+
+      leaf journal-compaction {
+        type enumeration {
+          enum automatic;
+          enum manual;
+        }
+        default automatic;
+        description
+          "Controls the way the CDB configuration store does its journal
+           compaction. Never set to anything but the default
+           'automatic' unless there is an external mechanism which
+           controls the compaction using the
+           cdb_initiate_journal_compaction() API call.";
+      }
+
+      container operational {
+        presence "";
+        description
+          "Operational data can either be implemented by external
+           callbacks, or stored in CDB (or a combination of both). The
+           operational datastore is used when data is to be stored in
+           CDB.";
+
+        leaf db-dir {
+          type string;
+          description
+            "db-dir is the directory on disk which CDB operational
+             uses for its storage and any temporary files being
+             used. If left unset (default) the same directory as
+             db-dir for CDB is used.";
+        }
+        leaf replication-mode {
+          type enumeration {
+            enum async;
+            enum sync;
+          }
+          default sync;
+          description
+            "When CDB replication is enabled (which it is when
+             high-availability mode is enabled, see /ncs-config/ha)
+             the replication of the CDB operational store can be done
+             either asynchronously or synchronously. With the
+             asynchronous replication, an API call writing operational
+             data will return as soon as the updates have been sent to
+             the connected slaves. With the default synchronous replication,
+             the API call will block until the updates have been completely
+             propagated to the slaves.";
+        }
+      }
+
+      container snapshot {
+        presence "";
+        description
+          "The snapshot datastore is used by the commit queue to
+           calculate the southbound diff towards the devices outside
+           of the transaction lock.";
+
+        leaf pre-populate {
+          type boolean;
+          default false;
+          description
+            "This parameter controls if the snapshot datastore should
+             be pre-populated during upgrade. Switching this on or off
+             implies different trade-offs.
+
+             If 'false', NCS is optimized for using normal transaction
+             commits. The snapshot is populated in a lazy manner (when
+             a device is committed through the commit queue for the first
+             time). The drawback is that this commit will suffer performance
+             wise, which is especially true for devices with large
+             configurations. Subsequent commits on the same devices will
+             not have the same penalty.
+
+             If 'true', NCS is optimized for systems using the commit queue
+             extensively. This will lead to better performance when
+             committing using the commit queue with no additional penalty
+             for the first time commits. The drawbacks are that upgrade
+             times will increase and an almost doubling of NCS memory
+             consumption.";
+        }
+      }
+    }
+
+    container encrypted-strings {
+      presence "";
+      description
+        "encrypted-strings defines keys used to encrypt strings adhering
+         to the types tailf:des3-cbc-encrypted-string,
+         tailf:aes-cfb-128-encrypted-string and
+         tailf:aes-256-cfb-128-encrypted-string.";
+
+      container external-keys {
+        presence "";
+        description
+          "Configuration of an external command that will provide the
+           keys used for encryptedStrings. When set no keys for
+           encrypted-strings can be set in the configuration.";
+
+        leaf command {
+          description
+            "Path to command executed to output keys.";
+          type string;
+          mandatory true;
+          must "not(../../DES3CBC) and not(../../AESCFB128)
+                and not(../../AES256CFB128)";
+        }
+        leaf command-timeout {
+          description
+            "Command timeout. Timeout is measured between complete lines
+             read from the output.";
+          type timeout-type;
+          default PT60S;
+        }
+        leaf command-argument {
+          description
+            "Argument available in external-keys command as the
+             environment variable CONFD_EXTERNAL_KEYS_ARGUMENT.";
+          type string;
+        }
+      }
+
+      container DES3CBC {
+        presence "";
+        description
+          "In the DES3CBC case three 64 bits (8 bytes) keys and a
+           random initial vector are used to encrypt the string.
+           The initVector leaf is only used when upgrading from
+           versions before NCS-4.2, but it is kept for backward
+           compatibility reasons.";
+        leaf key1 {
+          type hex8-value-type;
+          mandatory true;
+        }
+        leaf key2 {
+          type hex8-value-type;
+          mandatory true;
+        }
+        leaf key3 {
+          type hex8-value-type;
+          mandatory true;
+        }
+        leaf initVector {
+          type hex8-value-type;
+          status deprecated;
+        }
+      }
+      container AESCFB128 {
+        presence "";
+        description
+          "In the AESCFB128 case one 128 bits (16 bytes) key and a
+           random initial vector are used to encrypt the string.
+           The initVector leaf is only used when upgrading from
+           versions before NCS-4.2, but it is kept for backward
+           compatibility reasons.";
+        leaf key {
+          type hex16-value-type;
+          mandatory true;
+        }
+        leaf initVector {
+          type hex16-value-type;
+          status deprecated;
+        }
+      }
+      container AES256CFB128 {
+        presence "";
+        description
+          "In the AES256CFB128 case one 256 bits (32 bytes) key and a
+           random initial vector are used to encrypt the string.";
+        leaf key {
+          type hex32-value-type;
+          mandatory true;
+        }
+      }
+    }
+
+    container crypt-hash {
+      presence "";
+      description
+        "crypt-hash specifies how cleartext values should be hashed for
+         leafs of the types ianach:crypt-hash,
+         tailf:sha-256-digest-string, and tailf:sha-512-digest-string.";
+      leaf algorithm {
+        type crypt-hash-algorithm-type;
+        default md5;
+        description
+          "algorithm can be set to one of the values 'md5', 'sha-256',
+           or 'sha-512', to choose the corresponding hash algorithm for
+           hashing of cleartext input for the ianach:crypt-hash type.";
+      }
+      leaf rounds {
+        type crypt-hash-rounds-type;
+        default 5000;
+        description
+          "For the 'sha-256' and 'sha-512' algorithms for the
+           ianach:crypt-hash type, and for the
+           tailf:sha-256-digest-string and tailf:sha-512-digest-string
+           types, 'rounds' specifies how many times the hashing loop
+           should be executed. If a value other than the default 5000 is
+           specified, the hashed format will have 'rounds=N$', where
+           N is the specified value, prepended to the salt. This parameter
+           is ignored for the 'md5' algorithm for ianach:crypt-hash.";
+      }
+    }
+
+    container logs {
+      presence "";
+      container syslog-config {
+        presence "";
+        description
+          "Shared settings for how to log to syslog. Logs (see below) can be
+           configured to log to file and/or syslog.  If a log is configured to
+           log to syslog, the settings under /ncs-config/logs/syslog-config are
+           used.";
+        leaf facility {
+          type syslog-facility-type;
+          default daemon;
+          description
+            "This facility setting is the default
+             facility. It's also possible to set individual facilities
+             in the different logs below.";
+        }
+      }
+      leaf trace-id {
+        description
+          "Enable a per request unique trace id, included in headers and
+           entries for relevant logs";
+        type boolean;
+        default true;
+      }
+      container ncs-log {
+        uses log-type;
+        description
+          "ncs-log is NCS's daemon log. Check this log for startup
+           problems of the NCS daemon itself. This log is not
+           rotated, i.e. use logrotate(8).";
+      }
+      container developer-log {
+        uses log-type;
+        description
+          "developer-log is a debug log for troubleshooting user-written
+          Java code. Enable and check this log for
+           problems with validation code etc. This log is enabled by
+           default. In all other regards it can be configured as
+           ncs-log. This log is not rotated, i.e. use logrotate(8).";
+      }
+      leaf developer-log-level {
+        type enumeration {
+          enum error;
+          enum info;
+          enum trace;
+        }
+
+        default info;
+        description
+          "Controls which level of developer messages are printed in
+           the developer log.";
+      }
+      container audit-log {
+        uses log-type;
+        description
+          "audit-log is an audit log recording successful and failed
+           logins to the NCS backplane and also user operations
+           performed from the CLI or northbound interfaces. This log
+           is enabled by default. In all other regards it can be
+           configured as /ncs-config/logs/ncs-log. This log is not
+           rotated, i.e. use logrotate(8).";
+      }
+      leaf audit-log-commit {
+        type boolean;
+        default false;
+        description
+          "Controls whether the audit log should include messages about
+           the resulting configuration changes for each commit to the
+           running data store.";
+      }
+      leaf audit-log-commit-defaults {
+        type boolean;
+        default false;
+        description
+          "Controls whether the audit log should include messages about
+           default values being set.  Enabling this may have a performance
+           impact.";
+      }
+
+      container audit-network-log {
+        uses log-type {
+          refine enabled {
+            default false;
+          }
+          refine syslog {
+            description "Syslog is not available for audit-network-log.
+                         This parameter has no effect.";
+          }
+        }
+        description
+          "audit-network-log is an audit log recording southbound traffic
+           towards devices.";
+      }
+
+      container netconf-log {
+        presence "";
+        uses log-type;
+        description
+          "netconf-log is a log for troubleshooting northbound
+           NETCONF operations,
+           such as checking why e.g. a filter operation didn't return
+           the data requested. This log is enabled by default. In all
+           other regards it can be configured as
+           /ncs-config/logs/ncs-log. This log is not rotated,
+           i.e. use logrotate(8).";
+        leaf log-reply-status {
+          type boolean;
+          default false;
+          description
+            "When set to 'true', NCS extends netconf log with rpc-reply
+               status ('ok' or 'error').";
+        }
+      }
+
+      container jsonrpc-log {
+        presence "";
+        uses log-type;
+        description
+          "jsonrpc-log is a log of JSON-RPC traffic. This log is enabled by
+           default. In all other regards it can be configured as
+           /ncs-config/logs/ncs-log. This log is not rotated, i.e. use
+           logrotate(8).";
+      }
+
+      container snmp-log {
+        presence "";
+        uses log-type;
+      }
+      leaf snmp-log-level {
+        type enumeration {
+          enum error;
+          enum info;
+        }
+
+        default info;
+        description
+          "Controls which level of SNMP pdus are printed in the SNMP log. The
+           value 'error' means that only PDUs with error-status not equal to
+           'noError' are printed.";
+      }
+      container webui-browser-log {
+        presence "";
+        description
+          "Deprecated. Should not be used.";
+        leaf enabled {
+          description
+            "Deprecated. Should not be used.";
+          type boolean;
+          default false;
+        }
+        leaf filename {
+          description
+            "Deprecated. Should not be used.";
+          type string;
+          mandatory true;
+        }
+      }
+      container webui-access-log {
+        presence "";
+        description
+          "webui-access-log is an access log for the embedded NCS Web
+           server. This file adheres to the Common Log Format, as
+           defined by Apache and others. This log is not enabled by
+           default and is not rotated, i.e. use logrotate(8).";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+            "If set to 'true', the access log is used.";
+        }
+        leaf traffic-log {
+          type boolean;
+          default false;
+          description
+            "Is either true or false. If true, all HTTP(S) traffic
+             towards the embedded Web server is logged in a log file
+             named traffic.trace. The log file can be used to debugging
+             JSON-RPC/REST/RESTCONF. Beware: Do not use this log in a
+             production setting. This log is not enabled by default
+             and is not rotated, i.e. use logrotate(8).";
+        }
+        leaf dir {
+          type string;
+          mandatory true;
+          description
+            "The path to the directory whereas the access log should be
+             written to.";
+        }
+        container syslog {
+          presence "";
+          leaf enabled {
+            type boolean;
+            default false;
+            description
+              "If set to true, syslog messages are sent.";
+          }
+          leaf facility {
+            type syslog-facility-type;
+            description
+              "This optional value overrides the
+               /ncs-config/logs/syslog-config/facility for this
+               particular log. ";
+          }
+        }
+      }
+      container netconf-trace-log {
+        presence "";
+        description
+          "netconf-trace-log is a log for understanding and
+           troubleshooting northbound NETCONF protocol interactions. When this
+           log is enabled, all NETCONF traffic to and from NCS is
+           stored to a file.  By default, all XML is pretty-printed.
+           This will slow down the NETCONF server, so be careful
+           when enabling this log.  This log is not rotated, i.e. use
+           logrotate(8).
+
+           Please note that this means that everything, including
+           potentially sensitive data, is logged.  No filtering is done.";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+            "If set to 'true', all NETCONF traffic is logged.";
+        }
+        leaf filename {
+          type string;
+          mandatory true;
+          description
+            "The name of the file where the NETCONF traffic trace log is
+             written.";
+        }
+        container external {
+          leaf enabled {
+            type boolean;
+            default false;
+            description
+              "enabled is either 'true' or 'false'. If 'true', send log data
+               to external command for processing.";
+          }
+        }
+        leaf format {
+          type enumeration {
+            enum pretty;
+            enum raw;
+          }
+          default pretty;
+          description
+            "The value 'pretty' means that the XML data is
+             pretty-printed.  The value 'raw' means that it is not.";
+        }
+      }
+      container xpath-trace-log {
+        presence "";
+        description
+          "xpath-trace-log is a log for understanding and
+           troubleshooting XPath evaluations.  When this log is
+           enabled, the execution of all XPath queries evaluated by
+           NCS  are logged to a file.
+
+           This will slow down NCS, so be careful when enabling
+           this log.  This log is not rotated, i.e. use logrotate(8).";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+             "If set to 'true', all XPath execution is logged.";
+        }
+        leaf filename {
+          type string;
+          must "current() or ../external/enabled = 'true'";
+          description
+            "The name of the file where the XPath trace log is written";
+        }
+        container external {
+          leaf enabled {
+            type boolean;
+            default false;
+            description
+              "enabled is either 'true' or 'false'. If 'true', send log data
+               to external command for processing.";
+          }
+        }
+      }
+      container ext-log {
+        presence "";
+        description
+          "ext-log is a log for logging events related to external log
+           processing such as process execution, unexpected
+           termination etc.
+
+           This log is not rotated, i.e. use logrotate(8).";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+            "enabled is either 'true' or 'false'. If 'true', external log
+             processing events is logged.";
+        }
+        leaf filename {
+          type string;
+          mandatory true;
+          description
+            "The name of the file where the log for external log processing
+             is written.";
+        }
+        leaf level {
+          type uint8 {
+            range "0..7";
+          }
+          default 2;
+          description
+            "The log level of extLog. 0 is the most critical, 7 is trace
+             logging.";
+        }
+      }
+      container error-log {
+        presence "";
+        description
+          "error-log is an error log used for internal logging from the
+           NCS daemon. It is used for troubleshooting the NCS
+           daemon itself, and should normally be disabled. This log is
+           rotated by the NCS daemon (see below).";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+            "If set to 'true', error logging is performed.";
+        }
+        leaf filename {
+          type string;
+          mandatory true;
+          description
+            "filename is the full path to the actual log file. This
+             parameter must be set if the error-log is enabled.";
+        }
+        leaf max-size {
+          type tailf:size;
+          default S1M;
+          description
+            "max-size is the maximum size of an individual log file
+             before it is rotated. Log filenames are reused when five
+             logs have been exhausted.";
+        }
+        container debug {
+          presence "";
+          leaf enabled {
+            type boolean;
+            default false;
+          }
+          leaf level {
+            type uint16;
+            default 2;
+          }
+          leaf-list tag {
+            type string;
+            max-elements unbounded;
+          }
+        }
+      }
+      container progress-trace {
+        presence "";
+        description
+          "progress-trace is used for tracing progress events emitted by
+           transactions and actions in ConfD. It provides useful
+           information for debugging, diagnostics and profiling.
+           Enabling this setting allows progress trace files to be
+           written to the configured directory. What data to be
+           emitted are configured in /progress/trace.";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+            "enabled is either 'true' or 'false'. If 'true', progress
+             trace files are written to the configured directory.";
+        }
+        leaf dir {
+          type string;
+          mandatory true;
+          description
+            "The directory path to the location of the progress trace
+             files.";
+        }
+      }
+      container external {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default false;
+        }
+        leaf command {
+          type string;
+          mandatory true;
+          description
+            "Path to command executed to process log data from stdin.";
+        }
+        container restart {
+          leaf max-attempts {
+            type uint8;
+            default 3;
+            description
+              "Max restart attempts within period, includes time used by delay.
+               If maxAttempts restarts is exceeded the external processing
+               will be disabled until a reload is issued or the configuration
+               is changed.";
+          }
+          leaf delay {
+            type timeout-type;
+            default PT1S;
+            description
+              "Delay between start attempts if the command failed to start or
+               stopped unexpectedly.";
+          }
+          leaf period {
+            type timeout-type;
+            default PT30S;
+            description
+              "Period of time start attempts are counted in. Period is
+               reset if a command runs for more than period amount of time.";
+          }
+        }
+      }
+    }
+    leaf sort-transactions {
+      type boolean;
+      default true;
+      description
+        "This parameter controls how NCS lists newly created, not yet
+         committed list entries.  If this value is set to 'false',
+         NCS will list all new elements before listing existing data.
+
+         If this value is set to 'true', NCS will merge new and
+         existing entries, and provide one sorted view of the data.
+         This behavior works well when CDB is used to store
+         configuration data, but if an external data provider is used,
+         NCS does not know the sort order, and can thus not merge the
+         new entries correctly.  If an external data provider is used
+         for configuration data, and the sort order differs from CDB's
+         sort order, this parameter should be set to 'false'.";
+    }
+
+    leaf enable-inactive {
+      type boolean;
+      default true;
+      description
+        "This parameter controls if the NCS's inactive feature
+         should be enabled or not. When NCS is used to control
+         Juniper routers, this feature is required";
+    }
+
+    leaf enable-origin {
+      type boolean;
+      default false;
+      description
+        "This parameter controls if NCS's NMDA origin feature
+         should be enabled or not.";
+    }
+
+   container session-limits {
+      presence "";
+      description
+        "Parameters for limiting concurrent access to NCS.";
+      leaf max-sessions {
+        type limit-type;
+        default unbounded;
+        description
+          "Puts a limit to the total number of concurrent sessions to NCS.";
+      }
+      list session-limit {
+        key context;
+        description "
+            Parameters for limiting concurrent access for a specific
+            context to NCS. There can be multiple instances of this
+            container element, each one specifying parameters for a
+            specific context.
+          ";
+        leaf context {
+          type string;
+          description "
+              The context is either one of cli, netconf, webui, snmp
+              or it can be any other context string defined through
+              the use of MAAPI. As an example, if we use MAAPI to
+              implement a CORBA interface to NCS, our MAAPI program
+              could send the string 'corba' as context.";
+        }
+        leaf max-sessions {
+          type limit-type;
+          mandatory true;
+          description "
+              Puts a limit to the total number of concurrent sessions to
+              NCS.
+            ";
+        }
+      }
+      leaf max-config-sessions {
+        type limit-type;
+        default unbounded;
+        description "
+            Puts a limit to the total number of concurrent configuration
+            sessions to NCS.
+          ";
+      }
+      list config-session-limit {
+        key context;
+        description "
+            Parameters for limiting concurrent read-write transactions
+            for a specific context to NCS. There can be multiple
+            instances of this container element, each one specifying
+            parameters for a specific context.
+          ";
+        leaf context {
+          type string;
+          description "
+              The context is either one of cli, netconf, webui, snmp,
+              or it can be any other context string defined through
+              the use of MAAPI. As an example, if we use MAAPI to
+              implement a CORBA interface to NCS, our MAAPI program
+              could send the string 'corba' as context.";
+        }
+        leaf max-sessions {
+          type limit-type;
+          mandatory true;
+          description "
+              Puts a limit to the total number of concurrent
+              configuration sessions to NCS for the corresponding
+              context.
+            ";
+        }
+      }
+    }
+   container parser-limits {
+      presence "";
+      description "Parameters for limiting parsing of XML data in ConfD.";
+
+      leaf max-processing-instruction-length {
+        description
+          "Maximum number of bytes for processing instructions.";
+        type parser-limit-type;
+        default 32768;
+      }
+      leaf max-tag-length {
+        description
+          "Maximum number of bytes for tag names excluding namespace prefix.";
+        type parser-limit-type;
+        default 1024;
+      }
+      leaf max-attribute-length {
+        description
+          "Maximum number of bytes for attribute names including namespace
+            prefix.";
+        type parser-limit-type;
+        default 1024;
+      }
+      leaf max-attribute-value-length {
+        description
+          "Maximum number of bytes for attribute values in escaped form.";
+        type limit-type;
+        default unbounded;
+      }
+      leaf max-attribute-count {
+        description "Maximum number of attributes on a single tag.";
+        type parser-limit-type;
+        default 64;
+      }
+      leaf max-xmlns-prefix-length {
+        description
+          "Maximum number of bytes for xmlns prefix.";
+        type limit-type;
+        default 1024;
+      }
+      leaf max-xmlns-valueLength {
+        description
+          "Maximum number of bytes for a namespace value in escaped form.";
+        type parser-limit-type;
+        default 1024;
+      }
+      leaf max-xmlns-count {
+        description "Maximum number of xmlns declarations on a single tag.";
+        type limit-type;
+        default 1024;
+      }
+      leaf max-data-length {
+        description "Maximum number of bytes of continuous data.";
+        type limit-type;
+        default unbounded;
+      }
+    }
+    container aaa {
+      presence "";
+      description "
+          The login procedure to NCS is fully described in the NCS
+          User Guide.
+        ";
+      leaf ssh-login-grace-time {
+        type xs:duration;
+        default PT10M;
+        description "
+            NCS servers close ssh connections after this time if the client
+            has not successfully authenticated itself by then. If the
+            value is 0, there is no time limit for client authentication.
+
+            This is a global value for all ssh servers in NCS.
+
+            Modification of this value will only affect ssh connections that
+            are established after the modification has been done.
+          ";
+      }
+      leaf ssh-max-auth-tries {
+        type limit-type;
+        default unbounded;
+        description "
+            NCS servers close ssh connections when the client has made this
+            number of unsuccessful authentication attempts.
+
+            This is a global value for all ssh servers in NCS.
+
+            Modification of this value will only affect ssh connections that
+            are established after the modification has been done.
+          ";
+      }
+      leaf ssh-server-key-dir {
+        type string;
+        description "
+            ssh-server-key-dir is the directory file path where the keys
+            used by the NCS SSH daemon are found. This parameter must
+            be set if SSH is enabled for NETCONF or the CLI. If SSH is
+            enabled, the server keys used by NCS are om the same
+            format as the server keys used by openssh, i.e. the same
+            format as generated by 'ssh-keygen'
+
+            Only DSA- and RSA-type keys can be used with the NCS
+            SSH daemon, as generated by 'ssh-keygen' with the '-t dsa'
+            and '-t rsa' switches, respectively.
+
+            The key must be stored with an empty passphrase, and
+            with the name 'ssh_host_dsa_key' if it is a DSA-type key, and with
+            the name 'ssh_host_rsa_key' if it is an RSA-type key.
+
+            The SSH server will advertise support for those key
+            types for which there is a key file available and for which
+            the required algorithm is enabled, see the
+            /ncs-config/ssh/algorithms/server-host-key leaf.
+          ";
+      }
+      leaf ssh-pubkey-authentication {
+        type enumeration {
+          enum none;
+          enum local;
+          enum system;
+        }
+        default system;
+        description "
+            Controls how the NCS SSH daemon locates the user keys for
+            public key authentication.
+
+            If set to 'none', public key authentication is disabled.
+
+            If set to 'local', and the user exists in
+            /aaa/authentication/users, the keys in the user's
+            'ssh_keydir' directory are used.
+
+            If set to 'system', the user is first looked up in
+            /aaa/authentication/users, but only if
+            /ncs-config/aaa/local-authentication/enabled is set to
+            'true' - if local-authentication is disabled, or the user
+            does not exist in /aaa/authentication/users, but the user
+            does exist in the OS password database, the keys in the
+            user's $HOME/.ssh directory are used.
+          ";
+      }
+      leaf default-group {
+        type string;
+        description "
+            If the group of a user cannot be found in the AAA
+            sub-system, a logged in user will end up as a member of the
+            default group (if specified).  If a user logs in and the
+            group membership cannot be established, the user will have
+            zero access rights.
+          ";
+      }
+      leaf auth-order {
+        type string;
+        description "
+            The default order for authentication is
+            'local-authentication pam external-authentication'.
+            It is possible to change this order through this
+            parameter
+          ";
+      }
+      leaf validation-order {
+        type string;
+        description
+          "By default the AAA system will try token validation for a user by
+           the external-validation configurables, as that is the only
+           one currently available - i.e. an external program is invoked to
+           validate the token.
+
+           The default is thus:
+
+           'external-validation'";
+      }
+      leaf challenge-order {
+        type string;
+        description
+          "By default the AAA system will try the challenge mechanism for a
+           user by the external-challenge configurables, as that is the only
+           one currently available - i.e. an external program is invoked to
+           authenticate the challenge id and response.
+
+           The default is thus:
+
+           'external-challenge'";
+      }
+
+      leaf expiration-warning {
+        type enumeration {
+          enum ignore;
+          enum display;
+          enum prompt;
+        }
+        default ignore;
+        description "
+            When PAM or external authentication is used, the
+            authentication mechanism may give a warning that the user's
+            password is about to expire. This parameter controls how
+            the NCS daemon processes that warning message.
+
+            If set to 'ignore', the warning is ignored.
+
+            If set to 'display', interactive user interfaces will
+            display the warning message at login time.
+
+            If set to 'prompt', interactive user interfaces will
+            display the warning message at login time, and require that
+            the user acknowledges the message before proceeding.
+          ";
+      }
+      leaf audit-user-name {
+        type enumeration {
+          enum known;
+          enum never;
+        }
+        default known;
+        description '
+            Controls the logging of the user name when a failed
+            authentication attempt is logged to the audit log.
+
+            If set to "known", the user name is only logged when it is
+            known to be valid (i.e. when attempting local-authentication
+            and the user exists in /aaa/authentication/users), otherwise
+            it is logged as "[withheld]".
+
+            If set to "never", the user name is always logged as
+            "[withheld]".
+          ';
+      }
+      leaf max-password-length {
+        type uint16;
+        default 1024;
+        description "
+            The maximum length of the cleartext password for all forms of
+            password authentication. Authentication attempts using a longer
+            password are rejected without attempting verification.
+
+            The hashing algorithms used for password verification, in
+            particular those based on sha-256 and sha-512, require
+            extremely high amounts of CPU usage when verification of very
+            long passwords is attempted.
+          ";
+      }
+      container pam {
+        presence "";
+        description "
+            If PAM is to be used for login the NCS daemon typically
+            must run as root.
+          ";
+        leaf enabled {
+          type boolean;
+          default false;
+          description "
+              When set to 'true', NCS uses PAM for authentication.";
+        }
+        leaf service {
+          type string;
+          default common-auth;
+          description "
+              The PAM service to be used for the login NETCONF/SSH CLI
+              procedure. This can be any service we have installed in
+              the /etc/pam.d directory. Different unices have different
+              services installed under /etc/pam.d - choose a service
+              which makes sense or create a new one.
+            ";
+        }
+        leaf timeout {
+          type xs:duration;
+          default PT10S;
+          description "
+              The maximum time that authentication will wait for a reply
+              from PAM. If the timeout is reached, the PAM authentication
+              will fail, but authentication attempts may still be done
+              with other mechanisms as configured for
+              /ncs-config/aaa/authOrder. Default is PT10S, i.e. 10
+              seconds.
+            ";
+        }
+      }
+      container restconf {
+        presence "";
+        leaf auth-cache-ttl {
+          type xs:duration;
+          default PT10S;
+          description "
+              The amount of time that RESTCONF locally caches
+              authentication credentials before querying the AAA server. Default
+              is PT10S, i.e. 10 seconds. Setting to PT0S, i.e. 0 seconds,
+              effectively disables the authentication cache.
+            ";
+        }
+        leaf enable-auth-cache-client-ip {
+          type boolean;
+          default false;
+          description
+            "If enabled, a clients source IP address will also be stored
+             in the RESTCONF authentication cache.";
+        }
+      }
+      container external-authentication {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default false;
+          description "
+              When set to 'true', external authentication is used.";
+        }
+        leaf executable {
+          type string;
+          description "
+              If we enable external authentication, an executable on the
+              local host can be launched to authenticate a user.  The
+              executable will receive the username and the cleartext
+              password on its standard input. The format is
+              '[${USER};${PASS};]\\n'. For example if user is 'bob' and
+              password is 'secret', the executable will receive the line
+              '[bob;secret;]' followed by a newline on its standard
+              input. The program must parse this line.
+
+              The task of the external program, which for example could
+              be a RADIUS client is to authenticate the user and also
+              provide the user to groups mapping. So if 'bob' is member
+              of the 'oper' and the 'lamers' group, the program should
+              echo 'accept oper lamers' on its standard output.  If the
+              user fails to authenticate, the program should echo
+              'reject ${reason}' on its standard output.";
+        }
+        leaf use-base64 {
+          type boolean;
+          default false;
+          description "
+              When set to 'true', ${USER} and ${PASS} in the data passed
+              to the executable will be base64-encoded, allowing e.g.
+              for the password to contain ';' characters. For example if
+              user is 'bob' and password is 'secret', the executable
+              will receive the string '[Ym9i;c2VjcmV0;]' followed by a
+              newline.";
+        }
+        leaf include-extra {
+          type boolean;
+          default false;
+          description "
+              When set to 'true', additional information items will be
+              provided to the executable: source IP address and port,
+              context, and protocol. I.e. the complete format will be
+              '[${USER};${PASS};${IP};${PORT};${CONTEXT};${PROTO};]\\n'.
+              Example: '[bob;secret;192.168.1.1;12345;cli;ssh;]\\n'.";
+        }
+      }
+      container local-authentication {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default true;
+          description "
+              When set to true, NCS uses local authentication. That
+              means that the user data kept in the aaa namespace is used
+              to authenticate users. When set to false some other
+              authentication mechanism such as PAM or external
+              authentication must be used.
+            ";
+        }
+      }
+
+      container authentication-callback {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default false;
+          description "
+              When set to true, NCS will invoke an application
+              callback when authentication has succeeded or failed. The
+              callback may reject an otherwise successful authentication.
+              If the callback has not been registered, all
+              authentication attempts will fail. See Javadoc for
+              DpAuthCallback for the callback details.
+            ";
+        }
+      }
+      container external-validation {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+            "When set to 'true', external token validation is used.";
+        }
+        leaf executable {
+          type string;
+          description
+            "If we enable external token validation, an executable on the
+             local host can be launched to validate a user.  The
+             executable will receive a cleartext token on its standard
+             input. The format is '[${TOKEN};]\\n'. For example if the token is
+             '7ea345123', the executable will receive the string '[7ea345123;]'
+             followed by a newline on its standard input. The program must parse
+             this line.
+
+             The task of the external program, which for example could
+             be a FUSION client, is to validate the token and also provide
+             the token to user and groups mappings. Refer to the External
+             validation section of the AAA chapter in the User
+             Guide for the details of how the program should report the
+             result back to NSO.";
+        }
+        leaf use-base64 {
+          type boolean;
+          default false;
+          description
+            "When set to true, ${TOKEN} in the data passed to the executable
+             will be base64-encoded, allowing e.g. for the token to contain ';'
+             characters.";
+        }
+        leaf include-extra {
+          type boolean;
+          default false;
+          description
+            "When set to true, additional information items will be
+             provided to the executable: source IP address and port,
+             context, and protocol. I.e. the complete format will be
+             '[${TOKEN};${IP};${PORT};${CONTEXT};${PROTO};]\\n'.
+             Example: '[7ea345123;192.168.1.1;12345;cli;ssh;]\\n'.";
+        }
+      }
+      container validation-callback {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+            "When set to true, NSO will invoke an application
+             callback when validation has succeeded or failed. The
+             callback may reject an otherwise successful validation.
+             If the callback has not been registered, all
+             validation attempts will fail.";
+        }
+      }
+      container external-challenge {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+            "When set to 'true', the external challenge mechanism is used.";
+        }
+        leaf executable {
+          type string;
+          description
+            "If we enable the external challenge mechanism, an executable on the
+             local host can be launched to authenticate a user.  The
+             executable will receive a cleartext token on its standard
+             input. The format is '[${CHALL-ID};${RESPONSE};]\\n'.
+             For example if the challenge id is '6yu125' and the response is
+             '989yuey', the executable will receive the string
+             '[6yu125;989yuey;]' followed by a newline on its standard input.
+             The program must parse this line.
+
+             The task of the external program, which for example could
+             be a RADIUS client, is to authenticate the combination of the
+             challenge id and the response, and also provide a mapping to user
+             and groups. Refer to the External challenge section of the
+             AAA chapter in the User Guide for the details of how the program
+             should report the result back to NSO.";
+        }
+        leaf use-base64 {
+          type boolean;
+          default false;
+          description
+            "When set to true, ${CHALL-ID} and${RESPONSE} in the data
+             passed to the executable will be base64-encoded, allowing e.g.
+             for them to contain ';' characters.";
+        }
+        leaf include-extra {
+          type boolean;
+          default false;
+          description
+            "When set to true, additional information items will be
+             provided to the executable: source IP address and port,
+             context, and protocol. I.e. the complete format will be
+             '[${CHALL-ID};${RESPONSE};${IP};${PORT};${CONTEXT};${PROTO};]\\n'.
+             Example: '[6yu125;989yuey;192.168.1.1;12345;cli;ssh;]\\n'.";
+        }
+      }
+      container challenge-callback {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+            "When set to true, NSO will invoke an application
+             callback when the challenge machanism has succeeded or failed. The
+             callback may reject an otherwise successful authentication.
+             If the callback has not been registered, all
+             challenge mechnism attempts will fail.";
+        }
+      }
+      container authorization {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default true;
+          description "
+              When set to false, all authorization checks are turned
+              off, similar to the -noaaa flag in ncs_cli.
+            ";
+        }
+        container callback {
+          presence "";
+          leaf enabled {
+            type boolean;
+            default false;
+            description "
+                When set to true, NCS will invoke application
+                callbacks for authorization. If the callbacks have not
+                been registered, all authorization checks will be
+                rejected. See Javadoc for DpAuthorizationCallback for
+                the callback details.
+              ";
+          }
+        }
+        leaf nacm-compliant {
+          type boolean;
+          default true;
+          description
+            "In earlier versions, NCS did not fully comply with the NACM
+             specification: the 'module-name' leaf was required to match
+             toplevel nodes, but it was not considered for the node
+             being accessed. If this leaf is set to false, this
+             non-compliant behavior remains - this setting is only
+             provided for backward compatibility with existing rule
+             sets, and is not recommended.";
+        }
+      }
+      leaf namespace {
+        type string;
+        default "http://tail-f.com/ns/aaa/1.1";
+        description "
+            If we want to move the AAA data into another userdefine
+            namespace, we indicate that here.
+          ";
+      }
+      leaf prefix {
+        type string;
+        default "/";
+        description "
+            If we want to move the AAA data into another userdefined
+            namespace, we indicate the prefix path in that namespace
+            where the NCS AAA namespace has been mounted.
+          ";
+      }
+    }
+
+    container rollback {
+      presence "";
+
+      description "
+          Settings controlling if and where rollback files are
+          created. A rollback file contains a copy of the system
+          configuration. The current running configuration is always
+          stored in rollback0, the previous version in rollback1
+          etc. The oldest saved configuration has the highest suffix.
+        ";
+      leaf enabled {
+        type boolean;
+        default false;
+        description "
+            When set to true a rollback file will be created whenever
+            the running configuration is modified.
+          ";
+      }
+      leaf directory {
+        type string;
+        mandatory true;
+        description "
+            Location where rollback files will be created.
+          ";
+      }
+      leaf history-size {
+        type uint32;
+        default 35;
+        description "
+            Number of old configurations to save.
+          ";
+      }
+      leaf type {
+        type enumeration {
+          enum delta;
+        }
+        default delta;
+        status deprecated;
+        description "
+            This parameter is deprecated, NCS supports only type 'delta'.
+            It is not necessary to set a value for this parameter,
+            it is kept only for backward compatibility reasons.
+
+            Type 'delta' means that only the changes
+            are stored in the rollback file. Rollback file 0 will
+            contain the changes from the last configuration commit.
+            This is space and time efficient for large configurations.";
+      }
+
+      leaf rollback-numbering {
+        type enumeration {
+          enum rolling;
+          enum fixed;
+        }
+        default "fixed";
+        description
+          "rollbackNumbering is either 'fixed' or 'rolling'. If set
+           to 'rolling' then rollback file '0' will always contain the
+           last commit. When using 'fixed' each rollback will get
+           a unique increasing number.";
+      }
+    }
+
+    container ssh {
+      presence "";
+      description "
+          This section defines settings which affect the behavior
+          of the SSH server built into NCS.";
+      leaf idle-connection-timeout {
+        type xs:duration;
+        default PT10M;
+        description "
+            The maximum time that an authenticated connection to the SSH
+            server is allowed to exist without open channels. If the
+            timeout is reached, the SSH server closes the connection.
+            Default is PT10M, i.e. 10 minutes. If the value is 0, there
+            is no timeout.";
+      }
+      container algorithms {
+        presence "";
+        description "
+            This section defines custom lists of algorithms to be usable
+            with the built-in SSH implementation.
+
+            For each type of algorithm, an empty value means that all
+            supported algorithms should be usable, and a non-empty value
+            (a comma-separated list of algorithm names) means that the
+            intersection of the supported algorithms and the configured
+            algorithms should be usable.
+          ";
+        leaf server-host-key {
+          type string;
+          default "ssh-ed25519";
+          description '
+              The supported serverHostKey algorithms (if implemented in
+              libcrypto) are
+              "ecdsa-sha2-nistp521",
+              "ecdsa-sha2-nistp384",
+              "ecdsa-sha2-nistp256",
+              "ssh-ed25519", "ssh-rsa" and "ssh-dss" but for
+              any SSH server, it is limited to those algorithms for which
+              there is a host key installed in the directory given by
+              /ncs-config/aaa/ssh-server-key-dir.
+
+              To limit the usable serverHostKey algorithms to "ssh-dss", set
+              this value to "ssh-dss" or avoid installing a key of any other
+              type than ssh-dss in the sshServerKeyDir.
+            ';
+        }
+        leaf kex {
+          type string;
+          default "curve25519-sha256,ecdh-sha2-nistp256,"
+                 +"diffie-hellman-group14-sha256";
+          description '
+             The supported key exchange algorithms (as long as their hash
+             functions are implemented in libcrypto) are
+             "ecdh-sha2-nistp521",
+             "ecdh-sha2-nistp384",
+             "ecdh-sha2-nistp256",
+             "curve25519-sha256",
+             "diffie-hellman-group14-sha256",
+             "diffie-hellman-group14-sha1".
+
+             To limit the usable key exchange algorithms to
+             "diffie-hellman-group14-sha1" and
+             "diffie-hellman-group14-sha256" (in that order) set this
+             value to
+             "diffie-hellman-group14-sha1,
+             diffie-hellman-group14-sha256".';
+        }
+        container dh-group {
+          description
+            'Range of allowed group size, the SSH server responds to the
+             client during a "diffie-hellman-group-exchange". The range
+             will be the intersection of what the client requests, if there
+             is none the key exchange will be aborted.';
+          leaf min-size {
+            must ". <= ../max-size";
+            type dh-group-size-type;
+            default 2048;
+            description 'Minimal size of p in bits.';
+          }
+          leaf max-size {
+            type dh-group-size-type;
+            default 4096;
+            description 'Maximal size of p in bits.';
+          }
+        }
+        leaf mac {
+          type string;
+          default "hmac-sha2-512,hmac-sha2-256,hmac-sha1";
+          description '
+              The supported mac algorithms (if implemented in libcrypto) are
+              "hmac-sha1", "hmac-sha2-256" and "hmac-sha2-512".
+            ';
+        }
+        leaf encryption {
+          type string;
+          default "aes128-gcm@openssh.com,chacha20-poly1305@openssh.com,"
+                 +"aes128-ctr,aes192-ctr,aes256-ctr";
+          description '
+              The supported encryption algorithms (if implemented in libcrypto)
+              are "aes128-gcm@openssh.com", "chacha20-poly1305@openssh.com",
+              "aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-cbc",
+              "aes256-cbc" and "3des-cbc".
+            ';
+        }
+      }
+      leaf client-alive-interval {
+        type timeout-type;
+        default PT20S;
+        description '
+            If no data has been received from a connected client for this long,
+            a request that requires a response from the client, will be sent
+            over the SSH transport.
+          ';
+      }
+      leaf client-alive-count-max {
+        type uint32;
+        default 3;
+        description '
+            If no data has been received from the client, after this many
+            consecutive client-alive-interval has passed, the connection will be
+            dropped.
+          ';
+      }
+    }
+
+    container cli {
+      presence "";
+      description "CLI parameters.";
+      leaf enabled {
+        type boolean;
+        default true;
+        description "
+            When set to true, the CLI server is started.
+          ";
+      }
+      leaf enable-cli-cache {
+        type boolean;
+        default true;
+        description "
+           enable-cli-cache is either 'true' or 'false'. If 'true' the
+           CLI will operate with a builtin caching mechanism to speed
+           up some of its operations. This is the default and
+           preferred method. Only turn this off for very special
+           cases.
+         ";
+      }
+      leaf allow-implicit-wildcard {
+        type boolean;
+        default true;
+        description "
+            When set to true, users do not need to explicitly type * in the
+            place of keys in lists, in order to see all list instances. When
+            set to false, users have to explicitly type * to see all list
+            instances.
+
+            This option can be set to 'false', to help in the case where
+            tab completion in the CLI takes long time when performed on
+            lists with many instances.
+          ";
+      }
+      leaf completion-show-max {
+        type cli-max;
+        default 100;
+        description "
+            Maximum number of possible alternatives for the CLI to present
+            when doing completion.
+          ";
+      }
+      leaf style {
+        type enumeration {
+          enum "j";
+          enum "c";
+        }
+        description
+            "Style is either 'j', 'c', or 'i'. If 'j', then the CLI will
+            be presented as a Juniper style CLI. If 'c' then the CLI
+            will appear as Cisco XR style, and if 'i' then a Cisco IOS
+            style CLI will be rendered.";
+      }
+
+      container ssh {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default true;
+          description "
+              enabled is either 'true' or 'false'. If 'true' the NCS CLI
+              will use the built in SSH server.";
+        }
+        leaf ip {
+          type ip-address;
+          default 0.0.0.0;
+          description "
+              ip is an IP address which the NCS CLI should listen on
+              for SSH connections. 0.0.0.0 means that it listens on the
+              port (/ncs-config/cli/ssh/port) for all IPv4
+              addresses on the machine.
+            ";
+        }
+        leaf port {
+          type port-number;
+          default 2024;
+          description "
+              The port number for CLI SSH
+            ";
+        }
+        leaf use-keyboard-interactive {
+          type boolean;
+          default false;
+          description
+            "Need to be set to true if using challenge/response
+             authentication.";
+        }
+        leaf banner {
+          type string;
+          default "";
+          description "
+              banner is a string that will be presented to the client
+              before authenticating when logging in to the CLI via the
+              built-in SSH server.
+            ";
+        }
+        leaf banner-file {
+          type string;
+          default "";
+          description "
+              banner-file is the name of a file whose contents will be
+              presented (after any string given by the banner directive) to
+              the client before authenticating when logging in to
+              the CLI via the built-in SSH server.
+            ";
+        }
+        list extra-listen {
+          key "ip port";
+          description "
+              A list of additional IP address and port pairs which the
+              NCS CLI should also listen on for SSH connections.
+            ";
+          leaf ip {
+            type ip-address;
+          }
+          leaf port {
+            type port-number;
+          }
+        }
+      }
+
+      leaf top-level-cmds-in-sub-mode {
+        type boolean;
+        default "false";
+        description "
+            topLevelCmdsInSubMode is either 'true' or 'false'. If set
+            to 'true' all top level commands in I and C-style CLI are
+            available in sub modes.
+           ";
+      }
+
+      leaf completion-meta-info {
+        type completion-meta-info-type;
+        default "false";
+        description "
+            completionMetaInfo is either 'false', 'alt1' or 'alt2'.
+            If set to 'alt1' then the alternatives shown for
+            possible completions will be prefixed as follows:
+
+              containers with >
+              lists with +
+              leaf-lists with +
+
+            For example:
+
+              Possible completions:
+              ...
+              > applications
+              + apply-groups
+              ...
+              + dns-servers
+              ...
+
+            If set to 'alt2', then possible completions will be prefixed
+            as follows:
+
+              containers with >
+              lists with children with +>
+              lists without children +
+
+            For example:
+
+              Possible completions:
+              ...
+              > applications
+              +>apply-groups
+              ...
+              + dns-servers
+              ...";
+      }
+
+      leaf allow-abbrev-keys {
+        type boolean;
+        default "false";
+        description "
+            allowAbbrevKeys is either 'true' or 'false'. If 'false' then
+            key elements are not allowed to be abbreviated in the
+            CLI. This is relevant in the J-style CLI when using the
+            commands 'delete' and 'edit'. In the C/I-style CLIs when
+            using the commands 'no', 'show configuration' and for
+            commands to enter submodes.";
+      }
+      leaf action-call-no-list-instance {
+        type cli-action-no-list-inst;
+        default deny-call;
+        description
+          "action-call-no-list-instance can be set to either 'deny-call',
+           or 'create-instance'. If attempting to call an action placed
+           in a non existing list instance, 'deny-call' will give an
+           error. 'create-instance' will create the missing list instance
+           and subsequently call the action.
+           This is only effective in configuration mode in C-style CLI";
+      }
+
+      leaf allow-abbrev-enums {
+        type boolean;
+        default "false";
+        description "
+            allowAbbrevEnums is either 'true' or 'false'. If 'false'
+            then enums entered in the CLI cannot be abbreviated.";
+      }
+
+      leaf allow-case-insensitive-enums {
+        type boolean;
+        default "false";
+        description "
+            allowCaseInsensitiveEnums is either 'true' or 'false'. If
+            'false' then enums entered in the CLI must match in case, ie
+            you cannot enter FALSE if the CLI asks for 'true' or
+            'false'.";
+      }
+
+      leaf j-align-leaf-values {
+        type boolean;
+        default "true";
+        description "
+            j-align-leaf-values is either 'true' or 'false'. If 'true' then
+            the leaf values of all siblings in a container or list will
+            be aligned.";
+      }
+
+      leaf c-align-leaf-values {
+        type boolean;
+        default "true";
+        description "
+            c-align-leaf-values is either 'true' or 'false'. If 'true' then
+            the leaf values of all siblings in a container or list will
+            be aligned.";
+      }
+
+      leaf c-config-align-leaf-values {
+        type boolean;
+        default "true";
+        description "
+            c-align-leaf-values is either 'true' or 'false'. If 'true' then
+            the leaf values of all siblings in a container or list will
+            be aligned when displaying configuration.";
+      }
+
+      leaf enter-submode-on-leaf {
+        type boolean;
+        default "true";
+        description "
+            enterSubmodeOnLeaf is either 'true' or 'false'. If set
+            to 'true' (the default) then setting a leaf in a submode
+            from a parent mode results in entering the submode after
+            the command has completed. If set to 'false' then an
+            explicit command for entering the submode is needed.
+            For example, if running the command
+
+               interface FastEthernet 1/1/1 mtu 1400
+
+            from the top level in config mode. If enterSubmodeOnLeaf
+            is true the CLI will end up in the 'interface FastEthernet
+            1/1/1' submode after the command execution. If set to
+            'false' then the CLI will remain at the top level.
+            To enter the submode when set to 'false' the command
+
+               interface FastEthernet 1/1/1
+
+            is needed.
+            Applied to the C-style CLI.";
+      }
+
+      leaf table-look-ahead {
+        type int64;
+        default "50";
+        description "
+            The tableLookAhead element tells confd how many rows to
+            pre-fetch when displaying a table. The prefetched rows are
+            used for calculating the required column widths for the
+            table. If set to a small number it is recommended to explicitly
+            configure the column widhts in the clispec file.";
+      }
+
+      leaf more-buffer-lines {
+        type limit-type;
+        default "unbounded";
+        description "
+            moreBufferLines is used to limit the buffering done by the more
+            process. It can be 'unbounded' or a possitive integer describing
+            the maximum number of lines to buffer.";
+      }
+
+      leaf show-all-ns {
+        type boolean;
+        default false;
+        description "
+         If showAllNs is true then all elem names will be prefixed
+         with the namespace prefix in the CLI. This is visible
+         when setting values and when showing the configuration";
+      }
+
+      leaf show-action-completions {
+        type boolean;
+        default false;
+        description
+          "If set to 'true' then the action completions will be displayed
+           separated.";
+      }
+
+      leaf action-completions-format {
+        type string;
+        default "Action completions:";
+        description
+          "action-completions-format is the string displayed before the
+           displaying the action completion possibilities.";
+      }
+
+      leaf suppress-fast-show {
+        type boolean;
+        default false;
+        description
+          "suppressFastShow is either 'true' or 'false'. If 'true' then
+           the fast show optimization will be suppressed in the
+           C-style CLI. The fast show optimization is somewhat
+           experimental and may break certain operations.";
+      }
+
+      leaf use-expose-ns-prefix {
+        type boolean;
+        default false;
+        description "
+            If 'true' then all nodes annotated with the
+            tailf:cli-expose-ns-prefix will result in the namespace
+            prefix being shown/required.  If set to 'false' then the
+            tailf:cli-expose-ns-prefix annotation will be ignored.
+            The container /devices/device/config has this annotation.
+            ";
+      }
+
+      leaf show-defaults {
+        type boolean;
+        default false;
+        description "
+            show-defaults is either 'true' or 'false'. If 'true' then
+            default values will be shown when displaying the
+            configuration. The default value is shown inside a comment
+            on the same line as the value. Showing default values can
+            also be enabled in the CLI per session using the operational
+            mode command 'set show defaults true'.";
+      }
+
+      leaf default-prefix {
+        type string;
+        default "";
+        description "
+            default-prefix is a string that is placed in front of the
+            default value when a configuration is shown with default
+            values as comments.
+          ";
+      }
+      leaf commit-retry-timeout {
+        type timeout-type;
+        default PT0S;
+        description "
+            DEPRECATED - use /ncs-config/commit-retry-timeout instead
+            to control this behavior consistently for all northbound
+            interfaces.
+
+            Commit timeout in the CLI. This timeout controls for how
+            long the commit operation will attempt to complete the
+            operation when some other entity is locking the database,
+            e.g. some other commit is in progress or some managed
+            object is locking the database.
+
+            There is a similiar configuration parameter,
+            /ncs-config/commit-retry-timeout, which sets a timeout for
+            NCS transactions in the JSON-RPC API.
+          ";
+      }
+      leaf timezone {
+        type enumeration {
+          enum utc;
+          enum local;
+        }
+        default local;
+        description "
+            Time in the CLI can be either local, as configured on
+            the host, or UTC.
+          ";
+      }
+      leaf with-defaults {
+        type boolean;
+        default false;
+        description "
+            withDefaults is either 'true' or 'false'. If 'false' then
+            leaf nodes that have their default values will not be shown
+            when the user displays the configuration, unless the user
+            gives the 'details' option to the 'show' command.
+
+            This is useful when there are many settings which are seldom
+            used. When set to 'false' only the values actually modified
+            by the user will be shown.";
+      }
+      leaf banner {
+        type string;
+        default "";
+        description "
+            Banner shown to the user when the CLI is started. Default is
+            empty.
+          ";
+      }
+      leaf banner-file {
+        type string;
+        default "";
+        description "
+            File whose contents are shown to the user (after any string set
+            by the 'banner' directive) when the CLI is started. Default is
+            empty.
+          ";
+      }
+      leaf prompt1 {
+        type string;
+        default '\u@\h\M> ';
+        description
+          "Prompt used in operational mode.
+
+           This string is not validated to be legal UTF-8,
+           for details see /ncs-config/validate-utf8.
+
+           The string may contain a number of backslash-escaped
+           special characters which are decoded as follows:
+
+           \\[ and \\]
+               Enclosing sections of the prompt in \\[ and \\] makes
+               that part not count when calculating the width of the
+               prompt. This makes sense, for example, when including
+               non-printable characters, or control codes that are
+               consumed by the terminal. The common control codes for
+               setting text properties for vt100/xterm are ignored
+               automatically, so are control characters. Updating the
+               xterm title can be done using a control sequence that
+               may look like this:
+                   <prompt1>\\[&#x1b;]0;\\u@\\h&#x07;\\]\\u@\\h&gt; </prompt1>
+           \\d
+              the date in 'YYYY-MM-DD' format (e.g., '2006-01-18')
+           \\h
+              the hostname up to the first '.' (or delimiter as defined
+              by promptHostnameDelimiter)
+           \\H
+              the hostname
+           \\s
+              the client source ip
+           \\S
+              the name provided by the -H argument to confd_cli
+           \\t
+              the current time in 24-hour HH:MM:SS format
+           \\T
+              the current time in 12-hour HH:MM:SS format
+           \\@
+              the current time in 12-hour am/pm format
+           \\A
+              the current time in 24-hour HH:MM format
+           \\u
+              the username of the current user
+           \\m
+              the mode name (only used in XR style)
+           \\m{N}
+              same as \\m, but the number of trailing components in
+              the displayed path is limited to be max N (an integer).
+              Characters removed are replaced with an ellipsis (...).
+           \\M
+              the mode name inside parenthesis if in a mode
+           \\M{N}
+              same as \\M, but the number of trailing components in
+              the displayed path is limited to be max N (an integer).
+              Characters removed are replaced with an ellipsis (...).";
+      }
+      leaf prompt2 {
+        type string;
+        default '\u@\h\M% ';
+        description "
+            Prompt used in configuration mode.
+
+            This string is not validated to be legal UTF-8,
+            for details see /ncs-config/validate-utf8.
+
+            The string may contain a number of backslash-escaped
+            special characters which are decoded as described for
+            prompt1.
+          ";
+      }
+
+      leaf c-prompt1 {
+        type string;
+        default '\u@\h\M> ';
+        description "
+            Prompt used in operational mode in the Cisco XR style
+            CLI.
+
+            This string is not validated to be legal UTF-8,
+            for details see /ncs-config/validate-utf8.
+
+            The string may contain a number of backslash-escaped
+            special characters which are decoded as described for
+            prompt1.";
+      }
+      leaf c-prompt2 {
+        type string;
+        default '\u@\h\M% ';
+        description "
+            Prompt used in configuration mode in the Cisco XR style
+            CLI.
+
+            This string is not validated to be legal UTF-8,
+            for details see /ncs-config/validate-utf8.
+
+            The string may contain a number of backslash-escaped
+            special characters which are decoded as described for
+            prompt1.
+          ";
+      }
+
+      leaf prompt-hostname-delimiter {
+        type string;
+        default .;
+        description
+          "When the \\h token is used in a prompt the first part of
+           the hostname up until the first occurance of the
+           promptHostnameDelimiter is used.";
+      }
+      leaf idle-timeout {
+        type xs:duration;
+        default PT30M;
+        description "
+            Maximum idle time before terminating a CLI session. Default
+            is PT30M, ie 30 minutes.
+          ";
+      }
+      leaf prompt-sessions-cli {
+        type boolean;
+        default false;
+        description "
+            promptSessionsCLI is either 'true' or 'false'. If set to 'true'
+            then only the current CLI sessions will be displayed when the user
+            tries to start a new CLI session and the maximum number of sessions
+            has been reached. Note that MAAPI sessions with their context set to
+            'cli' would be regarded as CLI sessions and would be listed as such.
+          ";
+      }
+      leaf suppress-ned-errors {
+        type boolean;
+        default false;
+        description "
+          Suppress errors from NED devices. Make log-communication
+          between ncs and its devices more silent. Be cautious with
+          this option since errors that might be interesting can get
+          suppressed as well.
+          ";
+      }
+
+      leaf disable-idle-timeout-on-cmd {
+        type boolean;
+        default true;
+        description "
+            disable-idle-timeout-on-cmd is either 'true' or 'false'. If
+            set to 'false' then the idle timeout will trigger even
+            when a command is running in the CLI. If set to 'true'
+            the idle timeout will only trigger if the user is idling
+            at the CLI prompt.";
+      }
+      leaf command-timeout {
+        type timeout-type;
+        default infinity;
+        description "
+            Global command timeout. Terminate command unless the command
+            has completed within the timeout. It is generally a bad idea
+            to use this feature since it may have undesirable effects in
+            a loaded system where normal commands take longer to
+            complete than usual.
+
+            This timeout can be overridden by a command specific timeout
+            specified in the ncs.cli file.
+          ";
+      }
+
+      container space-completion {
+        presence "";
+        leaf enabled {
+          type boolean;
+        }
+      }
+
+      leaf ignore-leading-whitespace {
+        type boolean;
+        description "
+           If 'false' then the CLI will show completion help when the
+           user enters TAB or SPACE as the first characters on a
+           row. If set to 'true' then leading SPACE and TAB are
+           ignored. The user can enter '?' to get a list of possible
+           alternatives. Setting the value to 'true' makes it easier
+           to paste scripts into the CLI.
+        ";
+      }
+
+      container auto-wizard {
+        presence "";
+        description "
+            Default value for autowizard in the CLI. The user can always
+            enable or disable the auto wizard in each session, this
+            controls the initial session value.
+          ";
+        leaf enabled {
+          type boolean;
+          default true;
+          description "
+              enabled is either 'true' or 'false'. If 'true' the CLI
+              will prompt the user for required attributes when a new
+              identifier is created.";
+        }
+      }
+      leaf restricted-file-access {
+        type boolean;
+        default false;
+        description "
+            restricted-file-access is either 'true' or 'false'. If 'true'
+            then a CLI user will not be able to access files and
+            directories outside the home directory tree.";
+      }
+      leaf restricted-file-regexp {
+        type string;
+        default "";
+        description "
+            restricted-file-regexp is either an empty string or an regular
+            expression (AWK style). If not empty then all files and
+            directories created or accessed must match the regular
+            expression. This can be used to ensure that certain symbols
+            does not occur in created files.
+          ";
+      }
+      leaf history-save {
+        type boolean;
+        default true;
+        description "
+            If set to 'true' then the CLI history will be saved
+            between CLI sessions. The history is stored in the state
+            directory.";
+
+      }
+      leaf history-remove-duplicates {
+        type boolean;
+        default false;
+        description "
+            If set to 'true' then repeated commands in the CLI will only
+            be stored once in the history. Each invocation of the
+            command will only update the date of the last entry. If set
+            to 'false' duplicates will be stored in the history.";
+      }
+      leaf history-max-size {
+        type int64;
+        default 1000;
+        description "
+            Sets maximum configurable history size.
+          ";
+      }
+      leaf message-max-size {
+        type int64;
+        default 10000;
+        description "
+            Maximum size of user message.
+          ";
+      }
+      leaf show-commit-progress {
+        type boolean;
+        default true;
+        description "
+            show-commit-progress can be either 'true' or 'false'. If set to
+            'true' then the commit operation in the CLI will provide
+            some progress information.";
+      }
+
+      leaf commit-message {
+        type boolean;
+        default true;
+        description "CLI prints out a message when a commit is executed";
+      }
+
+      leaf use-double-dot-ranges {
+        type boolean;
+        default true;
+        description "useDoubleDotRanges is either 'true' or 'false'. If 'true'
+            then range expressions are types as 1..3, if set to 'false'
+            then ranges are given as 1-3.";
+      }
+
+      leaf allow-range-expression-all-types {
+        type boolean;
+        default true;
+        description "allowRangeExpressionAllTypes is either 'true' or 'false'.
+            If 'true' then range expressions are allowed for all key values
+            regardless of type.";
+      }
+
+      leaf suppress-range-keyword {
+        type boolean;
+        default false;
+        description
+          "suppressRangeKeyword is either 'true' or 'false'. If 'true'
+           then 'range' keyword is not allowed in C- and I-style for
+           range expressions.";
+      }
+
+      leaf commit-message-format {
+        type string;
+        default "\nSystem message at $(time)...\n"
+              + "Commit performed by $(user) via $(proto) using $(ctx).\n";
+        description "The format of the CLI commit messages";
+      }
+
+
+      leaf-list suppress-commit-message-context {
+        type string;
+        description "A list of contexts for which no commit message
+                     shall be displayed. A good value is [ system ] which
+                     will make all system generated commits to go
+                     unnoticed in the CLI. A context is either the name of
+                     an agent i.e cli, webui, netconf, snmp or any free form
+                     text string if the transaction is initated from Maapi";
+      }
+
+      leaf show-subsystem-messages {
+        type boolean;
+        default true;
+        description "show-subsystem-messages is either 'true' or 'false'.
+                     If 'true' the CLI will display a system message
+                     whenever a connected daemon is started or stopped.";
+      }
+
+      leaf show-editors {
+        type boolean;
+        default true;
+        description "show-editors is either 'true' or 'false'. If set to true
+            then a list of current editors will be displayed when
+            a user enters configure mode.";
+      }
+
+      leaf rollback-aaa {
+        type boolean;
+        default "false";
+        description
+          "If set to true then AAA rules will be applied when a
+           rollback file is loaded. This means that rollback may
+           not be possible if some other user have made changes
+           that the current user does not have access privileges
+           to.";
+      }
+
+      leaf rollback-numbering {
+        type enumeration {
+          enum rolling;
+          enum fixed;
+        }
+        default "fixed";
+        description
+          "rollbackNumbering is either 'fixed' or 'rolling'. If set
+           to 'rolling' then rollback file '0' will always contain the
+           last commit. When using 'fixed' each rollback will get
+           a unique increasing number.";
+      }
+
+      leaf show-service-meta-data {
+        type boolean;
+        default "false";
+        description
+          "If set to true, then backpointers and refcounts are displayed
+           by default when showing the configuration. If set to false,
+           they are not. The default can be overridden by the pipe
+           flags 'display service-meta' and 'hide service-meta'.";
+      }
+
+      leaf escape-backslash {
+        type boolean;
+        default "false";
+        description
+          "escapeBackslash is either 'true' or 'false'. If set to 'true'
+           then backslash is escaped in the CLI.";
+      }
+
+      leaf preserveSemicolon {
+        type boolean;
+        default false;
+        description
+          "preserveSemicolon is either 'true' or 'false'. If set to
+           'true' the semicolon is preserved as an ordinary char instead
+           of using the semicolon as a keyword to separate CLI statements
+           in the I and C-style CLI.";
+      }
+
+      leaf bypass-allow-abbrev-keys {
+        type boolean;
+        default "false";
+        description
+          "bypassAllowAbbrevKeys is either 'true' or 'false'. If 'true'
+           then /ncs-config/cli/allow-abbrev-keys setting does not take
+           any effect. It means that no matter what is set for
+           /ncs-config/cli/allow-abbrev-keys, the key elements are not
+           allowed to be abbreviated in the CLI. This is relevant in the
+           J-style CLI when using the commands 'delete' and 'edit'. In
+           the C/I-style CLIs when using the commands 'no',
+           'show configuration' and for commands to enter submodes.";
+      }
+
+      leaf mode-info-in-aaa {
+        type mode-info-in-aaa-type;
+        default "false";
+        description
+          "modeInfoInAAA is either 'true', 'false' or 'path', If 'true', then
+           all commands will be prefixed with major and minor mode name
+           when processed by the AAA-rules. This means that it is
+           possible to differentiate between commands with the same
+           name in different modes. Major mode is 'operational' or
+           'configure' and minor mode is 'top' in J-style and the name
+           of the submode in C- and I-mode. On the top-level in C- and
+           I-mode it is also 'top'. If set to 'path' the major mode
+           will be followed by the full command path to the submode.";
+      }
+
+      leaf match-completions-search-limit {
+        type limit-type;
+        default "50";
+        description
+          "match-completions-search-limit is either unbounded or
+           an integer value. It determines how many list instances
+           should be looked at in order to determine if a leaf should
+           be included in the match completions list. It can be very
+           expensive to explore all instances if the configuration
+           contains many list instances.";
+      }
+
+      container nmda {
+        presence "";
+        description
+          "CLI settings for NMDA.";
+        leaf show-operational-state {
+          type boolean;
+          default false;
+          description
+            "show-operational-state is either 'true' or 'false'.
+             If 'true', the 'operational-state' option to the show command will
+             be available in the CLI.
+
+             The operational-state option is to display the content of the
+             operational datastore.";
+        }
+      }
+    }
+
+    container restconf {
+        presence "";
+        description "
+            This section defines settings for the RESTCONF api.
+          ";
+        leaf enabled {
+            type boolean;
+            default false;
+            description "
+                enabled is either 'true' or 'false'. If 'true', the RESTCONF
+                api is enabled on the Web server used by the Web UI. Note that
+                the Web UI must be enabled as well.";
+        }
+        leaf show-hidden {
+          type boolean;
+          default false;
+          description
+            "show-hidden is either 'true' or 'false'. If 'true' all hidden nodes
+             will be reachable. If 'false' query parameter ?unhide overrides.";
+        }
+        leaf root-resource {
+            type string;
+            default "restconf";
+            description "The RESTCONF root resource path.";
+        }
+        leaf schema-server-url {
+            type string;
+            description "
+                Change the schema element in the ietf-yang-library:modules-state
+                resource response.
+
+                It is possible to use the placeholders @X_FORWARDED_HOST@ and
+                @X_FORWARDED_PORT@ in order to set the schema URL with HTTP
+                headers X-Forwarded-Host and X-Forwarded_Port, e.g.
+                https://@X_FORWARDED_HOST@:@X_FORWARDED_PORT@ .
+              ";
+        }
+        container token-response {
+          presence "";
+          description "
+            When authenticating via AAA external-authentication or
+            external-validation and a token is returned, it is possible
+            to include a header with the token in the response.";
+          leaf x-auth-token {
+            type boolean;
+            default false;
+            description "
+                Either 'true' or 'false'. If 'true', a x-auth-token header is
+                included in the response with any token returned from AAA.";
+          }
+          container token-cookie {
+            presence "";
+            description "Configuration of RESTCONF token cookies.";
+            leaf name {
+              type string;
+              default "";
+              description "
+                The cookie name, exactly as it is to be sent.
+                If configured, a HTTP cookie with that name is included in the
+                response with any token returned from AAA as value.";
+            }
+            leaf directives {
+              type string;
+              default "";
+              description "
+                An optional string with directives appended to the cookie,
+                exactly as it is to be sent.";
+            }
+          }
+        }
+
+        uses customHTTPHeaders;
+
+        container transport {
+          presence "";
+          description
+            "Settings deciding which transport services the RESTCONF server
+             should listen to, e.g. TCP and SSL.";
+          container tcp {
+            presence "";
+            description
+              "Settings deciding how the RESTCONF server TCP transport service
+               should behave.";
+            leaf enabled {
+              type boolean;
+              default false;
+              description
+                "enabled is either 'true' or 'false'. If 'true', the RESTCONF
+                 server uses clear text TCP as a transport service.";
+            }
+            leaf ip {
+              type inet:ip-address;
+              default "0.0.0.0";
+              description
+                "The IP address which the RESTCONF server should listen to for
+                 TCP connections. 0.0.0.0 means that it listens to the port
+                 for all IPv4 addresses on the machine.";
+            }
+            leaf port {
+              type inet:port-number;
+              default 8009;
+              description
+                "port is a valid port number to be used in combination
+                 with the address.";
+            }
+            leaf-list extraIpPorts {
+              type xs:token;
+              description
+                "extraIpPorts is a leaf-list of ip:port pairs which the
+                 RESTCONF server also listens to for TCP connections.
+                 For IPv6 addresses, the syntax [ip]:port may be used.
+                 If the ':port' is omitted, a fallback to the port used by
+                 the WebUI transport will take place.
+                 Example:
+
+                 <extraIpPorts>10.45.22.11:4777</extraIpPorts>
+                 <extraIpPorts>127.0.0.1</extraIpPorts>
+                 <extraIpPorts>:::88</extraIpPorts>
+                 <extraIpPorts>[::]</extraIpPorts>";
+            }
+            leaf dscp {
+              type dscp-type;
+              description
+                "Support for setting the Differentiated Services Code Point
+                 (6 bits) for traffic originating from the RESTCONF server for
+                 TCP connections.";
+            }
+          }
+          container ssl {
+            presence "";
+            description
+              "Settings deciding how the RESTCONF server SSL (Secure Sockets
+               Layer) transport service should behave.";
+            leaf enabled {
+              type boolean;
+              default false;
+              description
+                "enabled is either 'true' or 'false'. If 'true', the RESTCONF
+                 server uses SSL as a transport service.";
+            }
+            leaf ip {
+              type inet:ip-address;
+              default "0.0.0.0";
+              description
+                "The IP address which the RESTCONF server should listen to for
+                 incoming SSL connections. 0.0.0.0 means that it listens
+                 to the port for all IPv4 addresses on the machine.";
+            }
+            leaf port {
+              type inet:port-number;
+              default 8889;
+              description
+                "port is a valid port number.";
+            }
+            leaf-list extraIpPorts {
+              type xs:token;
+              description
+                "extraIpPorts is a leaf-list of ip:port
+                 pairs which the RESTCONF server also listens to for SSL
+                 connections.
+                 For IPv6 addresses, the syntax [ip]:port may be used.
+                 If the ':port' is omitted,
+                 /confdConfig/webui/transport/ssl/port is used.
+                 Example:
+
+                 <extraIpPorts>10.45.22.11:4777</extraIpPorts>
+                 <extraIpPorts>127.0.0.1</extraIpPorts>
+                 <extraIpPorts>:::88</extraIpPorts>
+                 <extraIpPorts>[::]</extraIpPorts>";
+            }
+            leaf dscp {
+              type dscp-type;
+              description
+                "Support for setting the Differentiated Services Code Point
+                 (6 bits) for traffic originating from the RESTCONF server for
+                 SSL connections.";
+            }
+            leaf keyFile {
+              type string;
+              description
+                "Specifies which file that contains the private key for
+                 the certificate.";
+            }
+            leaf certFile {
+              type string;
+              description
+                "Specifies which file that contains the server
+                 certificate. The certificate is either a self-signed
+                 test certificate or a genuin and validated certificate
+                 bought from a CA (Certificate Authority). If this
+                 configurable is omitted the keyFile points to a
+                 built-in self signed certificate/key in the ConfD
+                 distribution instead. Note: Only use this certificate/key
+                 for test purposes.
+
+                 The ConfD distribution comes with a server certificate
+                 which can be used for testing purposes
+                 ($CONFD_DIR/src/confd/webui/cert/host.{cert,key}). This
+                 server certificate has been generated using a local CA
+                 certificate:
+
+                 $ openssl
+                 OpenSSL> genrsa -out ca.key 4096
+                 OpenSSL> req -new -x509 -days 3650 -key ca.key -out ca.cert
+                 OpenSSL> genrsa -out host.key 4096
+                 OpenSSL> req -new -key host.key -out host.csr
+                 OpenSSL> x509 -req -days 365 -in host.csr -CA ca.cert \\
+                   -CAkey ca.key -set_serial 01 -out host.cert";
+            }
+            leaf caCertFile {
+              type string;
+              description
+                "Specifies which file that contains the trusted
+                 certificates to use during client authentication and
+                 to use when attempting to build the server certificate
+                 chain. The list is also used in the list of acceptable
+                 CA certificates passed to the client when a
+                 certificate is requested.
+
+                 The ConfD distribution comes with a CA certificate
+                 which can be used for testing purposes
+                 ($CONFD_DIR/src/confd/webui/ca_cert/ca.cert).
+                 This CA certificate has been generated as shown above.";
+            }
+            leaf verify {
+              type enumeration {
+                enum 1;
+                enum 2;
+                enum 3;
+              }
+              default 1;
+              description
+                "Specifies the level of verification the server does on
+                 client certificates. 1 means nothing, 2 means the
+                 server will ask the client for a certificate but not
+                 fail if the client does not supply a client
+                 certificate, 3 means that the server requires the
+                 client to supply a client certificate.
+
+                 If caCertFile has been set to the ca.cert file
+                 generated above you can verify that it works correctly
+                 using, for example:
+
+                 $ openssl s_client -connect 127.0.0.1:8888 \\
+                       -cert client.cert -key client.key
+
+                 For this to work client.cert must have been generated using
+                 the ca.cert from above:
+
+                 $ openssl
+                 OpenSSL> genrsa -out client.key 4096
+                 OpenSSL> req -new -key client.key -out client.csr
+                 OpenSSL> x509 -req -days 3650 -in client.csr -CA ca.cert \\
+                   -CAkey ca.key -set_serial 01 -out client.cert";
+            }
+            leaf depth {
+              type uint64 {
+                range "0 .. max";
+              }
+              default 1;
+              description
+                "Specifies the depth of certificate chains the server
+                 is prepared to follow when verifying client
+                 certificates.";
+            }
+            leaf ciphers {
+              type string;
+              default DEFAULT;
+              description
+                "Specifies the cipher suites to be used by the server as a
+                 colon-separated list from the set
+
+                 ECDHE-ECDSA-AES256-GCM-SHA384, ECDHE-RSA-AES256-GCM-SHA384,
+                 ECDHE-ECDSA-AES256-SHA384, ECDHE-RSA-AES256-SHA384,
+                 ECDH-ECDSA-AES256-GCM-SHA384, ECDH-RSA-AES256-GCM-SHA384,
+                 ECDH-ECDSA-AES256-SHA384, ECDH-RSA-AES256-SHA384,
+                 DHE-RSA-AES256-GCM-SHA384, DHE-DSS-AES256-GCM-SHA384,
+                 DHE-RSA-AES256-SHA256, DHE-DSS-AES256-SHA256,
+                 AES256-GCM-SHA384, AES256-SHA256,
+                 ECDHE-ECDSA-AES128-GCM-SHA256, ECDHE-RSA-AES128-GCM-SHA256,
+                 ECDHE-ECDSA-AES128-SHA256, ECDHE-RSA-AES128-SHA256,
+                 ECDH-ECDSA-AES128-GCM-SHA256, ECDH-RSA-AES128-GCM-SHA256,
+                 ECDH-ECDSA-AES128-SHA256, ECDH-RSA-AES128-SHA256,
+                 DHE-RSA-AES128-GCM-SHA256, DHE-DSS-AES128-GCM-SHA256,
+                 DHE-RSA-AES128-SHA256, DHE-DSS-AES128-SHA256,
+                 AES128-GCM-SHA256, AES128-SHA256, ECDHE-ECDSA-AES256-SHA,
+                 ECDHE-RSA-AES256-SHA, DHE-RSA-AES256-SHA, DHE-DSS-AES256-SHA,
+                 ECDH-ECDSA-AES256-SHA, ECDH-RSA-AES256-SHA, AES256-SHA,
+                 ECDHE-ECDSA-AES128-SHA, ECDHE-RSA-AES128-SHA,
+                 DHE-RSA-AES128-SHA, DHE-DSS-AES128-SHA,
+                 ECDH-ECDSA-AES128-SHA, ECDH-RSA-AES128-SHA, AES128-SHA,
+                 ECDHE-ECDSA-DES-CBC3-SHA, ECDHE-RSA-DES-CBC3-SHA,
+                 EDH-RSA-DES-CBC3-SHA, EDH-DSS-DES-CBC3-SHA,
+                 ECDH-ECDSA-DES-CBC3-SHA, ECDH-RSA-DES-CBC3-SHA, and
+                 DES-CBC3-SHA,
+
+                 or the word 'DEFAULT' (use all cipher suites in that list
+                 for which the required support is implemented in libcrypto).
+                 See the OpenSSL manual page ciphers(1) for the definition of
+                 the cipher suites.  NOTE: The general cipher list syntax
+                 described in ciphers(1) is not supported.";
+            }
+            leaf protocols {
+              type string;
+              default DEFAULT;
+              description
+                "Specifies the SSL/TLS protocol versions to be used by the
+                 server as a whitespace-separated list from the set
+                 tlsv1 tlsv1.1 tlsv1.2, or the word 'DEFAULT' (use all
+                 supported protocol versions except tlsv1).";
+            }
+            leaf ellipticCurves {
+              type string;
+              default DEFAULT;
+              description
+                "Specifies the curves for Elliptic Curve cipher suites to be
+                 used by the server as a whitespace-separated list from the set
+
+                 sect571r1, sect571k1, secp521r1, brainpoolP512r1, sect409k1,
+                 sect409r1, brainpoolP384r1, secp384r1, sect283k1, sect283r1,
+                 brainpoolP256r1, secp256k1, secp256r1, sect239k1, sect233k1,
+                 sect233r1, secp224k1, secp224r1, sect193r1, sect193r2,
+                 secp192k1, secp192r1, sect163k1, sect163r1, sect163r2,
+                 secp160k1, secp160r1, and secp160r2,
+
+                 or the word 'DEFAULT' (use all supported curves).";
+            }
+          }
+        }
+
+        container require-module-name {
+          presence "";
+          leaf enabled {
+            type boolean;
+            default true;
+            description "
+              When set to 'true', the client must explicitly provide the module
+              name of the node if it is defined in a module other than its
+              parent node or its parent node is the datastore.
+              When set to 'false', this configuration parameter allows the
+              client to bypass above requirements.
+              Refer to RFC 8040, section 3.5.3 for detailed information.";
+          }
+        }
+    }
+    container webui {
+      presence "";
+      description "
+          This section defines settings which decide how the embedded
+          NCS Web server should behave, with respect to TCP and SSL
+          etc.
+        ";
+      leaf enabled {
+        type boolean;
+        default false;
+        description "
+            enabled is either 'true' or 'false'. If 'true', the Web
+            server is started.";
+      }
+      leaf server-name {
+        type string;
+        default localhost;
+        description "
+            The hostname the Web server serves.
+          ";
+      }
+      leaf match-host-name {
+        type boolean;
+        default false;
+        description "
+            This setting specifies if the Web server only should serve
+            URLs adhering to the serverName defined above. By default
+            the server-name is 'localhost' and match-host-name is 'false',
+            i.e. any server name can be given in the URL. If you want
+            the server to only accept URLs adhering to the server-name,
+            enable this setting.";
+      }
+      leaf cache-refresh-secs {
+        type uint64 {
+          range "0 .. max";
+        }
+        default 0;
+        description "
+            The NCS Web server uses a RAM cache for static content. An
+            entry sits in the cache for a number of seconds before it is
+            reread from disk (on access). The default is 0.
+          ";
+      }
+      leaf max-ref-entries {
+        type uint64 {
+          range "0 .. max";
+        }
+        default 100;
+        description "
+            Leafref and keyref entries are represented as drop-down
+            menues in the automatically generated Web UI. By default
+            no more than 100 entries are fetched. This element makes
+            this number configurable.
+          ";
+      }
+      leaf docroot {
+        type string;
+        description "
+            The location of the document root on disk. If this
+            configurable is omited the docroot points to the next
+            generation docroot in the NCS distro instead.
+          ";
+      }
+      leaf webui-index-url {
+        type string;
+        default "/index.html";
+        description "
+            Where to redirect after successful login, which by default
+            is '/index.html'.
+          ";
+      }
+      leaf webui-one-url {
+        type string;
+        default "/webui-one";
+        description "
+            Url where the 'webui-one' webui is mapped if webui is enabled.
+            The default is '/webui-one'.
+          ";
+      }
+      leaf login-dir {
+        type string;
+        description "
+            The login-dir element points out an alternative login directory
+            which contains your HTML code etc used to login to the Web UI.
+            This directory will be mapped https://<ip-address>/login. If
+            this element is not specified the default login/ directory in
+            the docroot will be used instead.
+          ";
+      }
+
+      uses customHTTPHeaders;
+
+      container disable-auth {
+        presence "";
+        leaf-list dir {
+          type string;
+          max-elements unbounded;
+          description "
+              The disable-auth element contains any number of dir
+              elements. Each dir element points to a directory path
+              in the docroot which should not be restricted by the AAA
+              engine. If no dir elements are specifed the following
+              directories and files will not be restricted by the AAA
+              engine: '/login' and '/login.html'.";
+        }
+      }
+      leaf allow-symlinks {
+        type boolean;
+        default true;
+        description "
+            Allow symlinks in the docroot directory.
+          ";
+      }
+      container transport {
+        presence "";
+        description "
+            Settings deciding which transport services the Web server
+            should listen on, e.g. TCP and SSL.
+          ";
+        container tcp {
+          presence "";
+          description "
+              Settings deciding how the Web server TCP transport service
+              should behave.
+            ";
+          leaf enabled {
+            type boolean;
+            default true;
+            description "
+                enabled is either 'true' or 'false'. If 'true', the Web
+                server uses cleart text TCP as a transport service.";
+          }
+          leaf redirect {
+            type string;
+            description "
+                If given the user will be redirected to the specified
+                URL. Two macros can be specified, i.e. @HOST@ and
+                @PORT@. For example https://@HOST@:443 or
+                https://192.12.4.3:@PORT@
+              ";
+          }
+          leaf ip {
+            type ip-address;
+            default 0.0.0.0;
+            description "
+                The IP address which the Web server should listen
+                on. 0.0.0.0 means that it listens on the port
+                (/ncs-config/webui/transport/tcp/port) for all IPv4
+                addresses on the machine.
+              ";
+          }
+          leaf port {
+            type port-number;
+            default 8008;
+            description "
+                port is a valid port number to be used in combination
+                with the address in /ncs-config/webui/transport/tcp/ip.
+              ";
+          }
+          leaf keepalive {
+            type boolean;
+            default false;
+            description "
+                keepalive is either 'true' or 'false' (default). When 'true'
+                periodic polling of the other end of the connection will be
+                done for sockets that have not exchanged data during the OS
+                defined interval. The server will also periodicly send
+                messages (':keepalive test') over the connection to detect if it
+                is alive. The first message may not detect that the connection
+                is down, but the subsequent one will. The OS keepalive service
+                will only clean the OS socket, this timeout will clean the
+                server processes.
+              ";
+          }
+          leaf keepalive-timeout {
+            type uint64 {
+              range "1 .. max";
+            }
+            default 3600;
+            description "
+                keepalive-timeout defines the time (in seconds, default 3600)
+                the server will wait before trying to send keepalive messages.
+              ";
+          }
+          list extra-listen {
+            key "ip port";
+            description "
+                A list of additional IP address and port pairs which the
+                Web server should also listen on.
+              ";
+            leaf ip {
+              type ip-address;
+            }
+            leaf port {
+              type port-number;
+            }
+          }
+        }
+        container ssl {
+          presence "";
+          description "
+              Settings deciding how the Web server SSL (Secure Sockets
+              Layer) transport service should behave.
+
+              SSL is widely deployed on the Internet and virtually all
+              bank transactions as well as all on-line shopping today is
+              done with SSL encryption. There are many good sources on
+              describing SSL in detail,
+              e.g. http://www.tldp.org/HOWTO/SSL-Certificates-HOWTO/
+              which describes how to manage certificates and keys.
+            ";
+          leaf enabled {
+            type boolean;
+            default false;
+            description "
+                enabled is either 'true' or 'false'. If 'true', the Web
+                server uses SSL as a transport service.";
+          }
+          leaf redirect {
+            type string;
+            description "
+                If given the user will be redirected to the specified
+                URL. Two macros can be specified, i.e. @HOST@ and
+                @PORT@. For example http://@HOST@:80 or
+                http://192.12.4.3:@PORT@
+              ";
+          }
+          leaf ip {
+            type ip-address;
+            default 0.0.0.0;
+            description "
+                The IP address which the Web server should listen on for
+                incoming ssl connections. 0.0.0.0 means that it listens
+                on the port (/ncs-config/webui/transport/ssl/port) for
+                all IPv4 addresses on the machine.
+              ";
+          }
+          leaf port {
+            type port-number;
+            default 8888;
+            description "
+                port is a valid port number to be used in combination
+                with /ncs-config/webui/transport/ssl/ip.
+              ";
+          }
+          leaf keepalive {
+            type boolean;
+            default false;
+            description "
+                keepalive is either 'true' or 'false' (default). When 'true'
+                periodic polling of the other end of the connection will be
+                done for sockets that have not exchanged data during the OS
+                defined interval. The server will also periodicly send
+                messages (':keepalive test') over the connection to detect if it
+                is alive. The first message may not detect that the connection
+                is down, but the subsequent one will. The OS keepalive service
+                will only clean the OS socket, this timeout will clean the
+                server processes.
+              ";
+          }
+          leaf keepalive-timeout {
+            type uint64 {
+              range "1 .. max";
+            }
+            default 3600;
+            description "
+                keepalive-timeout defines the time (in seconds, default 3600)
+                the server will wait before trying to send keepalive messages.
+              ";
+          }
+          list extra-listen {
+            key "ip port";
+            description "
+                A list of additional IP address and port pairs which the
+                Web server should also listen on for incoming ssl connections.
+              ";
+            leaf ip {
+              type ip-address;
+            }
+            leaf port {
+              type port-number;
+            }
+          }
+          leaf read-from-db {
+            type boolean;
+            default false;
+            description
+              "If enabled, TLS data (certificate, private key, and CA
+               certificates) is read from database. Corresponding configuration
+               regarding reading TLS data (i.e.
+               /ncs-config/webui/transport/ssl/key-file,
+               /ncs-config/webui/transport/ssl/cert-file,
+               /ncs-config/webui/transport/ssl/ca-cert-file) is ignored when
+               enabled.
+
+               See tailf-tls.yang and the NCS User Guide for more
+               information.";
+          }
+          leaf key-file {
+            type string;
+            description "
+                Specifies which file that contains the private key for
+                the certificate. Read more about certificates in
+                /ncs-config/webui/transport/ssl/cert-file. If this
+                configurable is omitted the keyFile points to a
+                built-in self signed certificate/key in the NCS
+                distro instead. Note: Only use this certificate/key
+                for test purposes.
+              ";
+          }
+          leaf cert-file {
+            type string;
+            description
+              "Specifies which file that contains the server
+                certificate. The certificate is either a self-signed
+                test certificate or a genuin and validated certificate
+                bought from a CA (Certificate Authority). If this
+                configurable is omitted the keyFile points to a
+                built-in self signed certificate/key in the NCS
+                distro instead. Note: Only use this certificate/key
+                for test purposes.
+
+                The NCS distro comes with a server certificate
+                which can be used for testing purposes
+                (${NCS_DIR}/var/ncs/webui/cert/host.{cert,key}). This
+                server certificate has been generated using a local CA
+                certificate:
+
+                $ openssl
+                OpenSSL> genrsa -out ca.key 4096
+                OpenSSL> req -new -x509 -days 3650 -key ca.key -out ca.cert
+                OpenSSL> genrsa -out host.key 4096
+                OpenSSL> req -new -key host.key -out host.csr
+                OpenSSL> x509 -req -days 365 -in host.csr -CA ca.cert \\
+                        -CAkey ca.key -set_serial 01 -out host.cert";
+          }
+          leaf ca-cert-file {
+            type string;
+            description "
+                Specifies which file that contains the trusted
+                certificates to use during client authentication and
+                to use when attempting to build the server certificate
+                chain. The list is also used in the list of acceptable
+                CA certificates passed to the client when a
+                certificate is requested.
+
+                The NCS distro comes with a CA certificate
+                which can be used for testing purposes
+                (${NCS_DIR}/var/ncs/webui/ca_cert/ca.cert).
+                This CA certificate has been generated as shown above.
+              ";
+          }
+          leaf verify {
+            type uint32 {
+              range "1 .. 3";
+            }
+            default 1;
+            description "
+                Specifies the level of verification the server does on
+                client certificates. 1 means nothing, 2 means the
+                server will ask the client for a certificate but not
+                fail if the client does not supply a client
+                certificate, 3 means that the server requires the
+                client to supply a client certificate.
+
+                If ca-cert-file has been set to the ca.cert file
+                generated above you can verify that it works correctly
+                using, for example:
+
+                  $ openssl s_client -connect 127.0.0.1:8888 \\
+                    -cert client.cert -key client.key
+
+                For this to work client.cert must have been generated using
+                the ca.cert from above:
+
+                  $ openssl
+                  OpenSSL> genrsa -out client.key 4096
+                  OpenSSL> req -new -key client.key -out client.csr
+                  OpenSSL> x509 -req -days 3650 -in client.csr -CA ca.cert \\
+                           -CAkey ca.key -set_serial 01 -out client.cert";
+          }
+          leaf depth {
+            type uint64 {
+              range "0 .. max";
+            }
+            default 1;
+            description
+              "Specifies the depth of certificate chains the server
+               is prepared to follow when verifying client
+               certificates.";
+          }
+          leaf ciphers {
+            type string;
+            default DEFAULT;
+            description '
+                Specifies the cipher suites to be used by the server as a
+                colon-separated list from the set
+
+                ECDHE-ECDSA-AES128-SHA, ECDHE-ECDSA-AES128-GCM-SHA256,
+                ECDHE-RSA-AES128-GCM-SHA256, DHE-RSA-AES128-GCM-SHA256,
+                DHE-DSS-AES128-GCM-SHA256, ECDHE-ECDSA-AES128-SHA256,
+                ECDHE-RSA-AES128-SHA256, ECDHE-RSA-AES128-SHA,
+                DHE-RSA-AES128-SHA256, DHE-RSA-AES128-SHA,
+                DHE-DSS-AES128-SHA256, DHE-DSS-AES128-SHA, AES128-GCM-SHA256,
+                AES128-SHA256, AES128-SHA, ECDHE-ECDSA-DES-CBC3-SHA,
+                ECDHE-RSA-DES-CBC3-SHA, EDH-RSA-DES-CBC3-SHA,
+                EDH-DSS-DES-CBC3-SHA, ECDH-ECDSA-DES-CBC3-SHA, DES-CBC3-SHA,
+                DHE-RSA-AES256-SHA, AES256-SHA, ECDHE-ECDSA-AES256-GCM-SHA384,
+                ECDHE-RSA-AES256-GCM-SHA384, DHE-RSA-AES256-GCM-SHA384,
+                DHE-DSS-AES256-GCM-SHA384, ECDHE-ECDSA-AES256-SHA384,
+                ECDHE-RSA-AES256-SHA384, DHE-RSA-AES256-SHA256,
+                DHE-DSS-AES256-SHA256, AES256-GCM-SHA384, and AES256-SHA256,
+
+                or the word "DEFAULT", which expands to a list containing
+
+                ECDHE-ECDSA-AES128-SHA, ECDHE-ECDSA-AES128-GCM-SHA256,
+                ECDHE-RSA-AES128-GCM-SHA256, DHE-RSA-AES128-GCM-SHA256,
+                DHE-DSS-AES128-GCM-SHA256, ECDHE-ECDSA-AES128-SHA256,
+                ECDHE-RSA-AES128-SHA256, ECDHE-RSA-AES128-SHA,
+                DHE-RSA-AES128-SHA256, DHE-RSA-AES128-SHA,
+                DHE-DSS-AES128-SHA256, DHE-DSS-AES128-SHA, AES128-GCM-SHA256,
+                AES128-SHA256, AES128-SHA, ECDHE-ECDSA-AES256-GCM-SHA384,
+                ECDHE-RSA-AES256-GCM-SHA384, DHE-RSA-AES256-GCM-SHA384,
+                DHE-DSS-AES256-GCM-SHA384, ECDHE-ECDSA-AES256-SHA384,
+                ECDHE-RSA-AES256-SHA384, DHE-RSA-AES256-SHA256,
+                DHE-DSS-AES256-SHA256, AES256-GCM-SHA384, and AES256-SHA256.
+
+                See the OpenSSL manual page ciphers(1) for the definition of
+                the cipher suites. NOTE: The general cipher list syntax
+                described in ciphers(1) is not supported.
+              ';
+          }
+          leaf protocols {
+            type string;
+            default DEFAULT;
+            description '
+                Specifies the SSL/TLS protocol versions to be used by the
+                server as a whitespace-separated list from the set
+                tlsv1 tlsv1.1 tlsv1.2, or the word "DEFAULT" (use all
+                supported protocol versions except tlsv1).
+              ';
+          }
+          leaf elliptic-curves {
+            type string;
+            default DEFAULT;
+            description '
+                Specifies the curves for Elliptic Curve cipher suites to be
+                used by the server as a whitespace-separated list from the set
+
+                secp256r1, secp256k1, secp384r1, secp521r1, sect571r1,
+                sect571k1, brainpoolP512r1, sect409k1, sect409r1,
+                brainpoolP384r1, sect283k1, sect283r1, brainpoolP256r1,
+                sect239k1, sect233k1, sect233r1, secp224k1, and secp224r1,
+
+                or the word "DEFAULT", which expands to a list containing
+
+                secp256r1, secp256k1, secp384r1, secp521r1, sect571r1,
+                sect571k1, brainpoolP512r1, sect409k1, sect409r1,
+                brainpoolP384r1, sect283k1, sect283r1, and brainpoolP256r1.
+              ';
+          }
+        }
+        leaf unauthenticated-message-limit {
+          type unauthenticated-message-limit-type;
+          default 65536;
+          description "
+            Limit the size of allowed unauthenticated messages. Limit is given
+            in bytes or 'nolimit'. The default is 64kB.";
+        }
+      }
+      container cgi {
+        presence "";
+        description "CGI-script support";
+        leaf enabled {
+          type boolean;
+          default false;
+          description "
+              enabled is either 'true' or 'false'. If 'true',
+              CGI-script support is enabled.";
+        }
+        leaf dir {
+          type string;
+          default cgi-bin;
+          description "
+              The directory path to the location of the CGI-scripts.
+            ";
+        }
+        leaf request-filter {
+          type string;
+          description "
+              Specifies that characters not specified in the given
+              regexp should be filtered out silently.
+            ";
+        }
+        leaf max-request-length {
+          type uint16;
+          description "
+              Specifies the maximum amount of characters in a
+              request. All characters exceedig this limit are silenty
+              ignored.
+            ";
+        }
+        container php {
+          presence "";
+          description "PHP support";
+          leaf enabled {
+            type boolean;
+            default false;
+            description "
+                enabled is either 'true' or 'false'. If 'true',
+                PHP support is enabled.";
+          }
+        }
+      }
+      leaf idle-timeout {
+        type xs:duration;
+        default PT30M;
+        description "
+            Maximum idle time before terminating a Web UI session.
+            PT0M means no timeout. Default is PT30M, ie 30 minutes.
+          ";
+      }
+      leaf absolute-timeout {
+        type xs:duration;
+        default PT16H;
+        description "
+            Maximum absolute time before terminating a Web UI session.
+            PT0M means no timeout. Default is PT16H, ie 16 hours.
+          ";
+      }
+      leaf rate-limiting {
+        type uint64 {
+          range "0 .. max";
+        }
+        default 1000000;
+        description "
+            Maximum number of allowed JSON-RPC requests every hour.
+            0 means infinity. Default is 1 million.
+          ";
+      }
+      leaf audit {
+        type boolean;
+        default false;
+        description "
+            audit is either 'true' or 'false'. If 'true', then JSON-RPC/CGI
+            requests are logged to the audit log.
+          ";
+      }
+      container use-forwarded-client-ip {
+        presence "";
+        description
+          "This section is created if a Client IP address should be looked for
+           among HTTP headers such as 'X-Forwarded-For' or 'X-REAL-IP', etc.";
+
+        leaf-list proxy-headers {
+          type string;
+          min-elements 1;
+          ordered-by user;
+          description
+            "Name of HTTP headers that contain the true Client IP address.
+
+             Typically the de facto standard is to use the 'X-Forwarded-For'
+             header, but other headers exists, e.g: 'X-REAL-IP'.
+
+             The first header in this list, found to contain an IP address
+             will cause this IP address to be used as the Client IP address.
+             In case of several elements, the first element, separated by a
+             space or comma, will be used. The header name specified here
+             is not case sensitive.
+
+             Example of HTTP headers containing a ClientIP:
+
+                  X-Forwarded-For: ClientIP, ProxyIP1, ProxyIP2
+                  X-REAL-IP: ClientIP
+            ";
+        }
+        leaf-list allowed-proxy-ip-prefix {
+          type inet:ip-prefix;
+          min-elements 1;
+          description
+            "Only the source IP-prefix  addresses listed here will be trusted to
+             contain a Client IP address in a HTTP header as specified
+             in 'proxyHeaders'";
+        }
+      }
+      container resources {
+        presence "";
+        description
+          "Settings for the /resources URL.";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+            "enabled is either 'true' or 'false'. If 'true', the
+             /resources URL will be available.";
+        }
+      }
+    }
+
+    container japi {
+      presence "";
+      description "Java-API parameters.";
+      leaf new-session-timeout {
+        type xs:duration;
+        default PT30S;
+        description "
+              Timeout for a data provider to respond to a control socket
+              request, see DpTrans. If the Dp fails to respond within the
+              given time, it will be disconnected.
+            ";
+      }
+      leaf query-timeout {
+        type xs:duration;
+        default PT120S;
+        description "
+            Timeout for a data provider to respond to a worker socket query,
+            see DpTrans. If the dp fails to respond within the
+            given time, it will be disconnected.
+          ";
+      }
+      leaf connect-timeout {
+        type xs:duration;
+        default PT60S;
+        description "
+            Timeout for data provider  to send initial message after connecting
+            the socket to the NCS server. If the dp fails to
+            initiate the connection within the given time, it will be
+            disconnected.
+          ";
+      }
+      leaf object-cache-timeout {
+        type xs:duration;
+        default PT2S;
+        description "
+            Timeout for the cache used by the getObject() and
+            iterator(),nextObject() callback requests.
+            NCS caches the result of these calls and serves getElem()
+            requests from northbound agents from the cache.
+            NOTE: Setting this timeout too low will effectively cause
+            the callbacks to be non-functional - e.g. getObject() may
+            be invoked for each getElem() request from a northbound agent.
+          ";
+      }
+      leaf event-reply-timeout {
+        type xs:duration;
+        default PT120S;
+        description "
+            Timeout for the reply from an event notification subscriber
+            for a notification that requires a reply, see the Notif class.
+            If the subscriber fails to reply within the given time, the
+            event notification socket will be closed.
+          ";
+      }
+    }
+
+
+    container netconf-north-bound {
+      presence "";
+      description "
+          This section defines settings which decide how the NETCONF
+          agent should behave, with respect to NETCONF and SSH.
+        ";
+      leaf enabled {
+        type boolean;
+        default true;
+        description "
+            enabled is either 'true' or 'false'. If 'true', the NETCONF
+            agent is started.";
+      }
+      container transport {
+        presence "";
+        description "
+            Settings deciding which transport services the NETCONF agent
+            should listen on, e.g. TCP and SSH.
+          ";
+        container ssh-call-home-source-address {
+          presence "";
+          description "
+          This section provides the possibility to specify the source
+          address to use for NETCONF call home connnections.
+          In most cases the source address assignment is best
+          left to the TCP/IP stack in the OS, since an incorrectly
+          chosen address may result in connection failures. However in
+          case there is more than one address that could be chosen by
+          the stack, and we need to restrict the choice to one of them,
+          these settings can be used.
+          Currently only supported when the internal SSH stack is used.
+        ";
+          leaf ipv4 {
+            type ipv4-address;
+            description "
+            The source address to use for call home IPv4 connections.
+            If not set, the source address will be assigned by the OS.
+          ";
+          }
+          leaf ipv6 {
+            type ipv6-address;
+            description "
+            The source address to use for call home IPv6 connections.
+            If not set, the source address will be assigned by the OS.
+          ";
+          }
+        }
+        container ssh {
+          presence "";
+          description "
+              Settings deciding how the NETCONF SSH transport service
+              should behave.
+            ";
+          leaf enabled {
+            type boolean;
+            default true;
+            description "
+                enabled is either 'true' or 'false'. If 'true', the
+                NETCONF agent uses SSH as a transport service.";
+          }
+          leaf ip {
+            type ip-address;
+            default 0.0.0.0;
+            description "
+                ip is an IP address which the NCS NETCONF agent should
+                listen on. 0.0.0.0 means that it listens on the port
+                (/ncs-config/netconf-north-bound/transport/ssh/port)
+                for all IPv4 addresses on the machine.
+              ";
+          }
+          leaf port {
+            type port-number;
+            default 2022;
+            description "
+                port is a valid port number to be used in combination
+                with /ncs-config/netconf-north-bound/transport/ssh/ip.
+                Note that the standard port for NETCONF over SSH is 830.
+              ";
+          }
+          list extra-listen {
+            key "ip port";
+            description "
+                A list of additional IP address and port pairs which the
+                NCS NETCONF agent should also listen on.
+              ";
+            leaf ip {
+              type ip-address;
+            }
+            leaf port {
+              type port-number;
+            }
+          }
+        }
+        container tcp {
+          presence "";
+          description "
+              NETCONF over TCP is not standardized, but it can be useful
+              during development in order to use e.g. netcat for
+              scripting. It is also useful if we want to use our own
+              proprietary transport. In that case we setup the NETCONF
+              agent to listen on localhost and then proxy it from our
+              transport service module.
+            ";
+          leaf enabled {
+            type boolean;
+            default false;
+            description "
+                enabled is either 'true' or 'false'. If 'true', the
+                NETCONF agent uses clear text TCP as a transport
+                service.";
+          }
+          leaf ip {
+            type ip-address;
+            default 0.0.0.0;
+            description "
+                ip is an IP address which the NCS NETCONF agent should
+                listen on. 0.0.0.0 means that it listens on the port
+                (/ncs-config/netconf-north-bound/transport/tcp/port)
+                for all IPv4 addresses on the machine.
+              ";
+          }
+          leaf port {
+            type port-number;
+            default 2023;
+            description "
+                port is a valid port number to be used in combination
+                with /ncs-config/netconf-north-bound/transport/tcp/ip.
+              ";
+          }
+          leaf keepalive {
+            type boolean;
+            default false;
+            description "
+                keepalive is either 'true' or 'false' (default). When 'true'
+                periodic polling of the other end of the connection will be
+                done for sockets that have not exchanged data during the OS
+                defined interval.
+              ";
+          }
+          list extra-listen {
+            key "ip port";
+            description "
+                A list of additional IP address and port pairs which the
+                NCS NETCONF agent should also listen on.
+              ";
+            leaf ip {
+              type ip-address;
+            }
+            leaf port {
+              type port-number;
+            }
+          }
+        }
+      }
+      leaf extended-sessions {
+        type boolean;
+        default false;
+        description "
+            If extended-sessions are enabled, all NCS sessions can be
+            terminated using <kill-session>, i.e. not only can
+            other NETCONF session be terminated, but also CLI sessions,
+            Webui sessions etc.  If such a session holds a lock, it's
+            session id will be returned in the <lock-denied>,
+            instead of '0'.
+
+            Strictly speaking, this extension is not covered by the
+            NETCONF specification; therefore it's false by default.
+          ";
+      }
+      leaf idle-timeout {
+        type xs:duration;
+        default PT0S;
+        description "
+            Maximum idle time before terminating a NETCONF session.
+            If the session is waiting for notifications, or has a
+            pending confirmed commit, the idle timeout is not used.
+            The default value is 0, which means no timeout.
+
+            Modification of this value will only affect connections that
+            are established after the modification has been done.
+          ";
+      }
+      leaf write-timeout {
+        type xs:duration;
+        default PT0S;
+        description "
+            Maximum time for a write operation towards a client to complete.
+            If the time is exceeded, the NETCONF session is terminated.
+            The default value is 0, which means no timeout.
+
+            Modification of this value will only affect connections that
+            are established after the modification has been done.
+          ";
+      }
+      leaf rpc-errors {
+        type enumeration {
+          enum close;
+          enum inline;
+        }
+
+        default close;
+        description "
+            If rpc-errors is 'inline', and an error occurs during the
+            processing of a <get> or <get-config> request when NCS
+            tries to fetch some data from a data provider, NCS will
+            generate an rpc-error element in the faulty element, and
+            continue to process the next element.
+
+            If an error occurs and rpc-errors is 'close', the NETCONF
+            transport is closed by NCS.";
+      }
+      leaf max-batch-processes {
+        type limit-type;
+        default unbounded;
+        description "
+            Controls how many concurrent NETCONF batch processes there
+            can be at any time.  A batch process can be started by the
+            agent if a new NETCONF operation is implemented as a batch
+            operation.  See the NETCONF chapter in the NCS User's
+            Guide for details.
+          ";
+      }
+      container capabilities {
+        presence "";
+        description "
+            Decide which NETCONF capabilities to enable here.
+          ";
+        container url {
+          presence "";
+          description "
+              Turn on the URL capability options we want to support.
+            ";
+          leaf enabled {
+            type boolean;
+            default false;
+            description "
+                enabled is either 'true' or 'false'. If 'true', the url
+                NETCONF capability is enabled.
+              ";
+          }
+          container file {
+            presence "";
+            description "
+                Decide how the url file support should behave.
+              ";
+            leaf enabled {
+              type boolean;
+              default true;
+              description "
+                  enabled is either 'true' or 'false'. If 'true', the
+                  url file scheme is enabled.
+                ";
+            }
+            leaf root-dir {
+              type string;
+              description "
+                  rootDir is a directory path on disk where ConfD will
+                  store the result from an NETCONF operation using the
+                  url capability.  This parameter must be set if the
+                  file url scheme is enabled.
+                ";
+            }
+          }
+          container ftp {
+            presence "";
+            description "
+                Decide how the url ftp scheme should behave.
+              ";
+            leaf enabled {
+              type boolean;
+              default true;
+              description "
+                  enabled is either 'true' or 'false'. If 'true', the
+                  url ftp scheme is enabled.
+                ";
+            }
+            container source-address {
+              presence "";
+              description "
+          This section provides the possibility to specify the source
+          address to use for ftp connnections.
+          In most cases the source address assignment is best
+          left to the TCP/IP stack in the OS, since an incorrectly
+          chosen address may result in connection failures. However in
+          case there is more than one address that could be chosen by
+          the stack, and we need to restrict the choice to one of them,
+          these settings can be used.
+        ";
+              leaf ipv4 {
+                type ipv4-address;
+                description "
+            The source address to use for IPv4 connections.
+            If not set, the source address will be assigned by the OS.
+          ";
+              }
+              leaf ipv6 {
+                type ipv6-address;
+                description "
+            The source address to use for IPv6 connections.
+            If not set, the source address will be assigned by the OS.
+          ";
+              }
+            }
+          }
+          container sftp {
+            presence "";
+            description "
+                Decide how the url sftp scheme should behave.
+              ";
+            leaf enabled {
+              type boolean;
+              default true;
+              description "
+                  enabled is either 'true' or 'false'. If 'true', the
+                  url sftp scheme is enabled.
+                ";
+            }
+            container source-address {
+              presence "";
+              description "
+          This section provides the possibility to specify the source
+          address to use for sftp connnections.
+          In most cases the source address assignment is best
+          left to the TCP/IP stack in the OS, since an incorrectly
+          chosen address may result in connection failures. However in
+          case there is more than one address that could be chosen by
+          the stack, and we need to restrict the choice to one of them,
+          these settings can be used.
+        ";
+              leaf ipv4 {
+                type ipv4-address;
+                description "
+            The source address to use for IPv4 connections.
+            If not set, the source address will be assigned by the OS.
+          ";
+              }
+              leaf ipv6 {
+                type ipv6-address;
+                description "
+            The source address to use for IPv6 connections.
+            If not set, the source address will be assigned by the OS.
+          ";
+              }
+            }
+          }
+        }
+        container inactive {
+          status deprecated;
+          presence "";
+          description
+            "DEPRECATED - the YANG module tailf-netconf-inactive
+                          will be announced if its fxs file is found
+                          in the loadPath and /ncs-config/enable-inactive
+                          is set.
+
+              Control of the inactive capability option.
+            ";
+          leaf enabled {
+            type boolean;
+            default true;
+            description "
+                enabled is either 'true' or 'false'. If 'true', the
+                'http://tail-f.com/ns/netconf/inactive/1.0' capability is
+                enabled.
+              ";
+          }
+        }
+      }
+    }
+
+    container netconf-call-home {
+      presence "";
+      description
+        "This section defines settings which decide how the NETCONF
+         Call Home client should behave, with respect to TCP.";
+      leaf enabled {
+        type boolean;
+        default false;
+        description
+          "enabled is either 'true' or 'false'. If 'true', the NETCONF
+           Call Home client is started.";
+      }
+      container transport {
+        presence "";
+        description
+          "Settings for the NETCONF Call Home transport service.";
+        container tcp {
+          presence "";
+          description
+            "The NETCONF Call Home client listens for TCP connection
+             requests.";
+          leaf ip {
+            type ip-address;
+            default 0.0.0.0;
+            description
+              "ip is an IP address which the NETCONF Call Home client
+               should listen on. 0.0.0.0 means that it listens on the port
+               (/ncs-config/netconf-call-home/transport/tcp/port)
+               for all IPv4 addresses on the machine.";
+          }
+          leaf port {
+            type port-number;
+            default 4334;
+            description
+              "port is a valid port number to be used in combination
+               with /ncs-config/netconf-call-home/transport/tcp/ip.";
+          }
+          list extra-listen {
+            key "ip port";
+            description
+              "A list of additional IP address and port pairs which the
+               NETCONF Call Home client should also listen on.";
+            leaf ip {
+              type ip-address;
+            }
+            leaf port {
+              type port-number;
+            }
+          }
+          leaf dscp {
+            type dscp-type;
+            description
+              "Support for setting the Differentiated Services Code Point
+               (6 bits) for traffic originating from the NETCONF Call Home
+               client for TCP connections.";
+          }
+        }
+        container ssh {
+          leaf idle-connection-timeout {
+            type xs:duration;
+            default PT30S;
+            description
+              "The maximum time that the authenticated SSH connection
+               is allowed to exist without open channels. If the
+               timeout is reached, the SSH server closes the connection.
+               Default is PT30S, i.e. 30 seconds. If the value is 0, there
+               is no timeout.";
+          }
+        }
+      }
+    }
+
+    container southbound-source-address {
+      presence "";
+      description "
+          This section provides the possibility to specify the source
+          address to use for southbound connnections from NCS to the
+          devices. In most cases the source address assignment is best
+          left to the TCP/IP stack in the OS, since an incorrectly
+          chosen address may result in connection failures. However in
+          case there is more than one address that could be chosen by
+          the stack, and we need to restrict the choice to one of them,
+          these settings can be used.
+        ";
+      leaf ipv4 {
+        type ipv4-address;
+        description "
+            The source address to use for southbound IPv4 connections.
+            If not set, the source address will be assigned by the OS.
+          ";
+      }
+      leaf ipv6 {
+        type ipv6-address;
+        description "
+            The source address to use for southbound IPv6 connections.
+            If not set, the source address will be assigned by the OS.
+          ";
+      }
+    }
+
+    container ha {
+      presence "";
+      leaf enabled {
+        type boolean;
+        default false;
+        description
+        "If set to true, the HA mode is enabled.";
+      }
+      leaf ip {
+        type ip-address;
+        default 0.0.0.0;
+        description
+        "The IP address which NCS listens to for incoming
+           connections from other HA nodes";
+      }
+
+      leaf port {
+        type port-number;
+        default 4570;
+        description
+          "The port number which NCS listens to for incoming
+           connections from other HA nodes";
+      }
+
+      list extra-listen {
+        key "ip port";
+        description
+          "A list of additional IP address and port pairs which are
+           used for incoming requests from other HA nodes.";
+        leaf ip {
+          type ip-address;
+        }
+        leaf port {
+          type port-number;
+        }
+      }
+
+      leaf tick-timeout {
+        type xs:duration;
+        default PT20S;
+        description "Defines the timeout between keepalive ticks sent
+                     between HA nodes.
+                     The special value 'PT0' means that no keepalive ticks
+                     will ever be sent.";
+      }
+    }
+
+    container scripts {
+      presence "";
+      description "It is possible to add scripts to control various
+                   things in NCS, such as post-commit callbacks. New
+                   CLI commands can also be added. The scripts must be
+                   stored under /ncs-config/scripts/dir where there is
+                   a sub-directory for each sript category. For some
+                   script categories it suffices to just add a script
+                   in the correct the sub-directory in order to enable
+                   the script. For others some configuration needs to
+                   be done.";
+
+      leaf-list dir {
+        type string;
+        description
+          "Directory path to the location of plug-and-play scripts. The
+           scripts directory must have the following sub-directories:
+
+             scripts/command/
+                    post-commit/";
+      }
+    }
+
+    container java-vm {
+      presence "";
+      description
+        "Configuration parameters to control how and if NSO shall start (and
+         restart) the Java Virtual Machine.";
+
+      leaf auto-start {
+        type boolean;
+        default true;
+        description
+          "If 'true', NSO automatically starts the Java VM, using the
+           'start-command'.";
+      }
+      leaf auto-restart {
+        type boolean;
+        default true;
+        description
+          "Restart the Java VM if it terminates.
+
+           Only applicable if auto-start is 'true'.";
+      }
+      leaf start-command {
+        type string;
+        description
+          "The command which NSO will run to start the Java VM, or the
+           string DEFAULT. If this parameter is not set, the
+           ncs-start-java-vm script in the NSO installation directory
+           will be used as the start command. The string DEFAULT is
+           supported for backward compatibility reasons and is equivalent
+           to leaving this parameter unset.";
+      }
+      container run-in-terminal {
+        presence "";
+        description
+          "Enable this feature to run the Java VM inside
+           a terminal, such as xterm or gnome-terminal.
+
+           This can be very convenient during development;
+           to restart the Java VM, just kill the terminal.
+
+           Only applicable if auto-start is 'true'.";
+        leaf enabled {
+          type boolean;
+          default false;
+        }
+        leaf terminal-command {
+          type string;
+          default "xterm -title ncs-java-vm -e";
+          description
+            "The command which NSO will run to start the terminal, or the
+             string DEFAULT. The string DEFAULT is supported for backward
+             compatibility reasons and is equivalent to leaving this
+             parameter unset.";
+        }
+      }
+      container stdout-capture {
+        presence "";
+        leaf enabled {
+          type boolean;
+          description
+            "Enable stdout and stderr capture";
+        }
+        leaf file {
+          type string;
+          description
+            "The prefix used for the Java VM log file, or the
+             string DEFAULT. Setting a value here overrides any setting
+             for /java-vm/stdout-capture/file in the
+             tailf-ncs-java-vm.yang submodule. The string DEFAULT means
+             that the default as specified in tailf-ncs-java-vm.yang
+             should be used.";
+        }
+      }
+      container restart-on-error {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default false;
+          description
+            "If true, catching 'count' number of exceptions from a package
+             within 'duration' seconds will result in the java-vm being
+             restarted.
+             If false, the 'count' and 'duration' settings below do not
+             have any effect. Exceptions from a package will lead to only
+             that package being redeployed.";
+        }
+        leaf count {
+          type uint16;
+          default 3;
+        }
+        leaf duration {
+          type xs:duration;
+          default PT60S;
+        }
+      }
+    }
+
+    container python-vm {
+      presence "";
+      description
+        "Configuration parameters to control how and if NSO shall start (and
+         restart) the Python Virtual Machine.";
+
+      leaf auto-start {
+        type boolean;
+        default true;
+        description
+          "If 'true', NSO automatically starts the Python VM, using the
+           'start-command'.";
+      }
+      leaf auto-restart {
+        type boolean;
+        default true;
+        description
+          "Restart the Python VM if it terminates.
+
+           Only applicable if auto-start is 'true'.";
+      }
+      leaf start-command {
+        type string;
+        description
+          "The command which NSO will run to start the Python VM, or the
+           string DEFAULT. If this parameter is not set, the
+           ncs-start-python-vm script in the NSO installation directory
+           will be used as the start command. The string DEFAULT is
+           supported for backward compatibility reasons and is equivalent
+           to leaving this parameter unset.";
+      }
+      container run-in-terminal {
+        presence "";
+        leaf enabled {
+          type boolean;
+          default false;
+        }
+        leaf terminal-command {
+          type string;
+          default "xterm -title ncs-python-vm -e";
+          description
+            "The command which NSO will run to start the terminal, or the
+             string DEFAULT. The string DEFAULT is supported for backward
+             compatibility reasons and is equivalent to leaving this
+             parameter unset.";
+        }
+      }
+      container logging {
+        presence "";
+        leaf log-file-prefix {
+          type string;
+          description
+            "The prefix used for the Python VM log file, or the
+             string DEFAULT. Setting a value here overrides any setting
+             for /python-vm/logging/log-file-prefix in the
+             tailf-ncs-python-vm.yang submodule. The string DEFAULT means
+             that the default as specified in tailf-ncs-python-vm.yang
+             should be used.";
+        }
+      }
+      leaf start-timeout {
+        type xs:duration;
+        default PT30S;
+        description "
+            Timeout for each Python VM to start and initialize registered
+            classes after it has been started by NSO.";
+      }
+    }
+
+    container smart-license {
+      presence "";
+      description
+        "This section provides the possibility to override parameters in the
+         tailf-ncs-smart-license.yang submodule, thus preventing setting of
+         those parameters via northbound interfaces from having any effect,
+         even if the NACM access rules allow it.
+
+         Refer to tailf-ncs-smart-license.yang for a detailed description
+         of the parameters.";
+
+      container smart-agent {
+        leaf java-executable {
+          type string;
+          description
+            "The Java VM executable that NCS will use for smart licensing, or
+             the string DEFAULT. Setting a value here overrides any setting
+             for /smart-license/smart-agent/java-executable in the
+             tailf-ncs-smart-license.yang submodule. The string DEFAULT means
+             that the default as specified in tailf-ncs-smart-license.yang
+             should be used.";
+        }
+        leaf java-options {
+          type string;
+          description
+            "Options which NCS will use when starting the Java VM, or the
+             string DEFAULT. Setting a value here overrides any setting
+             for /smart-license/smart-agent/java-options in the
+             tailf-ncs-smart-license.yang submodule. The string DEFAULT means
+             that the default as specified in tailf-ncs-smart-license.yang
+             should be used.";
+        }
+        leaf production-url {
+          type union {
+            type uri {
+              pattern 'https?://.*';
+            }
+            type string {
+              pattern 'DEFAULT';
+            }
+          }
+          description
+            "URL that NCS will use when connecting to the Cisco licensing cloud
+             or the string DEFAULT. Setting a value here overrides any setting
+             for /smart-license/smart-agent/production-url in the
+             tailf-ncs-smart-license.yang submodule. The string DEFAULT means
+             that the default as specified in tailf-ncs-smart-license.yang
+             should be used.";
+        }
+        leaf alpha-url {
+          type union {
+            type uri {
+              pattern 'https?://.*';
+            }
+            type string {
+              pattern 'DEFAULT';
+            }
+          }
+          description
+            "URL that NCS will use when connecting to the Alpha licensing cloud
+             or the string DEFAULT. Setting a value here overrides any setting
+             for /smart-license/smart-agent/alpha-url in the
+             tailf-ncs-smart-license.yang submodule. The string DEFAULT means
+             that the default as specified in tailf-ncs-smart-license.yang
+             should be used.";
+        }
+        container override-url {
+          presence "";
+          leaf url {
+            type union {
+              type uri {
+                pattern 'https?://.*';
+              }
+              type string {
+                pattern 'DEFAULT';
+              }
+            }
+          description
+            "URL that NCS will use when connecting to the Cisco licensing cloud
+             or the string DEFAULT. Setting a value here overrides any setting
+             for /smart-license/smart-agent/override-url in the
+             tailf-ncs-smart-license.yang submodule. The string DEFAULT means
+             that the default as specified in tailf-ncs-smart-license.yang
+             should be used.";
+          }
+        }
+        container proxy {
+          presence "";
+          leaf url {
+            type union {
+              type uri {
+                pattern 'https?://.*:\d+';
+              }
+              type string {
+                pattern 'DEFAULT';
+              }
+            }
+            description
+              "Proxy URL for the smart licensing agent, or the
+               string DEFAULT. Setting a value here overrides any setting
+               for /smart-license/smart-agent/proxy/url in the
+               tailf-ncs-smart-license.yang submodule. The string DEFAULT
+               effectively disables the proxy URL, since there is no
+               default specified in tailf-ncs-smart-license.yang.";
+          }
+        }
+      }
+    }
+    leaf-list disable-schema-uri-for-agents {
+      type disabled-schema-uri-agents;
+      description
+        "disable-schema-uri-for-agents is a leaf-list of
+         northbound agents that schema leaf is not wanted in
+         the ietf-yang-library:modules-state resource response.";
+    }
+  }
+
+  /*
+   * These typedefs will be imported from ietf-yang-types and
+   * ietf-inet-types in a future release.
+   */
+
+  typedef object-identifier {
+    type string {
+      pattern '(([0-1](\.[1-3]?[0-9]))|(2\.(0|([1-9]\d*))))'
+            + '(\.(0|([1-9]\d*)))*';
+    }
+  }
+
+  typedef ip-address {
+    type union {
+      type ipv4-address;
+      type ipv6-address;
+    }
+  }
+
+  typedef ipv4-address {
+    type string {
+      pattern '((0'
+            +   '|(1[0-9]{0,2})'
+            +   '|(2(([0-4][0-9]?)|(5[0-5]?)|([6-9]?)))'
+            +   '|([3-9][0-9]?)'
+            +  ')'
+            + '\.){3}'
+            + '(0'
+            +  '|(1[0-9]{0,2})'
+            +  '|(2(([0-4][0-9]?)|(5[0-5]?)|([6-9]?)))'
+            +  '|([3-9][0-9]?)'
+            + ')(%[\p{N}\p{L}]+)?';
+    }
+  }
+
+  typedef ipv6-address {
+    type string {
+      pattern '((:|[0-9a-fA-F]{0,4}):)([0-9a-fA-F]{0,4}:){0,5}'
+            + '((([0-9a-fA-F]{0,4}:)?(:|[0-9a-fA-F]{0,4}))|'
+            + '(((25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])\.){3}'
+            + '(25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])))'
+            + '(%[\p{N}\p{L}]+)?';
+      pattern '(([^:]+:){6}(([^:]+:[^:]+)|(.*\..*)))|'
+            + '((([^:]+:)*[^:]+)?::(([^:]+:)*[^:]+)?)'
+            + '(%.+)?';
+    }
+  }
+
+  typedef port-number {
+    type uint16;
+  }
+
+  typedef uri {
+    type string;
+  }
+}

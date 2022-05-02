@@ -1,0 +1,232 @@
+This example illustrates how to use plug and play scripts to add
+
+  - CLI commands
+  - policy scripts
+  - post-commit callbacks
+
+In this example we rely on this part of ncs.conf:
+
+  <scripts>
+    <dir>./scripts</dir>
+  </scripts>
+
+which registers ./scripts as a directory where to look for scripts.
+There we have one CLI command (echo.sh), one policy script
+(check_dir.sh) and one post-commit hook (show_diff.sh).
+The directory structure looks like this:
+
+  $ find scripts
+  ./scripts
+  ./scripts/command
+  ./scripts/command/echo.sh
+  ./scripts/policy
+  ./scripts/policy/check_dir.sh
+  ./scripts/post-commit
+  ./scripts/post-commit/show_diff.sh
+
+The interface of the scripts are defined by the scripts themselves.
+NCS invokes the scripts to determine their interfaces. This is
+automatically done at startup and manually on demand via the
+"script reload" CLI command. In this case the new CLI command will
+be named "my script echo".
+
+This example does not need to be built.
+
+To run it we do:
+
+  $ ncs-setup --dest .
+  $ ncs
+
+This will start NCS, and NCS will load the package with the demo
+scripts. Now we start the CLI.
+
+  $ ncs_cli -u admin
+
+  admin connected from 127.0.0.1 using console on tellus
+
+and try the new CLI command "my script echo" out
+
+  admin@ncs> my script ?
+  Possible completions:
+    echo - Display a line of text
+  admin@ncs> my script echo ?
+  Possible completions:
+    String to be displayed
+    file - Redirect output to file
+    nolf - Do not output the trailing newline
+  admin@ncs> my script echo hello world
+  hello world
+  [ok][2015-01-16 13:59:38]
+
+Echo is a trivial command, it simply echoes a string, but the
+scripts/command/echo.sh script demonstrates how the parameter
+handling for CLI command scripts works.
+
+The policy script scripts/policy/check_dir.sh provides an
+example of how policies can be enforced. Here we try to
+change the trace-dir leaf to a value that the policy script
+does not allow.
+
+  admin@ncs% set devices global-settings trace-dir ?
+  Description: The directory where trace files are stored
+  Possible completions:
+    <string>[./logs]
+  admin@ncs% set devices global-settings trace-dir ./mybad
+  [ok][2015-01-16 14:02:19]
+
+  [edit]
+  admin@ncs% validate
+  Failed: /devices/global-settings/trace-dir: must retain it original value (./logs)
+  [error][2015-01-16 14:02:26]
+
+The post commit script scripts/post-commit/show_diff.sh provides a
+simple example of a side effect can be performed just before a
+transaction is ended. The script relies on an environment variable
+so we need to restart NCS in order to make it take effect.
+
+  admin@ncs% exit
+  [ok][2015-01-16 14:04:02]
+  admin@ncs> exit
+  $ ncs --stop
+
+Now we set the variable and start NCS again
+
+  $ cat my_trace_file.txt
+  cat: my_trace_file.txt: No such file or directory
+  $ export TEST_POST_COMMIT_SHOW_DIFF_FILE=my_trace_file.txt
+  $ ncs
+  $ ncs_cli -u admin
+
+  admin connected from 127.0.0.1 using console on tellus
+  admin@ncs> configure
+  Entering configuration mode private
+  [ok][2015-01-16 14:07:33]
+
+  [edit]
+  admin@ncs% set devices global-settings read-timeout ?
+  Description: Timeout in seconds used when reading data
+  Possible completions:
+    <unsignedInt>[20]
+  admin@ncs% set devices global-settings read-timeout 30
+  [ok][2015-01-16 14:07:53]
+
+  [edit]
+  admin@ncs% commit
+  Commit complete.
+  [ok][2015-01-16 14:07:56]
+
+Now we exit from the CLI and take a look at the side effect
+
+  [edit]
+  admin@ncs% exit
+  [ok][2015-01-16 14:07:58]
+  admin@ncs> exit
+  $ cat my_trace_file.txt
+
+  Fri Jan 16 14:07:56 CET 2015
+  /tmp/demo/examples.ncs/getting-started/using-ncs/7-scripting/scripts/post-commit/show_diff.sh
+  CONFD_MAAPI_USID=23
+  CONFD_MAAPI_THANDLE=17
+
+  --- transaction diff ---
+  value set  : /devices/global-settings/read-timeout
+  $
+
+When plug and play scripts have been created, updated or deleted there
+is no need for restarting NCS. The scripts may be reloaded with the
+command "script reload". The reload command may also be used to get
+various details of information about the scripts
+
+  $ ncs_cli -u admin
+
+  admin connected from 127.0.0.1 using console on tellus
+
+  admin@ncs> script reload ?
+  Possible completions:
+    all    - Show info about all scripts
+    debug  - Show additional debug info about the scripts
+    diff   - Show info about scripts changed since last reload
+    errors - Show info about erroneous scripts
+  admin@ncs> script reload all
+  /tmp/demo/examples.ncs/getting-started/using-ncs/7-scripting/scripts: ok
+      command:
+          add_user.sh: unchanged
+          echo.sh: unchanged
+      policy:
+          check_dir.sh: unchanged
+      post-commit:
+          show_diff.sh: unchanged
+  [ok][2015-01-16 14:17:16]
+  admin@ncs> script reload all debug
+  /tmp/demo/examples.ncs/getting-started/using-ncs/7-scripting/scripts: ok
+      command:
+          add_user.sh: unchanged
+  --- Output from /tmp/demo/examples.ncs/getting-started/using-ncs/7-scripting/scripts/command/add_user.sh --command ---
+  1:
+  2: begin command
+  3:   modes: config
+  4:   styles: c i j
+  5:   cmdpath: user-wizard
+  6:   help: Add a new user
+  7: end
+  8:
+  ---
+          echo.sh: unchanged
+  --- Output from /tmp/demo/examples.ncs/getting-started/using-ncs/7-scripting/scripts/command/echo.sh --command ---
+   1: begin command
+   2:   modes: oper
+   3:   styles: c i j
+   4:   cmdpath: my script echo
+   5:   help: Display a line of text
+   6: end
+   7:
+   8: begin param
+   9:  name: nolf
+  10:  type: void
+  11:  presence: optional
+  12:  flag: -n
+  13:  help: Do not output the trailing newline
+  14: end
+  15:
+  16: begin param
+  17:  name: file
+  18:  presence: optional
+  19:  flag: -f
+  20:  help: Redirect output to file
+  21: end
+  22:
+  23: begin param
+  24:  presence: mandatory
+  25:  words: any
+  26:  help: String to be displayed
+  27: end
+  28:
+  ---
+      policy:
+          check_dir.sh: unchanged
+  --- Output from /tmp/demo/examples.ncs/getting-started/using-ncs/7-scripting/scripts/policy/check_dir.sh --policy ---
+  1: begin policy
+  2:   keypath: /devices/global-settings/trace-dir
+  3:   dependency: /devices/global-settings
+  4:   priority: 2
+  5:   call: each
+  6: end
+  7:
+  ---
+      post-commit:
+          show_diff.sh: unchanged
+  --- Output from /tmp/demo/examples.ncs/getting-started/using-ncs/7-scripting/scripts/post-commit/show_diff.sh --post-commit ---
+  1: begin post-commit
+  2: end
+  3:
+  ---
+  [ok][2015-01-16 14:17:24]
+  admin@ncs> exit
+  $ 
+
+Do not forget to stop NCS before moving on:
+
+  $ ncs --stop
+
+If you want to restore the example to the initial configuration do:
+  $ ncs-setup --reset

@@ -1,0 +1,197 @@
+Running NCS towards Juniper Routers
+------------------------------------
+
+Preparations
+------------
+
+1) Make sure you have sourced the ncsrc file in $NCS_DIR. This sets up paths and
+   environment variables in order to run NCS. So this must be done all times
+   before running NCS, so it is recommended to put that in your profile.
+
+Optional:
+If you do not want to create the example files in the NCS installation
+directory $NCS_DIR/examples.ncs/getting-started/using-ncs/1-simulated-c7200,
+for example if you are several users sharing the same installation, you can
+run the example in a separate directory.
+
+2) Create an empty directory, for example in your home directory. NCS and the
+   simulator will create files and directories in this example. Make sure you
+   change to this directory before continuing.
+
+NCS built in Juniper NED talks to JunOS devices using NETCONF.
+To talk to a real Juniper router we first need to have an NCS
+setup with the Juniper NED package added. This is easily done by:
+
+ $ ncs-setup --dest . --ned-package juniper-junos
+
+Start
+
+ $ ncs
+
+ $ ncs_cli -u admin
+
+This starts a CLI with the NCS user 'admin'
+
+At this point we can start to add devices to the /devices/device
+tree.
+
+The following CLI session exemplifies how to add a Juniper router
+to NCS from the CLI, we need IP, a user on the Juniper and a
+password. The user/pass is added into an NCS authgroup which
+is referred from the /devices/device/authgroup field.
+
+Thus assume:
+
+name of Juniper router: olive1.lab
+user on Juniper router: admin
+pass to Juniper router  Admin99
+
+
+> edit devices authgroups group junipers
+> set umap admin remote-name admin remote-password Admin99
+> top
+> edit devices device olive1
+> set address olive1.lab port 22 authgroup junipers
+> set device-type netconf
+> set state admin-state unlocked
+> request ssh fetch-host-keys
+
+If we always want to initialize NCS with a set of Juniper
+routers when we start NCS empty, i.e with no .cdb files, an empty database
+we can do so either through
+an XML init file in the ./ncs-cdb directory or have CLI dump
+snippet that we always load in the CLI.
+
+
+$ cat my-init.cli
+devices {
+    global-settings {
+        read-timeout  45;
+        write-timeout 45;
+    }
+    authgroups {
+        group junipers {
+            umap admin {
+                remote-name     admin;
+                remote-password Admin99;
+            }
+        }
+     }
+    device olive1 {
+        address   olive1.lab;
+        port      22;
+        authgroup junipers;
+        device-type {
+            netconf;
+        }
+        state {
+            admin-state unlocked;
+        }
+    }
+    device olive2 {
+        address   olive2.lab;
+        port      22;
+        authgroup junipers;
+        device-type {
+            netconf;
+        }
+        state {
+            admin-state unlocked;
+        }
+    }
+}
+
+In the CLI we can then,
+
+   > configure
+   % load merge my-init.cli
+   % request devices device olive* ssh fetch-host-keys
+   % commit
+
+
+Alternatively, the data can be manually entered in the CLI,
+(see 2-real-device-c7200/README for an illustration of this)
+
+The SSH host keys can also in principle be included in an XML init file
+or a CLI dump file, but it is rather inconvenient to edit them into the
+file - thus we use the 'fetch-host-keys' action to fetch them from the
+devices here. See 2-real-device-cisco-ios/README for a discussion about
+the SSH host keys, and the 1-simulated-cisco-ios example for what an XML
+init file with host keys included looks like
+(ncs-cdb/netsim_devices_init.xml, created by 'ncs-setup' when netsim is
+used).
+
+This will create the authentication group and the meta-data for the
+devices.
+
+That way, next time NCS starts up empty, i.e entirely without any CDB
+files (./ncs-cdb/*.cdb) it'll initialize from that XML file and we'll
+have the two olive devices (not synced !!) at startup.
+
+Make sure the settings work by connecting to the devices:
+
+  > request devices connect
+
+If this does not work, check address, port, and authentication information.
+
+Next step is to read the configuration from the device into NCS:
+
+  > configure
+
+  % request devices sync-from
+
+
+It is now possible to view the configuration:
+
+  % show devices device config junos:configuration interfaces interface | display-level 5
+  % show devices device olive1..2 config junos:configuration interfaces interface
+
+Configuration changes can be made across several devices:
+
+  % set devices device olive1 config junos:configuration snmp contact the-boss
+  % set devices device olive2 config junos:configuration snmp contact the-boss
+
+  % commit
+
+Or by using device groups:
+
+  % set devices device-group all device-name [ olive1 olive2 ]
+
+  % set devices template snmp config junos:configuration snmp contact the-boss
+  % commit
+
+  % request devices device-group all apply-template template-name snmp
+  % show | compare
+  % commit
+
+If we encounter any problems, it may be a good idea to turn on
+NETCONF protocol tracing, as in:
+
+  % set devices global-settings trace pretty
+  % commit
+  % request devices disconnect
+
+The trace files will end up in the ./logs directory
+
+Stopping and cleaning up:
+
+  $ ncs --stop
+
+Will stop NCS but keep everything in the database. So next time you
+start NCS, the devices and their config is still there. Note that things
+might have changed on the device so a
+
+  % request devices sync-from
+
+Is a good way to start after a restart...
+
+  $ ncs-setup --reset
+
+Will stop ncs, clear all logs and wipe the database, i.e remove
+the CDB files.
+
+
+
+
+
+

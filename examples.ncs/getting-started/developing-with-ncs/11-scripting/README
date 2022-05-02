@@ -1,0 +1,150 @@
+This example illustrates how to use scripts to add
+
+- CLI commands
+- policy constraints
+- post-commit callbacks
+
+This example uses one NCS package.
+
+  $ ls ./packages
+  scripting
+
+In this package we have one CLI command (echo.sh), one policy script
+(check_number_of_hosts.sh) and one post-commit hook (show_diff.sh).
+The directory structure looks like this:
+
+  $ cd packages
+  $ find
+  ./package-meta-data.xml
+  ./scripts
+  ./scripts/command
+  ./scripts/command/echo.sh
+  ./scripts/policy
+  ./scripts/policy/check_dir.sh
+  ./scripts/post-commit
+  ./scripts/post-commit/show_diff.sh
+  ./load-dir
+
+The interface of the scripts are defined by the scripts themselves.
+NCS invokes the scripts to determine the their interfaces. This is
+automatically done at startup and manually on demand via the
+"script reload" CLI command. In this case the new CLI command will
+be named "my scripting echo".
+
+The package in this example does not need to be built.
+
+To run it we do:
+
+  $ ncs
+
+This will start NCS, and NCS will load the package with the demo
+scripts.
+
+  $ ncs_cli -u admin
+
+  admin connected from 127.0.0.1 using console on tellus
+  admin@ncs> my scripting ?
+  Possible completions:
+    echo - Display a line of text
+  admin@ncs> my scripting echo hello world
+  hello world
+  [ok][2013-02-19 16:13:52]
+
+[edit]
+  admin@ncs% validate
+
+  
+  admin@ncs> script reload ?
+  Possible completions:
+    all    - Show info about all scripts
+    debug  - Show additional debug info about the scripts
+    diff   - Show info about scripts changed since last reload
+    errors - Show info about erroneous scripts
+  admin@ncs> script reload all
+  /examples.ncs/getting-started/developing-with-ncs/11-scripting/scripts: ERROR: not a directory
+  /ncs_dir/scripts: ok
+  /examples.ncs/getting-started/developing-with-ncs/11-scripting/packages/scripting/scripts: ok
+      command:
+          echo.sh: unchanged
+      policy:
+          check_dir.sh: unchanged
+      post-commit:
+          show_diff.sh: unchanged
+  [ok][2013-02-19 16:14:12]
+  admin@ncs> script reload all debug
+  /ncs_dir/examples.ncs/getting-started/developing-with-ncs/11-scripting/scripts: ERROR: not a directory
+  /ncs_dir/scripts: ok
+  /ncs_dir/examples.ncs/getting-started/developing-with-ncs/11-scripting/packages/scripting/scripts: ok
+      command:
+          echo.sh: unchanged
+  --- Output from /ncs_dir/examples.ncs/getting-started/developing-with-ncs/11-scripting/packages/scripting/scripts/command/echo.sh --command ---
+   1: begin command
+   2:   modes: oper
+   3:   styles: c i j
+   4:   cmdpath: my scripting echo
+   5:   help: Display a line of text
+   6: end
+   7: 
+   8: begin param
+   9:  name: nolf
+  10:  type: void
+  11:  presence: optional
+  12:  flag: -n
+  13:  help: Do not output the trailing newline
+  14: end
+  15: 
+  16: begin param
+  17:  name: file
+  18:  presence: optional
+  19:  flag: -f
+  20:  help: Redirect output to file
+  21: end
+  22: 
+  23: begin param
+  24:  presence: mandatory
+  25:  words: any
+  26:  help: String to be displayed
+  27: end
+  28: 
+  ---
+      policy:
+          check_dir.sh: unchanged
+    --- Output from /ncs_dir/examples.ncs/getting-started/developing-with-ncs/11-scripting/packages/scripting/scripts/policy/check_dir.sh --policy ---
+    1: begin policy
+    2:   keypath: /simpleObjects/numberOfHosts
+    3:   dependency: /simpleObjects/maxNumberOfHosts
+    4:   priority: 4
+    5:   call: each
+    6: end
+    7:
+    ---
+      post-commit:
+          show_diff.sh: unchanged
+    --- Output from /ncs_dir/examples.ncs/getting-started/developing-with-ncs/11-scripting/packages/scripting/scripts/post-commit/show_diff.sh --post-commit ---
+    1: begin post-command
+    2: end
+    3: 
+    ---
+  [ok][2013-02-19 16:14:25]
+  admin@ncs> configure
+  Entering configuration mode private
+  [ok][2013-02-30 16:20:10]
+
+  [edit]
+  admin@ncs% set devices global-settings trace-dir ./mybad
+  [ok][2013-02-19 16:20:20]
+
+  [edit]
+  admin@ncs% validate
+  Failed: /devices/global-settings/trace-dir: must retain it original value (./logs)
+  [error][2013-02-19 16:20:30]
+
+--- --- --- --- --- --- --- --- --- --- --- ---
+
+- To start NCS, do ncs  [--verbose --foreground]
+- To get a Juniper CLI into NCS, do ncs_cli -u admin
+- To stop NCS, do ncs --stop
+- To cleanup , do make clean
+- To restart NCS from scratch, ncs-setup --reset
+    this will ensure NCS is reinitialized from the ncs-cdb/*.xml
+    files when restarted

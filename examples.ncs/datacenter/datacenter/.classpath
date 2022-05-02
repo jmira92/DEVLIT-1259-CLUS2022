@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+  <classpathentry
+     kind="con"
+     path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+  <classpathentry
+     kind="con"
+     path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
+  <classpathentry kind="output" path="bin"/>
+  <classpathentry kind="src"
+     path="./packages/connectivity/src/java/src"/>
+  <classpathentry
+       kind="lib"
+       path="/opt/tailf-src/trunk/ncs_dir/java/jar/ncs.jar"
+       sourcepath="/opt/tailf-src/trunk/ncs_dir/java/jar/ncs-src.jar"/>
+  <classpathentry
+    kind="lib"
+    path="/opt/tailf-src/trunk/ncs_dir/java/jar/conf-api.jar"
+    sourcepath="/opt/tailf-src/trunk/ncs_dir/java/jar/conf-api-src.jar"/>
+
+  <classpathentry
+     kind="lib"
+     path="/opt/tailf-src/trunk/ncs_dir/java/jar/ganymed-ssh2.jar"/>
+  <classpathentry
+     kind="lib"
+     path="/opt/tailf-src/trunk/ncs_dir/java/jar/ganymed-ssh2.jar"/>
+  <classpathentry
+     kind="lib"
+     path="/opt/tailf-src/trunk/ncs_dir/java/jar/snmp4j-1.11.3.jar"/>
+  <classpathentry
+     kind="lib"
+     path="/opt/tailf-src/trunk/ncs_dir/java/jar/log4j-api.jar"/>
+  <classpathentry
+     kind="lib"
+     path="/opt/tailf-src/trunk/ncs_dir/java/jar/snmp4j.jar"/>
+  <classpathentry
+     kind="lib"
+     path="/opt/tailf-src/trunk/ncs_dir/java/jar/log4j-core.jar"/>
+</classpath>

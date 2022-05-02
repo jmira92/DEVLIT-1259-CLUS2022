@@ -1,0 +1,257 @@
+
+
+This example illustrates how to create a simple service with NCS.
+
+1. Introduction
+
+In every service provider or enterprise network all network equipment
+needs a firewall or access list that limits management access. It is
+for example common that telnet or SSH access is limited to a specific
+set of IP networks or hosts and SNMP access is limited to the NOC
+management stations.
+
+Keeping these management firewalls up to date or making changes across
+the network is a time consuming task.
+
+To make life easier we create a service model for the a basic
+firewall. The model will serve as an abstraction from the vendor
+specific configuration in the network.
+
+There is also a custom view to manage and monitor your firewall access lists,
+which can be reached by selecting the lowermost choice in the left-hand menu
+in the web-interface, named 'ACL'.
+
+
+Preparations
+------------
+   Make sure you have sourced the ncsrc file in $NCS_DIR. This sets up paths and
+   environment variables in order to run NCS. So this must be done all times
+   before running NCS, so it is recommended to put that in your profile.
+
+2. Starting the Example
+
+    Running towards an emulated network with 1 Cisco IOS router and
+    1 Juniper router.
+    For Example: Consider this directory.
+       $ cd ${NCS_DIR}/examples.ncs/getting-started/using-ncs/6-access-lists
+
+    1) Run make all to setup the emulated network and build 
+       our service package.
+    
+       $ make all
+
+       This creates the emulated network in ./netsim
+
+    3) Start the simulated network
+
+       $ ncs-netsim start
+
+    4) Start ncs
+
+       $ ncs
+
+    5) Connect to the NCS CLI 
+
+       $ ncs_cli --user=admin
+
+
+3. Configuring the service
+
+    We start off by syncing from device. In the NCS CLI:
+
+       > request devices sync-from
+    
+    In configuration mode create a device group for our devices.
+    It looks good and we can now commit the changes:
+
+       > configure
+       % set devices device-group core-routers device-name [ c0 j0 ]
+       % commit
+
+
+    We create our first basic firewall and point out the device-group
+    where it should be applied.
+
+       % set services basic-firewall fw1 firewall-device-group core-routers
+
+    Create the rules to for example limit SSH and SNMP access
+
+       % set services basic-firewall fw1 rule 192.168.1.155/32 22 tcp
+       % set services basic-firewall fw1 rule 10.1.1.0/24 161 udp
+    
+   We commit the service.
+   
+       % commit
+
+
+4. Looking at the results
+
+    Lets exit configuration mode and look at the resulting service and device configuration:
+
+        % exit
+        > show configuration services basic-firewall
+
+            basic-firewall fw1 {
+                rule 10.1.1.0/24 161 udp;
+                rule 192.168.1.155/32 22 tcp;
+                firewall-device-group [ core-routers ];
+            }
+
+        > show configuration devices device c0
+
+            ..
+              access-list {
+                    extended {
+                        ext-named-acl fw1 {
+                            ext-access-list-rule "permit udp 10.1.1.0 0.0.0.255 any eq 161";
+                            ext-access-list-rule "permit tcp 192.168.1.155 0.0.0.0 any eq 22";
+                        }
+                    }
+                }
+            .. 
+             ios:interface {
+                 Loopback 0 {
+                    ip {
+                        access-group {
+                            access-list fw1;
+                            direction   in;
+                        }
+                    }
+                }
+              }
+
+            ...
+
+        > show configuration devices device j0
+
+            ..
+            filter fw1 {
+                term term0 {
+                    from {
+                        source-address 10.1.1.0/24;
+                        protocol    [ udp ];
+                        source-port [ 161 ];
+                    }
+                    then {
+                        accept;
+                    }
+                }
+                term term1 {
+                    from {
+                        source-address 192.168.1.155/32;
+                        protocol    [ tcp ];
+                        source-port [ 22 ];
+                    }
+                    then {
+                        accept;
+                    }
+                }
+            }
+            ..
+            interfaces {
+               interface lo0 {
+                    unit 0 {
+                        family {
+                          inet {
+                                filter {
+                                  input {
+                                    filter-name fw1;
+                                }
+                            }
+            ...
+
+
+5. Changing the service configuration
+
+    As you can see in the output above the access lists created
+    are by default attached to the loopback interface for
+    both devices.
+
+    In the service model we have added a property that lets you
+    specify if a custom interface should be used instead of
+    loopback0.
+
+    We configure our property to use the FastEthernet 1/0 for our
+    c0 device.
+
+        > configure
+        % set services properties basic-firewall firewall-interface c0 interface-name FastEthernet interface-number 1/0
+    
+    Lets also change one of our firewall entries to enable logging
+
+        % set services basic-firewall fw1 rule 10.1.1.0/24 161 udp log
+
+    A nice feature in NCS is the ability to look at the changes that will be 
+    done to our network devices. 
+
+        % commit dry-run
+        cli  devices {
+                 device j0 {
+                     config {
+                         junos:configuration {
+                             firewall {
+                                 filter fw1 {
+                                     term term0 {
+                                         then {
+            +                                log;
+                                         }
+                                     }
+                                 }
+                             }
+                         }
+                     }
+                 }
+                 device c0 {
+                     config {
+                         ios:interface {
+                             FastEthernet 1/0 {
+                                 ip {
+                                     access-group {
+            +                            direction in;
+            +                            access-list fw1;
+                                     }
+                                 }
+                             }
+                             Loopback 0 {
+                                 ip {
+                                     access-group {
+            -                            direction in;
+            -                            access-list fw1;
+                                     }
+                                 }
+                             }
+                         }
+                         ios:ip {
+                             access-list {
+                                 extended {
+                                     ext-named-acl fw1 {
+            -                            ext-access-list-rule "permit udp 10.1.1.0 0.0.0.255 any eq 161" {
+            -                            }
+            +                            # first
+            +                            ext-access-list-rule "permit udp 10.1.1.0 0.0.0.255 any eq 161 log" {
+            +                            }
+                                     }
+                                 }
+                             }
+                         }
+                     }
+                 }
+             }
+
+
+    It looks good and we can now commit the changes:
+
+        % commit
+	% exit
+	> request devices device c0 compare-config
+
+6. Stopping the example environment
+
+    Lets first stop our simulated network.
+        
+        > ncs-netsim stop
+
+    And then we stop NCS.
+
+        > ncs --stop
+    

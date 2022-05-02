@@ -1,0 +1,78 @@
+module %NAME% {
+
+  namespace "http://%DIR%";
+  prefix %NAME%;
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  // This is the skeleton for a made-up device that is used
+  // in the generic-ned skeleton generator
+
+
+  list row {
+    max-elements 10;
+    key k;
+
+    leaf k {
+      type int32;
+    }
+    leaf x {
+      type uint32;
+    }
+    leaf y {
+      type int8;
+      default 12;
+    }
+    leaf z {
+      type int8;
+      default 13;
+    }
+    leaf e {
+      type enumeration {
+        enum Up;
+        enum Down;
+      }
+    }
+  }
+
+
+  // This is an example of a command, the device - that is controlled
+  // by the generic NED has the ability to not only change
+  // the configuration, but it also has the ability to execute
+  // commands. If we wish to invoke those comands through NCS, we
+  // model the command in YANG like below, and we implement
+  // the invocation of the command in the NED Java code.
+
+  rpc my-cmd {
+    tailf:actionpoint ncsinternal {
+      tailf:internal;
+    }
+    input {
+      leaf a {
+        type int32;
+      }
+      leaf b {
+        type string;
+      }
+    }
+    output {
+      list  item {
+        leaf l1 {
+          type enumeration {
+            enum On;
+            enum Off;
+          }
+        }
+        leaf l2 {
+          type int32;
+        }
+      }
+    }
+  }
+}
+
+
+
+

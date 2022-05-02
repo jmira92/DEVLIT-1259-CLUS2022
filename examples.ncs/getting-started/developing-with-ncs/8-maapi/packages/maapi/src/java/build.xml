@@ -1,0 +1,259 @@
+<project name="package" basedir="." default="all">
+  <property environment="env"/>
+  <property name="build.dir" value="build"/>
+  <property name="classes.dir" value="${build.dir}/classes"/>
+  <property name="src.dir" value="src"/>
+  <property name="test.dir" value="test"/>
+  <property name="rsc.dir" value="src/resources"/>
+  <property name="sharedjar.dir" value="../../shared-jar"/>
+  <property name="privatejar.dir" value="../../private-jar"/>
+  <property name="doc.dir" value="${build.dir}/javadoc"/>
+  <property name="ncs.dir" value="${env.NCS_DIR}/java/jar"/>
+  <property name="ncs.topdir" value="${env.NCS_DIR}"/>
+  <property name="package" value="maapi"/>
+
+  <!-- Retrieving compilation compability parameters from NCS
+       Remove the following row if this is not desired  -->
+  <property file="${env.NCS_DIR}/etc/ncs/java.properties" />
+  <!-- Set defaults if not set, if the above directive is removed
+       or the property file is missing these values will be used -->
+  <property name="ncs_java_source_ver" value="1.8"/>
+  <property name="ncs_java_target_ver" value="1.8"/>
+
+
+  <path id="core-libs">
+    <fileset dir="${ncs.dir}">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <path id="router-jar">
+    <fileset dir="../../../router/shared-jar">
+    <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <target name="all" depends="package" />
+
+
+  <target name="package" depends="compile">
+    <jar destfile="${sharedjar.dir}/${package}-ns.jar"
+         basedir="${classes.dir}"
+         includes="**/namespaces/*.class"/>
+
+    <jar destfile="${privatejar.dir}/${package}.jar"
+         basedir="${classes.dir}"
+         includes="com/example/maapi/actions/*.class"
+         excludes="com/example/maapi/*"/>
+    <jar update="true" destfile="${privatejar.dir}/${package}.jar"
+         basedir="../.."
+         includes="package-meta-data.xml"/>
+  </target>
+
+  <target name="clean">
+    <delete dir="${build.dir}"/>
+    <delete file="${sharedjar.dir}/${package}-ns.jar"/>
+    <delete file="${privatejar.dir}/${package}.jar"/>
+  </target>
+
+  <target name="compile">
+    <mkdir dir="${classes.dir}"/>
+    <javac srcdir="${src.dir}"
+       destdir="${classes.dir}"
+       source="${ncs_java_source_ver}"
+       target="${ncs_java_target_ver}"
+       debug="on"
+       failonerror="true"
+       includeantruntime="false"
+       debuglevel="lines,vars,source"  >
+      <compilerarg value="-Xlint:unchecked"/>
+      <compilerarg value="-Xlint:deprecation"/>
+      <classpath refid="core-libs" />
+      <classpath>
+        <pathelement location="${sharedjar.dir}/java-getopt-1.0.13.jar" />
+      </classpath>
+      <classpath refid="router-jar" />
+    </javac>
+    <javac srcdir="${test.dir}"
+       destdir="${classes.dir}"
+       source="${ncs_java_source_ver}"
+       target="${ncs_java_target_ver}"
+       debug="on"
+       failonerror="true"
+       includeantruntime="false"
+       debuglevel="lines,vars,source"  >
+      <compilerarg value="-Xlint:unchecked"/>
+      <compilerarg value="-Xlint:deprecation"/>
+      <classpath refid="core-libs" />
+      <classpath>
+        <pathelement location="${sharedjar.dir}/java-getopt-1.0.13.jar" />
+      </classpath>
+      <classpath refid="router-jar" />
+    </javac>
+
+    <!-- External log4j2.xml configuration needed for ant targets bellow -->
+    <copy tofile="${classes.dir}/log4j2.xml" file="src/log4j2.xml" />
+  </target>
+
+<!--
+     ********************************************************
+      Below is run targets NOT deployed to NCS JVM examplify
+      some aspects of Navu/Maapi API
+      ********************************************************
+-->
+<!--
+     Set values to example yang module maai-types.yang which is
+     NOT a NCS core yang module
+-->
+<target name="setelems"
+        depends="compile"
+        description="Maapi.setElem() examples for different types">
+  <java classname="com.example.maapi.SetElem"
+        failonerror="true"
+        fork="true">
+    <classpath refid="core-libs" />
+    <classpath location="build/classes"/>
+  </java>
+</target>
+<!--
+    Set different types values to the examples model maapi-types.yang
+    which is NOT a NCS core yang module using Maapi.setValues()
+-->
+<target name="setvalues"
+        depends="compile"
+        description="Maapi setValues() examples">
+  <java classname="com.example.maapi.SetValues"
+        failonerror="true"
+        fork="true">
+    <classpath refid="core-libs" />
+    <classpath location="build/classes"/>
+  </java>
+</target>
+
+<!--
+     Prints a tree representation of schema information
+     starting from /ncs:ncs/devices/device{ex0}/config
+     and corresponding values using MaapiSchemas/Navu.
+-->
+<target name="printdevschema"
+        depends="compile"
+        description="Prints tree structure over schema nodes and values">
+  <java classname="com.example.maapi.SchemaTree"
+        failonerror="true"
+        fork="true">
+    <classpath refid="core-libs" />
+    <classpath location="build/classes"/>
+  </java>
+</target>
+<!--
+    Set values to the device tree using Maapi.setValues()
+-->
+<target name="valtodevices"
+        depends="compile"
+        description="Set values to devices using Navu/Maapi and PreparedXML">
+  <java classname="com.example.maapi.SetValuesToDevice"
+        failonerror="true"
+        fork="true">
+    <classpath refid="core-libs" />
+    <classpath location="build/classes"/>
+  </java>
+</target>
+<!--
+    Set values to the example maapi-types.yang through Maapi/Navu
+    PreparedXMLStatement.
+-->
+<target name="prepset"
+        depends="compile"
+        description="Setting values to devices using Navu and PreparedXML">
+  <java classname="com.example.maapi.PrepSetTest"
+        failonerror="true"
+        fork="true">
+    <classpath refid="core-libs" />
+    <classpath location="build/classes"/>
+  </java>
+</target>
+<!--
+     Prints XML representation of the device configuration
+     using Navu encode.
+-->
+<target name="xmlshow"
+        depends="compile"
+        description="Shows values in XML-format for devices">
+  <java classname="com.example.maapi.EncodeSubtree"
+        failonerror="true"
+        fork="true">
+    <classpath refid="core-libs" />
+    <classpath refid="router-jar" />
+    <classpath location="build/classes"/>
+  </java>
+</target>
+<!--
+     Example how to use cursor to extract values from
+     devices
+-->
+<target name="cursor"
+        depends="compile"
+        description="Examplify use of Maapi Cursor">
+  <java classname="com.example.maapi.ExampleMaapiCursor"
+        failonerror="true"
+        fork="true">
+    <classpath refid="core-libs" />
+    <classpath refid="router-jar" />
+    <classpath location="build/classes"/>
+  </java>
+</target>
+
+<!--
+    Example how to use Query API cursor to extract values from
+    devices
+-->
+<target name="query"
+        description="XPathQuery (usage:
+ant query -Darg=&quot;'&lt;Query&gt;:XPath-expr'
+ '&lt;selects&gt;:node0,node1...,nodeN' -n '&lt;num&gt;:result-iterations' -c '&lt;chunksize&gt;:num' -o '&lt;offset&gt;:1..N' -x
+ '&lt;initial-context&gt;:QueryCTX(default '/')' -r &lt;[t:ConfXMLParam|v:KeyPath and ConfValue|p:KeyPath|s:String]&gt;'&quot;)"
+        depends="compile">
+  <java classname="com.example.maapi.Query"
+        failonerror="true"
+        fork="true">
+    <classpath refid="core-libs" />
+    <classpath refid="router-jar" />
+    <classpath location="build/classes"/>
+    <classpath location="build/classes"/>
+    <arg line="${arg}" />
+  </java>
+</target>
+
+<!--
+    Example how to use navu to move lits entries with attribute
+    ordered by user
+-->
+<target name="dns"
+        description="list, add, remove and move dns servers of a device"
+        depends="compile">
+  <java classname="com.example.maapi.Dns"
+        failonerror="true"
+        fork="true">
+    <classpath refid="core-libs" />
+    <classpath refid="router-jar" />
+    <classpath location="build/classes"/>
+    <classpath location="build/classes"/>
+    <arg line="${arg}" />
+  </java>
+</target>
+
+
+<target name="simplequery1"
+        description="Simple XPath Query 1"
+        depends="compile">
+  <java classname="com.example.maapi.SimpleQuery1"
+        failonerror="true"
+        fork="true">
+    <classpath refid="core-libs" />
+    <classpath refid="router-jar" />
+    <classpath location="build/classes"/>
+    <classpath location="build/classes"/>
+  </java>
+</target>
+
+</project>

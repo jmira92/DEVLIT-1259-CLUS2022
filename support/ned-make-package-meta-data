@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+#
+# This file is intented to be run in the context of a ned package's
+# src directory. It will generate the file ../package-meta-data.xml
+# In case of none CDM it will just copy package-meta-data.xml.in
+# In CDM the ned-id is derived from the package-meta-data.in file and
+# the correct YANG for the ned-id is generated.
+#
+# The ned-id YANG file is generated in the current directory, and
+# is compiled, the resulting fxs is placed in:
+# ../load-dir/tailf-ncs-ned-id.fxs
+#
+export script=$(basename $0)
+
+if [[ -z $1 ]]; then
+    echo "Usage: $script <path to package-meta-data.xml.in>"
+    exit 1
+fi
+PMD_IN=$1
+
+function usage() {
+    cat - <<EOF
+$script: $1"
+
+EOF
+}
+
+if ${NCS_DIR}/bin/ncsc -h | grep -q '\[--ncs-ned-id'; then
+    HAS_CDM="true"
+else
+    HAS_CDM=""
+fi
+
+# Package Meta Data
+PMD="../package-meta-data.xml"
+
+if [[ -f ${PMD_IN} ]]; then
+    rm -rf ${PMD}
+    if [[ -n ${HAS_CDM} ]]; then
+        # As from CDM we start having a different format of ned-id
+        # rewrite that to the new format
+        xsltproc ${NCS_DIR}/support/ned-package-meta-data.xsl ${PMD_IN} > ${PMD}
+    else
+        # If not CDM keep the old format of the ned-id
+        cp ${PMD_IN} ${PMD}
+    fi
+    chmod -w ${PMD}
+else
+    # No package-meta-data.xml.in is found. This means the NED has not been
+    # converted to the new style. As this script is running that is an error
+    echo "$script: ERROR, the file ${PMD_IN} does not exist"
+    exit 1
+fi
+
+if [[ ! -f ${PMD} ]]; then
+    echo -n "$script: ERROR, package meta data file does not exist"
+    echo " '${PMD}'"
+    exit 1
+fi
+
+if [[ -n ${HAS_CDM} ]]; then
+    PKG_NAME=$(xsltproc ${NCS_DIR}/support/ned-pkg-name.xsl ${PMD_IN})
+    PKG_FAMILY=$(xsltproc ${NCS_DIR}/support/ned-pkg-family.xsl ${PMD_IN})
+    PKG_TYPE=$(xsltproc ${NCS_DIR}/support/ned-pkg-type.xsl ${PMD_IN})
+
+    ID_YANG=${PKG_NAME}.yang
+    ID_FXS=../load-dir/tailf-ned-id-${PKG_NAME}.fxs
+
+    FAMILY_YANG=${PKG_FAMILY}.yang
+    FAMILY_FXS=../load-dir/tailf-ned-id-${PKG_FAMILY}.fxs
+    if [[ ${PKG_FAMILY} = "cisco-nso-nc" ]]; then
+        FAMILY_BASE="ned:lsa-netconf";
+    else
+        FAMILY_BASE=ned:${PKG_TYPE}-ned-id;
+    fi
+    cat -  > ${FAMILY_YANG} <<EOF
+module ${PKG_FAMILY} {
+  yang-version 1.1;
+  namespace "http://tail-f.com/ns/ned-id/${PKG_FAMILY}";
+  prefix ${PKG_FAMILY};
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  import tailf-ncs-ned {
+    prefix ned;
+  }
+
+  identity ${PKG_FAMILY} {
+    tailf:abstract;
+    base ${FAMILY_BASE};
+EOF
+
+    if [[ ${PKG_TYPE} = "generic" ]]; then
+        # For generic NEDs base family on NETCONF as well to be able to
+        # run generic NEDs in ncs-netsim tests
+        cat -  >> ${FAMILY_YANG} <<EOF
+    base ned:netconf-ned-id;
+  }
+}
+EOF
+    else
+        cat  -  >> ${FAMILY_YANG} <<EOF
+  }
+}
+EOF
+    fi
+
+    cat -  > ${ID_YANG} <<EOF
+module ${PKG_NAME} {
+  yang-version 1.1;
+  namespace "http://tail-f.com/ns/ned-id/${PKG_NAME}";
+  prefix ${PKG_NAME};
+
+  import ${PKG_FAMILY} {
+    prefix family;
+  }
+
+  identity ${PKG_NAME} {
+    base family:${PKG_FAMILY};
+  }
+}
+EOF
+
+    mkdir -p ../load-dir
+
+    if ! ${NCS_DIR}/bin/ncsc -c ${FAMILY_YANG} -o ${FAMILY_FXS}; then
+        echo -n "$script: ERROR, could not compile generated "
+        echo    "NED family YANG file: ${FAMILY_YANG}"
+        exit 1
+    fi
+
+    if ! ${NCS_DIR}/bin/ncsc -c ${ID_YANG} -o ${ID_FXS}
+    then
+        echo -n "$script: ERROR, could not compile generated "
+        echo    "NED id YANG file: ${ID_YANG}"
+        exit 1
+    fi
+
+    echo "--ncs-ned-id ${PKG_NAME}:${PKG_NAME}"
+else
+    # Get the namespace of the ned-id. If not CDM then ${PMD} and
+    # ${PMD_IN} are the same
+    ID_URI=$(xsltproc ${NCS_DIR}/support/ned-pkg-ned-id-ns.xsl ${PMD})
+
+    if [[ -n ${ID_URI} ]]; then
+        # Find the YANG file with the namespace and compile it
+        ID_YANG=$(find . -type f -name '*.yang' | \
+            xargs grep -H -l "namespace[ ]*['\"]\{0,1\}${ID_URI}")
+        ID_FXS=../load-dir/$(echo ${ID_YANG} | sed 's/yang$/fxs/')
+
+        if [[ -n ${ID_YANG} ]]; then
+            ${NCS_DIR}/bin/ncsc -c ${ID_YANG} -o ${ID_FXS}
+        else
+            echo -n "$script: ERROR, YANG file which defines namespace:"
+            echo " '${ID_URI}' cannot be found"
+            exit 1
+        fi
+    else
+        echo -n "$script: ERROR, namespace of 'ned-id' field not found in"
+        echo " '${PMD}'"
+        exit 1
+    fi
+    echo ""
+fi

@@ -1,0 +1,33 @@
+module esc-manager {
+  namespace "http://cisco.com/yang/nso/esc-manager";
+  prefix "escm";
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  import tailf-ncs {
+    prefix ncs;
+  }
+
+  import vm-manager {
+    prefix vmm;
+  }
+
+  augment "/vmm:vm-manager" {
+    list esc {
+      tailf:info "Service to start VM";
+
+      key name;
+
+      uses ncs:service-data;
+      ncs:servicepoint vm-esc-servicepoint;
+
+      uses vmm:vm-grouping;
+    }
+  }
+}

@@ -1,0 +1,332 @@
+#!/bin/bash
+#
+# The ncs-project create script
+#
+# Handles creating the proper filestructure for a NCS project
+#
+
+prgname="ncs-project create"
+curdir=$(pwd)
+ncsver="local"
+bundle=""
+
+function error()
+{
+    if [ ! -z "$1" ]; then
+        echo >&2 "${prgname}: error: $1"
+        echo >&2
+    fi
+    echo >&2 "Try ${prgname} --help to get usage text"
+    exit 1
+}
+
+function patch_project_data()
+{
+    sed -i.bak 's#${projname}#'"${projname}"'#g' "${dest}/project-meta-data.xml"
+    rm ${dest}/project-meta-data.xml.bak 2> /dev/null
+}
+
+function create_pkgtest_env()
+{
+    local email
+    local dest=$1
+    email=`git config --get user.email`
+    cat > ${dest}/test/pkgtest.env <<EOF
+PKG_TEST_LABEL=
+PKG_TEST_PARALLELL=
+PKG_TEST_ENV=lux
+PKG_TEST_MAILTO=${email}
+EOF
+}
+
+
+function get_ncs()
+{
+    case "$(uname -s)" in
+        Darwin)
+            arch=darwin
+            ;;
+        Linux)
+            arch=linux
+            ;;
+        *)
+            error "could not determine platform"
+    esac
+    if [[ ! ${ncsver} = "local" ]]; then
+        uri="${url}"
+        if [[ ${uri} =~ ^file:///.* ]]; then
+            binfile=`echo ${uri} | sed s#file://##`
+            echo "cp ${binfile} ${dest}"
+            cp ${binfile} "${dest}"
+        else
+            echo "wget ${uri} -P ${dest}"
+            wget ${uri} -P "${dest}"
+        fi
+        tarfile=`basename ${uri}`
+        if [[ -e "${dest}/${tarfile}" ]]; then
+            echo "Installing NCS..."
+            cd $dest
+            ncsinstalldir="ncs-installdir"
+            sh ${tarfile} --local-install ${ncsinstalldir}
+            if [[ $? -eq 0 ]]; then
+                rm ${tarfile}
+                cd ncs-installdir
+                source ./ncsrc
+                echo "Installing NCS...done"
+                echo "DON'T FORGET TO: source ${dest}/${ncsinstalldir}/ncsrc"
+            else
+                error "failed to install NCS"
+            fi
+        else
+            error "could not download ${tarfile}"
+        fi
+    else
+        use_local_ncs
+    fi
+}
+
+use_local_ncs()
+{
+    if [[ -n ${NCS_DIR} ]]; then
+        echo "Using NCS `${NCS_DIR}/bin/ncs --version` found in ${NCS_DIR}"
+    else
+        error "no NCS installation found"
+    fi
+}
+
+function smkdir()
+{
+    mkdir -p "$1" 2>&1 > /dev/null || true
+}
+
+function project-get-data () {
+    PARAM=$1
+    PMD=$2
+    xsltproc - ${PMD} <<EOF
+<?xml version="1.0"?>
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:ncsproj="http://tail-f.com/ns/ncs-project">
+    <xsl:output method='text'/>
+    <xsl:template match="/ncsproj:project-meta-data">
+      <xsl:for-each select="*[name()='$PARAM']">
+        <xsl:value-of select="."/>
+        <xsl:text>&#10;</xsl:text>
+      </xsl:for-each>
+    </xsl:template>
+</xsl:stylesheet>
+EOF
+}
+
+function usage()
+{
+    cat <<EOF
+Usage: ${prgname} [options] [project-name]
+
+  Create an empty NCS project
+
+  OPTIONS
+  -u, --ncs-bin-url=URL    Specify an exact URL to the NCS install binary.
+                           Can be a 'http://' or 'file:///' Url.
+
+  -d, --dest=DEST          Specify the project (directory) location.
+                           The directory will be created if not existing.
+                           If not specified, the 'project-name' will be used.
+
+  --from-bundle=<bundle>   Use an exported NCS Project bundle created using
+                           the 'ncs-project export' command.
+
+  -h, --help               Show this help text.
+
+See manpage for ncs-project(1) for more info.
+EOF
+}
+
+while true; do
+    case ${1} in
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        --ncs-bin-url=*)
+            url=$(echo ${1} | sed 's/--ncs-bin-url=\(.*\)/\1/')
+            url=$(eval echo "$url")
+            ncsver="notlocal"
+            ;;
+        -u)
+            shift
+            url=${1}
+            url=$(eval echo "$url")
+            ncsver="notlocal"
+            ;;
+        --dest=*)
+            dest=$(echo ${1} | sed 's/--dest=\(.*\)/\1/')
+            dest=$(eval echo "$dest")
+            ;;
+        -d)
+            shift
+            dest=${1}
+            dest=$(eval echo "$dest")
+            ;;
+        --from-bundle=*)
+            bundle=$(echo ${1} | sed 's/--from-bundle=\(.*\)/\1/')
+            bundle=$(eval echo "$bundle")
+            ;;
+        -*)
+            error "no such option ${1}"
+            ;;
+        *)
+            if [ -z "${projname}" ] && [ ! -z "${1}" ]; then
+                # First non hyphen argument given
+                projname=${1}
+            elif [ -z "${1}" ]; then
+                # No project name given
+                break
+            else
+                # We have more than one argument
+                error "unexpected argument ${1}"
+            fi
+    esac
+    shift
+done
+
+if [ -z "$projname" ]; then
+    if [ -z "$dest" ]; then
+            # No projectname, no destination
+            projname=$(basename $curdir)
+            dest=$curdir
+    else
+            # No  projectname but a destination
+            dest=$(cd $dest; pwd)
+            projname=$(basename $dest)
+    fi
+else
+    # We've setup a project-name
+    # This overides any name in project-meta-data
+    # Project name, no dest
+    if [ -n "${bundle}" ]; then
+        # To make it simple we do not allow from-bundle to be combined with a
+        # project-name
+        echo "ERROR: from-bundle cannot be combined with project-name"
+        exit 1
+    fi
+    if [ -z "$dest" ]; then
+        dest="${curdir}/${projname}"
+    else
+        #Project name, dest
+        dest=$(cd $dest; pwd)
+        dest="${dest}/${projname}"
+    fi
+fi
+
+
+if [ -z "${bundle}" ]; then
+
+    echo "${projname}" | grep '[ |/|.]' >/dev/null
+    [ $? = 0 ] && error "illegal project name chars in name ${projname}"
+
+
+    if [ ! -d "$dest" ]; then
+        echo "Creating directory: ${dest}"
+        smkdir ${dest}
+    fi
+
+    if [[ -e "${dest}/ncs.conf" ]]; then
+        echo "project already exists"
+        exit 0
+    fi
+
+    if [[ -e "${dest}/project-meta-data.xml" ]]; then
+        cp ${dest}/project-meta-data.xml ${dest}/project-meta-data.xml.old
+        echo "Backing up existing project-meta-data.xml " \
+             "to project-meta-data.xml.old"
+    fi
+    if [[ -e "${dest}/Makefile" ]]; then
+        cp ${dest}/Makefile ${dest}/Makefile.old
+        echo "Backing up existing Makefile to Makefile.old"
+    fi
+
+    (cd ${NCS_DIR}/src/ncs/project-skeletons/default && tar cf - .) | \
+        cat | (cd ${dest} && tar xbf 1 -)
+    patch_project_data
+
+    if [[ -n "$url" ]]; then
+        get_ncs
+    else
+        use_local_ncs
+    fi
+
+    create_pkgtest_env ${dest}
+
+    ${NCS_DIR}/bin/ncs-setup --dest ${dest}
+    cd ${dest}
+    mkdir init_data
+    echo "wrote project to ${dest}"
+    exit 0
+else
+    # We're creating a project from an existing bundle
+    # All packages needs to be changed to local
+    # Bundle data could be removed
+    #
+
+    # If from-bundle is given use that
+    # it might be used in conjunction with dest,
+    # then use that directory
+
+    if [ ! -f ${bundle} ]; then
+        error "ERROR: No such file ${bundle}"
+    fi
+
+    if [ -z "$dest" ]; then
+        # no destination, but bundle
+        dest=$curdir
+    else
+        # destination and bundle
+        dest=$(cd $dest; pwd)
+    fi
+
+    tar -xzf ${bundle} -C ${dest}
+
+    subdir=$(tar -tzf ${bundle} --exclude="*/packages" | \
+        grep "project-meta-data.xml" | \
+        sed 's/\(.*\)\/.*/\1/')
+    dest=${dest}/${subdir}
+    pushd ${dest}  &> /dev/null
+    project_name=$(project-get-data name project-meta-data.xml)
+    project_ver=$(project-get-data project-version project-meta-data.xml)
+    if [[ -z ${project_name} ]] || [[ -z ${project_ver} ]]; then
+        echo "ERROR: Could not read project name and/or version"
+        exit 1
+    fi
+
+    if [[ -e "${dest}/Makefile" ]]; then
+        cp ${dest}/Makefile ${dest}/Makefile.old
+        echo "Backing up existing Makefile to Makefile.old"
+    fi
+
+    (cd ${NCS_DIR}/src/ncs/project-skeletons/default && \
+        tar cf - test Makefile setup.mk) | \
+        cat | (cd ${dest} && tar xbf 1 -)
+
+    if [[ -n "$url" ]]; then
+        get_ncs
+    else
+        use_local_ncs
+    fi
+
+    create_pkgtest_env ${dest}
+
+    ${NCS_DIR}/bin/ncs-setup --dest ${dest}
+    pushd ${dest}/packages &> /dev/null
+    for i in *.tar.gz
+    do
+        tar -xzf "${i}"
+        rm "${i}"
+    done
+    popd &> /dev/null
+    if [[ ! -d init_data ]]; then
+        mkdir init_data
+    fi
+    echo "wrote project to ${dest}"
+    exit 0
+fi

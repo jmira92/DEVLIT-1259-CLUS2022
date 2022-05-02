@@ -1,0 +1,144 @@
+submodule snmp-agent {
+
+  belongs-to snmp {
+    prefix snmp;
+  }
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import ietf-inet-types {
+    prefix inet;
+  }
+  import tailf-common {
+    prefix tailf;
+  }
+
+  include snmp-common;
+
+  augment /snmp:snmp {
+
+    container agent {
+
+      description
+        "Configuration of the SNMP agent";
+
+      leaf enabled {
+        type boolean;
+        default "false";
+        description
+          "Enables the SNMP agent.";
+      }
+
+      leaf ip {
+        type inet:ip-address;
+        default "0.0.0.0";
+        description
+          "The IPv4 or IPv6 address the agent listens on.";
+      }
+
+      leaf udp-port {
+        type inet:port-number;
+        default "161";
+        description
+          "UDP protocol port to be used for communication";
+      }
+
+      list extra-listen {
+        key "ip udp-port";
+        description
+          "A list of additional IP address and UDP port pairs
+           which the agent also listens on.";
+        leaf ip {
+          type inet:ip-address;
+        }
+        leaf udp-port {
+          type inet:port-number;
+        }
+      }
+
+      container version {
+        description
+          "SNMP version used by the agent";
+        leaf v1 {
+          type empty;
+        }
+        leaf v2c {
+          type empty;
+        }
+        leaf v3 {
+          type empty;
+          must "../../engine-id" {
+            error-message "when v3 is configured, an engine-id must be set";
+            tailf:dependency "../../engine-id";
+          }
+        }
+      }
+
+      container engine-id {
+        presence "sets the local engine-id";
+        reference "SNMP-FRAMEWORK-MIB.snmpEngineID";
+        description
+          "Local SNMP engine's administratively-unique identifier";
+        leaf enterprise-number {
+          type uint32;
+          mandatory true;
+        }
+        choice method {
+          mandatory true;
+          leaf from-ip {
+            type inet:ip-address;
+          }
+          leaf from-mac-address {
+            type yang:mac-address;
+          }
+          leaf from-text {
+            type string {
+              length 1..27;
+            }
+          }
+          leaf other {
+            type string {
+              pattern "[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){0,27}";
+            }
+          }
+        }
+      }
+      leaf max-message-size {
+        type int32 {
+          range 484..214748364;
+        }
+        // default 64000;
+        description
+          "The maximum length of SNMP message agent can send or receive";
+        reference "SNMP-FRAMEWORK-MIB.snmpEngineMaxMessageSize";
+      }
+    }
+
+    container system {
+
+      description
+        "System group configuration";
+
+      leaf contact {
+        type admin-string;
+        default "";
+        reference "SNMPv2-MIB.sysContact";
+      }
+
+      leaf name {
+        type admin-string;
+        default "";
+        reference "SNMPv2-MIB.sysName";
+      }
+
+      leaf location {
+        type admin-string;
+        default "";
+        reference "SNMPv2-MIB.sysLocation";
+      }
+
+    }
+
+  }
+}

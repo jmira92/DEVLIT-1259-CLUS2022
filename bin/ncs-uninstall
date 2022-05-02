@@ -1,0 +1,343 @@
+#!/bin/sh
+
+usage()
+{
+    cat <<EOF
+
+Uninstall part or all of an NCS installation done with the
+--system-install option to the NCS installer.
+
+Usage: ncs-uninstall --ncs-version [Version] [options]
+
+Removes the installation of static files for NCS version "Version".
+I.e. the directory tree rooted at InstallDir/ncs-Version will be
+removed. The Version argument may also be given as the filename or
+pathname of the installation directory, or, unless --non-interactive
+is given, omitted completely in which case the command will offer
+selection from the installed versions.
+
+Usage: ncs-uninstall --all [options]
+
+Completely removes the NCS installation. I.e. the whole directory
+tree rooted at InstallDir, as well as the directories for config
+files (option --config-dir to the installer), run-time state files
+(option --run-dir to the installer), and log files (option --log-dir
+to the installer), and also the init script and user profile scripts.
+
+Options:
+
+--install-dir InstallDir  Specifies the directory for installation of NCS
+                          static files, like the --install-dir option to
+                          the installer. Default: /opt/ncs.
+
+--non-interactive         If this option is used, removal will proceed without
+                          asking for confirmation.
+
+EOF
+    exit 0
+}
+
+log_no_echo()
+{
+    if [ -d "$NCS_RUN_DIR" ]; then
+        echo `date` "$1" >> "$NCS_RUN_DIR"/INSTALLATION-LOG
+    fi
+}
+
+log()
+{
+    echo "$1"
+    log_no_echo "$1"
+}
+
+error_no_log()
+{
+    echo "ERROR ** $1"
+    exit 1
+}
+
+error()
+{
+    log "ERROR ** $1"
+    exit 1
+}
+
+usage_error()
+{
+    echo "ERROR ** $1"
+    echo "Try $0 --help to get usage text"
+    exit 1
+}
+
+abspath()
+{
+    case "$1" in
+        /*) echo "$1" ;;
+        *) echo `pwd`/"$1" ;;
+    esac
+}
+
+# set $reply to yes/no
+ask()
+{
+    if [ $interactive = "yes" ]; then
+        while true; do
+            echo "$1 (y/n)? " | tr -d '\012'
+            read reply
+            case "$reply" in
+                [Yy]|[Yy][Ee][Ss])
+                    reply="yes"
+                    return
+                    ;;
+                [Nn]|[Nn][Oo])
+                    reply="no"
+                    return
+                    ;;
+                *)
+                    echo "Answer not understood"
+                    ;;
+            esac
+        done
+    else
+        reply="yes"
+    fi
+}
+
+remove_init_script()
+{
+    init_script="skip"
+    for f in /etc/init.d/ncs /etc/rc.d/ncs /usr/local/etc/rc.d/ncs; do
+        if [ -f "$f" ]; then
+            init_script="$f"
+            break
+        fi
+    done
+    if [ "$init_script" = "skip" ]; then
+        log "WARN  No init script found"
+    else
+        ask "Remove init script $init_script"
+        if [ $reply = "no" ]; then
+            log "WARN  Not removing init script $init_script"
+        else
+            rm -f "$init_script"
+            if [ -f "$init_script" ]; then
+                log "WARN  Failed to remove init script $init_script"
+            else
+                if [ "$init_script" = "/etc/init.d/ncs" ]; then
+                    rm -f /etc/rc[0-6].d/[KS][0-9][0-9]ncs
+                fi
+                log "INFO  Removed init script $init_script"
+            fi
+        fi
+    fi
+}
+
+remove_user_profiles()
+{
+    profile_scripts=""
+    for f in /etc/profile.d/ncs.sh /etc/profile.d/ncs.csh; do
+        if [ -f "$f" ]; then
+            profile_scripts="$profile_scripts $f"
+        fi
+    done
+    if [ -z "$profile_scripts" ]; then
+        log "WARN  No user profile scripts found"
+    else
+        ask "Remove user profile scripts $profile_scripts"
+        if [ $reply = "no" ]; then
+            log "WARN  Not removing user profile scripts $profile_scripts"
+        else
+            for f in $profile_scripts; do
+                rm -f "$f"
+                if [ -f "$f" ]; then
+                    log "WARN  Failed to remove user profile script $f"
+                else
+                    log "INFO  Removed user profile script $f"
+                fi
+            done
+        fi
+    fi
+}
+
+remove_logrotate_conf()
+{
+    logrotateconf="skip"
+    f="/etc/logrotate.d/ncs"
+    if [ -f "$f" ]; then
+        logrotateconf="$f"
+    fi
+    if [ "$logrotateconf" = "skip" ]; then
+        log "WARN  No 'logrotate' configuration file found"
+    else
+        ask "Remove 'logrotate' configuration file $logrotateconf"
+        if [ $reply = "no" ]; then
+            log \
+              "WARN  Not removing 'logrotate' configuration file $logrotateconf"
+        else
+            rm -f "$logrotateconf"
+            if [ -f "$logrotateconf" ]; then
+                log \
+          "WARN  Failed to remove 'logrotate' configuration file $logrotateconf"
+            else
+                log \
+                   "INFO  Removed 'logrotate' configuration file $logrotateconf"
+            fi
+        fi
+    fi
+}
+
+remove_dir() # <dir>
+{
+    if [ ! -d "$1" ]; then
+        log "WARN  Directory $1 not found"
+    else
+        ask "Remove $1 directory tree"
+        if [ $reply = "no" ]; then
+            log "WARN  Not removing directory $1"
+        else
+            rm -rf "$1"
+            if [ -d "$1" ]; then
+                log "WARN  Failed to remove directory $1"
+            else
+                log "INFO  Removed directory $1"
+            fi
+        fi
+    fi
+}
+
+uninstall_all() # <confdir> <rundir> <logdir> <system_instdir>
+{
+    log_no_echo "INFO  Starting complete uninstall"
+    remove_logrotate_conf
+    remove_user_profiles
+    remove_init_script
+    for d in "$@"; do
+        remove_dir "$d"
+    done
+}
+
+system_instdir=""
+interactive="yes"
+uninstall=""
+ncs_version=""
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -h|-help|--help)
+            usage
+            ;;
+        --install-dir)
+            case "$2" in
+                /) error_no_log "Cannot use '/' for --install-dir" ;;
+                -*) error_no_log "Missing argument to --install-dir" ;;
+                *) system_instdir="$2" ;;
+            esac
+            shift
+            ;;
+        --ncs-version)
+            uninstall="ncs_version"
+            case $2 in
+                -*)
+                    ncs_version=""
+                    ;;
+                *)
+                    ncs_version="$2"
+                    shift
+                    ;;
+            esac
+            ;;
+        --all)
+            uninstall="all"
+            ;;
+        --non-interactive)
+            interactive="no"
+            ;;
+        *)
+            usage_error "Unknown argument $1"
+            ;;
+    esac
+    shift
+done
+
+if [ "$uninstall" = "ncs_version" ]; then
+    case "$ncs_version" in
+        '')
+            if [ $interactive = "no" ]; then
+                usage_error "No version given for --ncs-version"
+            fi
+            ;;    
+        */*)
+            if [ -z "$system_instdir" ]; then
+                system_instdir=`dirname "$ncs_version"`
+            fi
+            ncs_version=`basename "$ncs_version"`
+            ncs_version=`echo "$ncs_version" | sed 's/^ncs-//'`
+            ;;
+        ncs-*)
+            ncs_version=`echo "$ncs_version" | sed 's/^ncs-//'`
+            ;;
+    esac
+fi
+case "$system_instdir" in
+    '') system_instdir="/opt/ncs" ;;
+    *) system_instdir=`abspath "$system_instdir"` ;;
+esac
+if [ -f "$system_instdir"/installdirs ]; then
+    . "$system_instdir"/installdirs
+    for f in "$NCS_CONFIG_DIR" "$NCS_RUN_DIR" "$NCS_LOG_DIR"; do
+        case "$f" in
+            /?*) # absolute path and not '/'
+                ;;
+            *)
+                error_no_log "$system_instdir/installdirs content is corrupt"
+                ;;
+        esac
+    done
+else
+    error_no_log "$system_instdir does not appear to be a NCS installation directory"
+fi
+
+case "$uninstall" in
+    '')
+        usage_error "Please specify what should be uninstalled"
+        ;;
+    "ncs_version")
+        if [ -L "$system_instdir"/current ]; then
+            current=`ls -l $system_instdir/current | awk '{print $NF}'`
+        else
+            error_no_log "$system_instdir does not appear to be a NCS installation directory"
+        fi
+        if [ -z "$ncs_version" ]; then
+            versions=`(cd "$system_instdir" && ls -d ncs-[0-9]*) | \
+                sed -e "/^$current\$/d" -e 's/^ncs-//'`
+            if [ -z "$versions" ]; then
+                error_no_log "No uninstallable NCS versions found in $system_instdir"
+            fi
+            echo "Installed NCS versions not currently active:"
+            echo "$versions" | awk '{ print NR, ":", $0 }'
+            echo "Select a version to uninstall: " | tr -d '\012'
+            read ncs_version
+            case $ncs_version in
+                *.*)
+                    ;;
+                *)
+                    ncs_version=`echo "$versions" | awk "NR == $ncs_version"`
+                    if [ -z "$ncs_version" ]; then
+                        error_no_log "Invalid selection"
+                    fi
+                    ;;
+            esac
+        else
+            if [ "$current" = "ncs-$ncs_version" ]; then
+                error_no_log "NCS-$ncs_version is the currently active version"
+            fi
+        fi
+        remove_dir "$system_instdir/ncs-$ncs_version"
+        ;;
+    "all")
+        uninstall_all \
+            "$NCS_CONFIG_DIR" "$NCS_RUN_DIR" "$NCS_LOG_DIR" "$system_instdir"
+        ;;
+esac
+
+exit 0

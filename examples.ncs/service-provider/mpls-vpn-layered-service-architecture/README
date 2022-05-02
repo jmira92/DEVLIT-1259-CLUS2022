@@ -1,0 +1,243 @@
+
+== MPLS Layer3 VPN Example as "Layered Service Architecture"
+
+The prerequisite for this example is the companion example
+above, 'mpls-vpn' - thus in order to grasp this example, read, run
+and understand the mpls-vpn example above first.
+
+In this example, we have implemented the mpls-vpn as
+a "Layered Service Architecture"
+The problem we address here is that when we need to build large
+NSO installations, we must distribute the data over multiple NSO nodes.
+
+The intended audience for this example is an architect that
+needs to understand how to build a really large NSO installation
+
+The code in this example, creates a structure that looks like:
+
+                    Service-NSO                    (Service node)
+                       |
+                       |
+    --------------------------------------------
+           |          |                   |
+           |          |                   |
+         NSO-1      NSO-2                NSO-3      (Device nodes)
+          |           |                   |
+          |           |                   |
+   -----------     ------------        ------------
+    |       |        |     |            |       |
+    |       |        |     |            |       |
+    ce0 ... ce7      p0...p3            pe0.....pe3  (Managed devices)
+
+
+That is - all the devices from the mpls-vpn example split-up
+over three distinct device nodes.
+
+- NSO-1 Owns all the CE routers
+- NSO-2 Owns all the P routers
+- NSO-3 Owns all the PE routers
+
+
+==== Example Network
+
+The example network consists of Cisco ASR 9k and Juniper core
+routers (P and PE) and Cisco IOS based CE routers.
+
+The routers comprise the same network as in the mpls-vpn
+example:
+
+image:network.jpg[]
+
+
+==== Basic idea
+
+The idea behind the "Layered Service Architecture" is to
+
+- Split up the managed devices on multiple disjunct NSO nodes, known
+  as device-nodes
+
+- Arrange a service-node NSO that has these device-nodes in it
+  /devices/device tree - i.e the service-node manages device-node NSOs
+
+- Create the service in a layered approach. This can be done in
+  several different ways. In this example we'll show one real simple
+  way of doing this.
+
+
+In general though. One service runs on the service node, we can call
+this the customer facing service, the CFS. The provisioning code on the
+service-node must
+
+- Figure out which devices will participate in the provisioned service.
+- Figure out which device-nodes host those devices.
+- Instantiate proper RFS services on those device nodes.
+
+
+In this example, the service-node YANG code and device-node YANG code are
+identical. The provisioning java code that runs at the service node
+will simply copy itself into all it's devices, which will be the
+3 device nodes.
+
+The Java provisioning code that runs on the device-nodes is identical
+to the code in the original mpls-vpn example.
+
+This will then work as follows:
+
+1. A VPN is instantiated at the service-node for example /vpn/l3vpn/[name='v1']
+
+2. Java create() code associated to the VPN service copies itself
+   down into all device-nodes using Maapi.copy_tree()
+
+           String serviceName = service.leaf("name").valueAsString();
+            NavuList managedDevices = ncsRoot.
+                container("devices").list("device");
+
+            for (NavuContainer device : managedDevices) {
+                Maapi maapi = service.context().getMaapi();
+                int tHandle = service.context().getMaapiHandle();
+
+
+                NavuNode dstVpn = device.container("config").
+                    container("l3vpn", "vpn").
+                    list("l3vpn").
+                    sharedCreate(serviceName);
+                ConfPath dst = dstVpn.getConfPath();
+                ConfPath src = service.getConfPath();
+                maapi.copy_tree(tHandle, true, src, dst);
+            }
+
+   This will then re-create the same VPN 3 times, i.e the code will create
+
+   /devices/device[name='nso-1]/config/vpn/l3vpn[name='v1']
+   /devices/device[name='nso-2]/config/vpn/l3vpn[name='v1']
+   /devices/device[name='nso-3]/config/vpn/l3vpn[name='v1']
+
+
+3. Java create() code runs on the 3 device-nodes. The code is identical
+   to the code in the mpls-vpn example. Each device-node will read the
+   topology (which must be replicated on all device-nodes) and it'll
+   try to provision the VPN - however each device-node will only touch
+   the devices it has itself in it's device tree.
+
+4. The net result is that the entire VPN is provisioned, but different
+   parts of the VPN as a whole are provisioned by different NSO nodes.
+
+
+
+==== Topology and QOS
+
+Identical to the mpls-vpn example, we have topology and QOS settings
+that are read by the VPN provisioning code.
+In the mpls-vpn example the topology and qos data is just stored
+under /qos and /topology
+In this example we want to have the data in the Service-NSO under
+/topology and /qos be replicated and identical on all Device NSO nodes.
+
+We implemented this as an NSO service at the Service-NSO layer
+that copies itself into an identical YANG model at the Device
+NSO nodes.
+
+Thus at Service NSO we have /topology and /qos and whenever
+those are modified, the data gets replicated to /topology and /qos on
+all the device-nodes.
+
+
+=== Running The Example in the CLI
+
+Make sure you start clean, i.e. no old configuration data is present.
+If you have been running this or some other example before, make sure
+to stop any NSO or simulated network nodes (ncs-netsim) that you may have
+running.  Output like 'connection refused (stop)' means no previous
+NSO was running and 'DEVICE ce0 connection refused (stop)...' no
+simulated network was running, which is good.
+
+----
+make stop clean reset all start
+make status
+make cli   (this will start the CLI towards the service NSO)
+----
+
+
+Lets start by configuring a VPN network.
+
+----
+configure
+load merge terminal
+vpn {
+  l3vpn volvo {
+    route-distinguisher 999;
+    endpoint branch-office1 {
+        ce-device    ce1;
+        ce-interface GigabitEthernet0/11;
+        ip-network   10.7.7.0/24;
+        bandwidth    6000000;
+        as-number    65102;
+    }
+    endpoint branch-office2 {
+        ce-device    ce4;
+        ce-interface GigabitEthernet0/18;
+        ip-network   10.8.8.0/24;
+        bandwidth    300000;
+        as-number    65103;
+    }
+    endpoint main-office {
+        ce-device    ce6;
+        ce-interface GigabitEthernet0/11;
+        ip-network   10.10.1.0/24;
+        bandwidth    12000000;
+        as-number    65101;
+    }
+  }
+}
+^D
+
+----
+
+Before we send anything to the network, lets see what would be sent if
+we committed.
+----
+commit dry-run outformat native
+native {
+    device {
+        name nso-1
+        data <rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0"
+                  message-id="1">
+        <edit-config xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0">
+          <target>
+            <running/>
+          </target>
+          <test-option>test-then-set</test-option>
+          <error-option>rollback-on-error</error-option>
+          <with-inactive xmlns="http://tail-f.com/ns/netconf/inactive/1.0"/>
+          <config>
+            <vpn xmlns="http://com/example/l3vpn">
+              <l3vpn>
+                <name>volvo</name>
+     ..........
+
+----
+
+This shows the NETCONF edit-config payload that we (the service node)
+will send to each of the device-nodes
+
+----
+commit
+-----
+
+
+We can log in to the device nodes as:
+
+-----
+make cli-nso-1
+request vpn l3vpn volvo get-modifications
+
+-----
+
+We see that the nso-1 node has only modified the CE devices, whereas
+
+------
+make cli-nso-3
+request vpn l3vpn volvo get-modifications
+------
+
+The nso-3 node has modified one of the PE routers

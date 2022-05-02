@@ -1,0 +1,34 @@
+module snmp {
+
+  namespace "http://tailf.com/ns/snmp";
+  prefix "snmp";
+
+  include snmp-common;
+  include snmp-agent;
+  include snmp-usm;
+  include snmp-target;
+  include snmp-target-params;
+  include snmp-community;
+  include snmp-notification;
+  include snmp-vacm;
+
+  description
+   "This module contains a collection of YANG definitions for
+    configuring SNMP engines via NETCONF.";
+
+  revision 2010-10-22 {
+    description
+      "Added USM encryption submodule";
+  }
+
+  revision 2010-07-24 {
+    description
+      "Added snmp-target-params submodule";
+  }
+
+  revision 2010-01-22 {
+    description
+     "Initial revision.";
+  }
+
+}

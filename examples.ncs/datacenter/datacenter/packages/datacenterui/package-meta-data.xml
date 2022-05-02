@@ -1,0 +1,11 @@
+<ncs-package xmlns="http://tail-f.com/ns/ncs-packages">
+  <name>datacenterui</name>
+  <package-version>1.0</package-version>
+  <description>Datacenter WebUI</description>
+  <ncs-min-version>3.0</ncs-min-version>
+
+  <required-package>
+    <name>1-ncsuiutil</name>
+  </required-package>
+
+</ncs-package>

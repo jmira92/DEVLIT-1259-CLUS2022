@@ -1,0 +1,351 @@
+WebSite Basic Example
+=======================
+
+Introduction
+------------
+This example shows the NCS device-manager, no Java code is part of this
+example.
+
+To run this example a properly installed NCS is required
+with the UNIX environment variable NCS_DIR set to where NCS is installed.
+
+The best way to do that is to source the ./ncsrc script found in the
+top dir of the NCS systems installation
+
+For this example, We have the following network where we manage one
+loadbalancer and three webservers.
+
+The following ASCII art shows the network:
+
+
+                NCS
+                 |
+                 |
+   ------------------------
+  |       |         |      |
+  |       |         |      |
+  lb0     www0      www1   www2   --- simulated network, confd agents
+
+
+The simulated network of managed devices, "lb0" and "www{0,1,2}" are
+represented by four ConfD instances running at localhost but on
+different ports. The tool ncs-netsim is used to simulate the network.
+
+We have two different types of managed devices. Each device is defined
+by a an NCS package. In the directory ./packages, we have two symbolic
+links to
+
+- a package called 'lb' which defines a hypothetical load balancer
+- a package called 'webserver' which defines a hypothetical webserver
+
+Before managing a device we must have an NCS package for the device.
+The package contains at a minimum the YANG models for the device.
+When compiling a package for a NETCONF device (which is defined by yang
+models only) the Makefiles in the package must make use of the ncsc compiler
+command
+
+$ ncsc --ncs-compile-bundle <path-to-yangfiles> \
+          --ncs-device-dir ./some-dir
+
+Note: The above command is executed automatically from the Makefiles
+in the packages when you build  the "all" target in this example.
+
+
+Building the Example
+--------------------
+To build the example execute:
+
+$ make all
+
+in this directory, the following will happen:
+
+- Both types of managed devices (lb and webserver) are compiled
+  and the exec environ is created for all 4 managed devices.
+
+
+Starting the Example
+--------------------
+To start the example you need to:
+
+1) Open two shells
+
+2) In the first shell, start the simulated network and ncs.
+
+$ ncs-netsim start
+
+This starts the 4 simulated devices, "lb0", "www0", "www1" and "www2".
+
+$ ncs
+
+This starts the NCS daemon.
+
+The NCS server is initialized with managed device data populating the
+tailf-ncs namespace with appropriate managed device data, such as at
+which IP/port each managed device resides as well as auth data -
+i.e. how do we ssh to each managed device.
+
+So for example,
+
+$ ncs_cli -u admin
+
+admin@zoe> show configuration devices device lb0
+address   127.0.0.1;
+port      12022;
+authgroup default;
+state {
+    admin-state unlocked;
+}
+
+
+At this point, we're ready to start managing the devices.
+We can now run several interesting commands to reconfigure
+our network of managed devices. Each individual device configuration
+can be found beneath /ncs/devices/device[name=Name]/config. For example,
+the config for 'lb0' (at NCS) is found at
+/ncs/devices/device[name='lb0']/config
+
+At this point, we don't have any configuration at all. Whereas in
+reality, the managed device "lb0" probably has - in short - we're not
+in sync with reality. A first reasonable step is thus to ensure that
+NCS and it's managed devices are in sync. Let's go through the
+different options we have at our disposal to synchronize the two
+configurations.
+
+First, we can execute:
+
+admin@zoe> request devices device lb0 check-sync
+result unknown
+
+The above is what we refer to as a cheap sync check, if the device
+supports the tailf proprietary monitoring namespace as in:
+admin@zoe> show status devices device lb0 capability
+......
+capability http://tail-f.com/yang/common-monitoring
+..
+.
+The cheap check is done by retrieving a single string from device
+The string identifies the last committed transaction as status data
+at the device. Let's go to the device, inside this example and
+have a look at that string.
+
+$ ncs-netsim cli lb0
+admin@zoe> show status confd-state internal cdb datastore running transaction-id
+transaction-id 1265-621669-781403;
+[ok][2010-02-08 11:24:36]
+
+The above is thus a direct CLI connection into one of the NCS managed devices.
+The ncs-netsim tool "knows" on which port the "lb0" ConfD device listens
+for CLI connections
+
+There are three different ways we can make a device become synchronized
+with regards to the transaction-id
+
+- sync the config from NCS to the device
+- sync the config from the device to NCS
+- run a diff that results in nothing
+
+Enter the cli of NCS. Let's start with a diff.
+
+admin@zoe> request devices device lb0 compare-config
+diff
+ devices {
+     device lb0 {
+         config {
++            interface eth0 {
++                macaddr aa:bb:cc:33:22:36;
++            }
+             lb:lbConfig {
+                 system {
++                    ntp-server 18.4.5.6;
+                     resolver {
++                        nameserver 18.4.5.6;
++                        search acme.com;
+                     }
+                 }
+             }
+         }
+     }
+ }
+
+
+Or alternatively with the output in the form of a NETCONF
+edit-config RPC
+
+admin@zoe> request devices device lb0 compare-config outformat xml
+diff
+<lbConfig xmlns="http://pound/lb">
+  <system>
+    <ntp-server>18.4.5.6</ntp-server>
+    <resolver>
+      <nameserver>18.4.5.6</nameserver>
+      <search>acme.com</search>
+    </resolver>
+  </system>
+</lbConfig>
+<interface xmlns="http://acme.com/if">
+  <name>eth0</name>
+  <macaddr>aa:bb:cc:33:22:36</macaddr>
+</interface>
+
+Both above two diffs denote what we - at NCS - have to
+merge into NCS in order to be in sync with the device.
+So let's do that:
+
+admin@zoe> request devices device lb0 sync-from
+result true
+[ok][2012-08-15 11:59:22]
+admin@zoe> request devices device lb0 check-sync
+result in-sync
+[ok][2012-08-15 11:59:27]
+admin@zoe> show configuration devices device lb0 config
+interface eth0 {
+    macaddr aa:bb:cc:33:22:36;
+}
+lb:lbConfig {
+    system {
+        ntp-server 18.4.5.6;
+        resolver {
+            search     acme.com;
+            nameserver 18.4.5.6;
+        }
+    }
+}
+
+We're now in sync.
+
+Let's sync all devices.
+
+admin@zoe> request devices sync-from
+sync-result {
+    device lb0
+    result true
+}
+sync-result {
+    device www0
+    result true
+}
+sync-result {
+    device www1
+    result true
+}
+sync-result {
+    device www2
+    result true
+}
+
+We can now start to make some network wide transactions
+that span multiple managed devices. For example, to turn on
+the KeepAlive feature in all web servers:
+
+admin@zoe> configure
+Entering configuration mode private
+[ok][2012-08-15 12:00:49]
+
+[edit]
+admin@zoe% set devices device www0..2 config ws:wsConfig global KeepAlive On
+[ok][2012-08-15 12:01:09]
+
+[edit]
+admin@zoe% commit
+Commit complete.
+[ok][2012-08-15 12:01:14]
+
+A nework wide rollback:
+
+admin@zoe% rollback 10007
+[ok][2012-08-15 12:01:47]
+
+[edit]
+admin@zoe% compare running brief
+ devices {
+     device www0 {
+         config {
+             ws:wsConfig {
+                 global {
+-                    KeepAlive On;
+                 }
+             }
+         }
+     }
+     device www1 {
+         config {
+             ws:wsConfig {
+                 global {
+-                    KeepAlive On;
+                 }
+             }
+         }
+     }
+     device www2 {
+         config {
+             ws:wsConfig {
+                 global {
+-                    KeepAlive On;
+                 }
+             }
+         }
+     }
+ }
+[ok][2012-08-15 12:01:57]
+
+[edit]
+admin@zoe% commit
+Commit complete.
+
+Let's take a look how we can push network wide transactions when one
+(or more) of the involved hosts are down. This can be achieved with the
+commit queue feature. By default the commit queue is turned off.
+
+$ ncs-netsim stop lb0
+DEVICE lb0 STOPPED
+
+And then in the NCS CLI:
+
+admin@zoe% set devices device lb0 config if:interface eth0 macaddr 00:66:77:22:11:22
+[ok][2012-08-15 12:04:44]
+
+[edit]
+admin@zoe% set devices device lb0 config if:interface eth0 ipv4-address 2.3.4.5
+[ok][2012-08-15 12:05:00]
+
+[edit]
+admin@zoe% commit
+Aborted: Failed to connect to device lb0: connection refused
+[error][2012-08-15 12:05:04]
+
+[edit]
+admin@zoe% commit commit-queue async
+commit-queue-id 11649974378
+Commit complete.
+[ok][2012-08-15 12:05:10]
+
+[edit]
+
+The transaction is now run through the commit queue. Each transaction
+committed becomes a queue item. Each queue item waits for something to
+happen. Let's take a look at the commit queue:
+
+admin@zoe% exit
+admin@zoe> show devices commit-queue
+
+A transient error occurred for "lb0" as it is down and non-operational.
+Transient errors are potentially bad, since the queue might grow if new
+items are added, waiting for the same device. Retries will take place in
+intervals. Let's restart the managed device, from a UNIX shell:
+
+$ ncs-netsim start lb0
+DEVICE lb0 OK STARTED
+
+Now monitor the commit queue:
+
+admin@zoe> show devices commit-queue
+
+When you are ready with this example make sure all daemons are stopped. Stop
+NCS and then the simulated network:
+
+$ ncs --stop
+$ ncs-netsim stop
+
+Clean all created files:
+
+$ make clean

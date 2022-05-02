@@ -1,0 +1,93 @@
+'\" t
+.\"     Title: ncs-uninstall
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 01/26/2022
+.\"    Manual: NCS Manual
+.\"    Source: Cisco Systems, Inc.
+.\"  Language: English
+.\"
+.TH "NCS\-UNINSTALL" "1" "01/26/2022" "Cisco Systems, Inc." "NCS Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+ncs-uninstall \- Command to remove NCS installation
+.SH "SYNOPSIS"
+.HP \w'\fBncs\-uninstall\fR\ 'u
+\fBncs\-uninstall\fR \-\-ncs\-version [\fIVersion\fR] [\-\-install\-dir\ \fIInstallDir\fR] [\-\-non\-interactive]
+.HP \w'\fBncs\-uninstall\fR\ 'u
+\fBncs\-uninstall\fR \-\-all [\-\-install\-dir\ \fIInstallDir\fR] [\-\-non\-interactive]
+.SH "DESCRIPTION"
+.PP
+The
+\fBncs\-uninstall\fR
+command can be used to remove part or all of an NCS "system installation", i\&.e\&. one that was done with the
+\fB\-\-system\-install\fR
+option to the NCS installer (see
+\m[blue]\fBncs\-installer(1)\fR\m[])\&.
+.SH "OPTIONS"
+.PP
+\fB\-\-ncs\-version [ \fR\fB\fIVersion\fR\fR\fB ]\fR
+.RS 4
+Removes the installation of static files for NCS version
+\fIVersion\fR\&. I\&.e\&. the directory tree rooted at
+\fIInstallDir\fR/ncs\-\fIVersion\fR
+will be removed\&. The
+\fIVersion\fR
+argument may also be given as the filename or pathname of the installation directory, or, unless
+\fB\-\-non\-interactive\fR
+is given, omitted completely in which case the command will offer selection from the installed versions\&.
+.RE
+.PP
+\fB\-\-all\fR
+.RS 4
+Completely removes the NCS installation\&. I\&.e\&. the whole directory tree rooted at
+\fIInstallDir\fR, as well as the directories for config files (option
+\fB\-\-config\-dir\fR
+to the installer), run\-time state files (option
+\fB\-\-run\-dir\fR
+to the installer), and log files (option
+\fB\-\-log\-dir\fR
+to the installer), and also the init script and user profile scripts\&.
+.RE
+.PP
+\fB[ \-\-install\-dir \fR\fB\fIInstallDir\fR\fR\fB ]\fR
+.RS 4
+Specifies the directory for installation of NCS static files, like the
+\fB\-\-install\-dir\fR
+option to the installer\&. If this option is omitted,
+/opt/ncs
+will be used for
+\fIInstallDir\fR\&.
+.RE
+.PP
+\fB[ \-\-non\-interactive ]\fR
+.RS 4
+If this option is used, removal will proceed without asking for confirmation\&.
+.RE
+.SH "AUTHOR"
+.br
+.RS 4
+Author.
+.RE
+.SH "COPYRIGHT"
+.br
+Copyright \(co 2021, 2022 Cisco Systems, Inc. All rights reserved.
+.br

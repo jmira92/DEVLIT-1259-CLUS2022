@@ -1,0 +1,149 @@
+module ipaddress-allocator {
+  namespace "http://cisco.com/yang/nso/ipaddress-allocator";
+  prefix "ipalloc";
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  import resource-allocator {
+    prefix ralloc;
+  }
+
+  container ip-allocator {
+    config false;
+
+    tailf:cdb-oper {
+      tailf:persistent true;
+    }
+
+    list pool {
+      key name;
+
+      leaf name {
+        type string;
+      }
+
+      list subnet {
+        key "address cidrmask";
+        tailf:cli-suppress-mode;
+        min-elements "1";
+
+        leaf address {
+          type inet:ip-address;
+        }
+
+        leaf cidrmask {
+          type uint16;
+        }
+
+        description
+          "Copy of configured subnets. Needed to know when subnets
+           have been added/removed.";
+
+      }
+
+      list exclude {
+        key "address cidrmask";
+        tailf:cli-suppress-mode;
+        min-elements "1";
+
+        leaf address {
+          type inet:ip-address;
+        }
+
+        leaf cidrmask {
+          type uint16;
+        }
+
+        description
+          "Copy of excluded subnets. Needed to know when exclustion
+           has been added/removed.";
+      }
+
+      list available {
+        key "address cidrmask";
+        tailf:cli-suppress-mode;
+
+        leaf address {
+          type inet:ip-address;
+        }
+
+        leaf cidrmask {
+          type uint16;
+        }
+
+        description
+          "Free subnets available for allocation.";
+      }
+
+      list allocation {
+        key "address cidrmask";
+        tailf:cli-suppress-mode;
+
+        leaf address {
+          type inet:ip-address;
+        }
+
+        leaf cidrmask {
+          type uint16;
+        }
+
+        leaf owner {
+          type string;
+        }
+
+        description
+          "Allocated subnets.";
+      }
+    }
+  }
+
+  augment "/ralloc:resource-pools/ralloc:ip-address-pool" {
+
+
+    list subnet {
+      key "address cidrmask";
+      tailf:cli-suppress-mode;
+
+      tailf:validate ipa_validate {
+        tailf:dependency ".";
+      }
+
+      leaf address {
+        type inet:ip-address;
+      }
+
+      leaf cidrmask {
+        type uint16;
+      }
+
+      leaf stop-allocation {
+        type boolean;
+        default "false";
+      }
+    }
+
+    list exclude {
+      key "address cidrmask";
+      tailf:cli-suppress-mode;
+
+      tailf:validate ipa_validate {
+        tailf:dependency "../subnet";
+        tailf:dependency ".";
+      }
+
+      leaf address {
+        type inet:ip-address;
+      }
+
+      leaf cidrmask {
+        type uint16;
+      }
+    }
+  }
+}

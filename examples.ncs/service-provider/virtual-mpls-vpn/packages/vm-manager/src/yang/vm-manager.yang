@@ -1,0 +1,185 @@
+module vm-manager {
+  namespace "http://cisco.com/yang/nso/vm-manager";
+  prefix "vmm";
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  import tailf-ncs {
+    prefix ncs;
+  }
+
+  import resource-allocator {
+    prefix ralloc;
+  }
+
+  grouping vm-grouping {
+    leaf name {
+      type string;
+    }
+
+    leaf deployment-name {
+      type string;
+    }
+
+    leaf vm-device {
+      type string;
+    }
+
+    leaf tenant {
+      type string;
+    }
+
+    leaf service-name {
+      type string;
+    }
+
+    leaf service-version {
+      type string;
+    }
+
+    leaf vm-type {
+      type string;
+    }
+
+    leaf vm-group {
+      type string;
+    }
+
+    leaf mgmt-ip-address {
+      type inet:ip-address;
+    }
+
+    leaf day0-url {
+      type string;
+    }
+
+    list interface {
+      key id;
+
+      leaf id {
+        type string;
+      }
+
+      leaf name {
+        type string;
+      }
+
+      leaf ip {
+        type inet:ip-address;
+      }
+    }
+
+    leaf scaling-min {
+      type uint32;
+    }
+
+    leaf scaling-max {
+      type uint32;
+    }
+
+    list scaling-pool {
+      key name;
+
+      leaf name {
+        type string;
+      }
+
+      list address {
+        key ip;
+
+        leaf ip {
+          type inet:ip-address;
+        }
+      }
+    }
+  }
+
+  container vm-manager {
+    list start {
+      key name;
+
+      description
+        "CDB interface to vm-service. Used from a service in order to
+       get staged delete of the VM. Ie, when we don't want to tell
+       the gabbleduck to remove the VM in the same transaction as we
+       are removing the config on the VM itself.";
+
+      uses vm-grouping;
+
+      list allocators {
+        key name;
+
+        leaf name {
+          type instance-identifier {
+            require-instance false;
+          }
+        }
+      }
+
+      list device {
+        description
+          "List of devices that has been added and should be
+         removed when the vm-manager/start instance is removed";
+
+        config false;
+
+        tailf:cdb-oper {
+          tailf:persistent true;
+        }
+
+        key name;
+
+        leaf name {
+          type string;
+        }
+      }
+
+      leaf error-status {
+        config false;
+
+        tailf:cdb-oper {
+          tailf:persistent true;
+        }
+
+        type string;
+      }
+
+      list log {
+        description "vm oper data to keep track of vm progress";
+        config false;
+
+        tailf:cdb-oper {
+          tailf:persistent true;
+        }
+
+        key id;
+        ordered-by user;
+
+        leaf id {
+          type string;
+        }
+
+        leaf timestamp {
+          type string;
+        }
+      }
+    }
+  }
+
+  augment "/ncs:devices/ncs:device" {
+    leaf ready {
+      config false;
+
+      tailf:cdb-oper {
+        tailf:persistent true;
+      }
+      type boolean;
+    }
+  }
+}

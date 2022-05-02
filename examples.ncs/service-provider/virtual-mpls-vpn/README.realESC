@@ -1,0 +1,9 @@
+
+in ESC_setup modify the following files to match your setup:
+ESC_device: address of the ESC
+service_reg: the path to CSR image
+tenant: Set the tenant name you will use in the demo
+
+in packages/l3vpn/templates/l3vpn-vm-manager.xml set:
+day0-url to a correct URL
+

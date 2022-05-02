@@ -1,0 +1,1420 @@
+[doc Test of ipaddress allocator]
+
+[config skip=TAILFSKIP_JAVA]
+[config skip=TAILF_OS=sunos]
+[config require=MAKE]
+[global fail_pattern=[Ee][Rr][Rr][Oo][Rr]]
+
+[shell ncs]
+    [timeout 120]
+    !$MAKE clean_cdb
+    !echo ==$$?==
+    ?==0==
+
+    -$fail_pattern
+    !$MAKE start
+    ?ncs_started
+
+[shell cli]
+    -$fail_pattern
+    !$MAKE cli
+    ?admin connected
+    ?.*>
+    !set paginate false
+    ?.*>
+    !config
+    ?.*%
+    !set resource-pools ip-address-pool management subnet 10.0.0.0 24
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        available 10.0.0.0 24;
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool management allocation a1 request subnet-size 32
+    ?.*%
+    !set resource-pools ip-address-pool management allocation a2 request subnet-size 32
+    ?.*%
+    !set resource-pools ip-address-pool management allocation a3 request subnet-size 32
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        available 10.0.0.0 32;
+        available 10.0.0.4 30;
+        available 10.0.0.8 29;
+        available 10.0.0.16 28;
+        available 10.0.0.32 27;
+        available 10.0.0.64 26;
+        available 10.0.0.128 25;
+        allocation 10.0.0.1 32 {
+            owner "";
+        }
+        allocation 10.0.0.2 32 {
+            owner "";
+        }
+        allocation 10.0.0.3 32 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !run show status resource-pools
+    """??
+    ip-address-pool management {
+        allocation a1 {
+            response {
+                subnet 10.0.0.1/32;
+                from   10.0.0.0/24;
+            }
+        }
+        allocation a2 {
+            response {
+                subnet 10.0.0.2/32;
+                from   10.0.0.0/24;
+            }
+        }
+        allocation a3 {
+            response {
+                subnet 10.0.0.3/32;
+                from   10.0.0.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    !rollback
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        available 10.0.0.0 24;
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool management subnet 10.0.1.0 24
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        available 10.0.0.0 23;
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool management subnet 10.0.2.0 24
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.2.0 24;
+        available 10.0.0.0 23;
+        available 10.0.2.0 24;
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool management subnet 10.0.3.0 24
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.2.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 22;
+    }
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool management subnet 10.0.2.0 24
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 23;
+        available 10.0.3.0 24;
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool management allocation a1 request subnet-size 32
+    ?.*%
+    !commit
+    ?.*%
+    !set resource-pools ip-address-pool management allocation a2 request subnet-size 32
+    ?.*%
+    !commit
+    ?.*%
+    !set resource-pools ip-address-pool management allocation a3 request subnet-size 32
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 23;
+        available 10.0.3.0 32;
+        available 10.0.3.4 30;
+        available 10.0.3.8 29;
+        available 10.0.3.16 28;
+        available 10.0.3.32 27;
+        available 10.0.3.64 26;
+        available 10.0.3.128 25;
+        allocation 10.0.3.1 32 {
+            owner "";
+        }
+        allocation 10.0.3.2 32 {
+            owner "";
+        }
+        allocation 10.0.3.3 32 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !run show status resource-pools
+    """??
+    ip-address-pool management {
+        allocation a1 {
+            response {
+                subnet 10.0.3.1/32;
+                from   10.0.3.0/24;
+            }
+        }
+        allocation a2 {
+            response {
+                subnet 10.0.3.2/32;
+                from   10.0.3.0/24;
+            }
+        }
+        allocation a3 {
+            response {
+                subnet 10.0.3.3/32;
+                from   10.0.3.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    [sleep 2]
+    !exit
+    ?.*>
+    !exit
+    ?SH-PROMPT
+
+[shell ncs]
+    !$MAKE stop
+    ?SH-PROMPT
+    !$MAKE start
+    ?ncs_started
+
+[shell cli]
+    -$fail_pattern
+    !$MAKE cli
+    ?admin connected
+    ?.*>
+    !set paginate false
+    ?.*>
+    !config
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 23;
+        available 10.0.3.0 32;
+        available 10.0.3.4 30;
+        available 10.0.3.8 29;
+        available 10.0.3.16 28;
+        available 10.0.3.32 27;
+        available 10.0.3.64 26;
+        available 10.0.3.128 25;
+        allocation 10.0.3.1 32 {
+            owner "";
+        }
+        allocation 10.0.3.2 32 {
+            owner "";
+        }
+        allocation 10.0.3.3 32 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !run show status resource-pools
+    """??
+    ip-address-pool management {
+        allocation a1 {
+            response {
+                subnet 10.0.3.1/32;
+                from   10.0.3.0/24;
+            }
+        }
+        allocation a2 {
+            response {
+                subnet 10.0.3.2/32;
+                from   10.0.3.0/24;
+            }
+        }
+        allocation a3 {
+            response {
+                subnet 10.0.3.3/32;
+                from   10.0.3.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool acme subnet 192.168.1.0 24
+    ?.*%
+    !set resource-pools ip-address-pool acme subnet 24.1.2.0 28
+    ?.*%
+    !commit
+    ?.*%
+    !run show status resource-pools
+    """??
+    ip-address-pool acme;
+    ip-address-pool management {
+        allocation a1 {
+            response {
+                subnet 10.0.3.1/32;
+                from   10.0.3.0/24;
+            }
+        }
+        allocation a2 {
+            response {
+                subnet 10.0.3.2/32;
+                from   10.0.3.0/24;
+            }
+        }
+        allocation a3 {
+            response {
+                subnet 10.0.3.3/32;
+                from   10.0.3.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool acme {
+        subnet 24.1.2.0 28;
+        subnet 192.168.1.0 24;
+        available 24.1.2.0 28;
+        available 192.168.1.0 24;
+    }
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 23;
+        available 10.0.3.0 32;
+        available 10.0.3.4 30;
+        available 10.0.3.8 29;
+        available 10.0.3.16 28;
+        available 10.0.3.32 27;
+        available 10.0.3.64 26;
+        available 10.0.3.128 25;
+        allocation 10.0.3.1 32 {
+            owner "";
+        }
+        allocation 10.0.3.2 32 {
+            owner "";
+        }
+        allocation 10.0.3.3 32 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool management allocation a1 request subnet-size 28
+    ?.*%
+    !set resource-pools ip-address-pool acme allocation a1 request subnet-size 28
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool acme {
+        subnet 24.1.2.0 28;
+        subnet 192.168.1.0 24;
+        available 192.168.1.0 24;
+        allocation 24.1.2.0 28 {
+            owner "";
+        }
+    }
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 23;
+        available 10.0.3.0 32;
+        available 10.0.3.4 30;
+        available 10.0.3.8 29;
+        available 10.0.3.16 28;
+        available 10.0.3.32 27;
+        available 10.0.3.64 26;
+        available 10.0.3.128 25;
+        allocation 10.0.3.1 32 {
+            owner "";
+        }
+        allocation 10.0.3.2 32 {
+            owner "";
+        }
+        allocation 10.0.3.3 32 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !run show status resource-pools
+    """??
+    ip-address-pool acme {
+        allocation a1 {
+            response {
+                subnet 24.1.2.0/28;
+                from   24.1.2.0/28;
+            }
+        }
+    }
+    ip-address-pool management {
+        allocation a1 {
+            response {
+                subnet 10.0.3.1/32;
+                from   10.0.3.0/24;
+            }
+        }
+        allocation a2 {
+            response {
+                subnet 10.0.3.2/32;
+                from   10.0.3.0/24;
+            }
+        }
+        allocation a3 {
+            response {
+                subnet 10.0.3.3/32;
+                from   10.0.3.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool acme allocation
+    ?.*%
+    !commit
+    ?.*%
+    !run show status resource-pools
+    """??
+    ip-address-pool acme;
+    ip-address-pool management {
+        allocation a1 {
+            response {
+                subnet 10.0.3.1/32;
+                from   10.0.3.0/24;
+            }
+        }
+        allocation a2 {
+            response {
+                subnet 10.0.3.2/32;
+                from   10.0.3.0/24;
+            }
+        }
+        allocation a3 {
+            response {
+                subnet 10.0.3.3/32;
+                from   10.0.3.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool acme {
+        subnet 24.1.2.0 28;
+        subnet 192.168.1.0 24;
+        available 24.1.2.0 28;
+        available 192.168.1.0 24;
+    }
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 23;
+        available 10.0.3.0 32;
+        available 10.0.3.4 30;
+        available 10.0.3.8 29;
+        available 10.0.3.16 28;
+        available 10.0.3.32 27;
+        available 10.0.3.64 26;
+        available 10.0.3.128 25;
+        allocation 10.0.3.1 32 {
+            owner "";
+        }
+        allocation 10.0.3.2 32 {
+            owner "";
+        }
+        allocation 10.0.3.3 32 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !rollback
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool acme {
+        subnet 24.1.2.0 28;
+        subnet 192.168.1.0 24;
+        available 192.168.1.0 24;
+        allocation 24.1.2.0 28 {
+            owner "";
+        }
+    }
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 23;
+        available 10.0.3.0 32;
+        available 10.0.3.4 30;
+        available 10.0.3.8 29;
+        available 10.0.3.16 28;
+        available 10.0.3.32 27;
+        available 10.0.3.64 26;
+        available 10.0.3.128 25;
+        allocation 10.0.3.1 32 {
+            owner "";
+        }
+        allocation 10.0.3.2 32 {
+            owner "";
+        }
+        allocation 10.0.3.3 32 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool acme
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 23;
+        available 10.0.3.0 32;
+        available 10.0.3.4 30;
+        available 10.0.3.8 29;
+        available 10.0.3.16 28;
+        available 10.0.3.32 27;
+        available 10.0.3.64 26;
+        available 10.0.3.128 25;
+        allocation 10.0.3.1 32 {
+            owner "";
+        }
+        allocation 10.0.3.2 32 {
+            owner "";
+        }
+        allocation 10.0.3.3 32 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool management allocation a2
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 23;
+        available 10.0.3.0 32;
+        available 10.0.3.2 32;
+        available 10.0.3.4 30;
+        available 10.0.3.8 29;
+        available 10.0.3.16 28;
+        available 10.0.3.32 27;
+        available 10.0.3.64 26;
+        available 10.0.3.128 25;
+        allocation 10.0.3.1 32 {
+            owner "";
+        }
+        allocation 10.0.3.3 32 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool management allocation a1
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 23;
+        available 10.0.3.0 32;
+        available 10.0.3.1 32;
+        available 10.0.3.2 32;
+        available 10.0.3.4 30;
+        available 10.0.3.8 29;
+        available 10.0.3.16 28;
+        available 10.0.3.32 27;
+        available 10.0.3.64 26;
+        available 10.0.3.128 25;
+        allocation 10.0.3.3 32 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool management allocation a3
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.1.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 23;
+        available 10.0.3.0 24;
+    }
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool management subnet 10.0.1.0 24
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 24;
+        available 10.0.3.0 24;
+    }
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool management subnet
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management;
+    """
+    ?.*%
+    !rollback
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 24;
+        available 10.0.3.0 24;
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool management allocation a1 request subnet-size 31
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.2 32;
+        available 10.0.0.3 32;
+        available 10.0.0.4 30;
+        available 10.0.0.8 29;
+        available 10.0.0.16 28;
+        available 10.0.0.32 27;
+        available 10.0.0.64 26;
+        available 10.0.0.128 25;
+        available 10.0.3.0 24;
+        allocation 10.0.0.0 31 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !run show status resource-pools
+    """??
+    ip-address-pool management {
+        allocation a1 {
+            response {
+                subnet 10.0.0.0/31;
+                from   10.0.0.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool management allocation a2 request subnet-size 31
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.2 32;
+        available 10.0.0.3 32;
+        available 10.0.0.6 32;
+        available 10.0.0.7 32;
+        available 10.0.0.8 29;
+        available 10.0.0.16 28;
+        available 10.0.0.32 27;
+        available 10.0.0.64 26;
+        available 10.0.0.128 25;
+        available 10.0.3.0 24;
+        allocation 10.0.0.0 31 {
+            owner "";
+        }
+        allocation 10.0.0.4 31 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !run show status resource-pools
+    """??
+    ip-address-pool management {
+        allocation a1 {
+            response {
+                subnet 10.0.0.0/31;
+                from   10.0.0.0/24;
+            }
+        }
+        allocation a2 {
+            response {
+                subnet 10.0.0.4/31;
+                from   10.0.0.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool management allocation a3 request subnet-size 30
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.2 32;
+        available 10.0.0.3 32;
+        available 10.0.0.6 32;
+        available 10.0.0.7 32;
+        available 10.0.0.12 30;
+        available 10.0.0.16 28;
+        available 10.0.0.32 27;
+        available 10.0.0.64 26;
+        available 10.0.0.128 25;
+        available 10.0.3.0 24;
+        allocation 10.0.0.0 31 {
+            owner "";
+        }
+        allocation 10.0.0.4 31 {
+            owner "";
+        }
+        allocation 10.0.0.8 30 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !run show status resource-pools
+    """??
+    ip-address-pool management {
+        allocation a1 {
+            response {
+                subnet 10.0.0.0/31;
+                from   10.0.0.0/24;
+            }
+        }
+        allocation a2 {
+            response {
+                subnet 10.0.0.4/31;
+                from   10.0.0.0/24;
+            }
+        }
+        allocation a3 {
+            response {
+                subnet 10.0.0.8/30;
+                from   10.0.0.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool management allocation
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 24;
+        available 10.0.3.0 24;
+    }
+    """
+    ?.*%
+    !run show status resource-pools
+    """??
+    ip-address-pool management;
+    """
+    ?.*%
+
+    !set resource-pools ip-address-pool management allocation a request subnet-size 16
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 24;
+        available 10.0.3.0 24;
+    }
+    """
+    ?.*%
+    -
+    !run show status resource-pools
+    """??
+    ip-address-pool management {
+        allocation a {
+            response {
+                error "com.cisco.nso.ipam.exceptions.AddressPoolMaskInvalidException: 24 24 ";
+            }
+        }
+    }
+    """
+    ?.*%
+    !rollback
+    ?.*%
+    !commit
+    ?.*%
+    -$fail_pattern
+    !request devices sync-from
+    ?.*%
+    !set services loop a device c0 pool management unit 4 description foo
+    ?.*%
+    !commit
+    ?.*%
+    !run show status resource-pools
+    """??
+    ip-address-pool management {
+        allocation a {
+            response {
+                subnet 10.0.0.1/32;
+                from   10.0.0.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 32;
+        available 10.0.0.2 32;
+        available 10.0.0.3 32;
+        available 10.0.0.4 30;
+        available 10.0.0.8 29;
+        available 10.0.0.16 28;
+        available 10.0.0.32 27;
+        available 10.0.0.64 26;
+        available 10.0.0.128 25;
+        available 10.0.3.0 24;
+        allocation 10.0.0.1 32 {
+            owner "/ncs:services/vl:loop{a}";
+        }
+    }
+    """
+    ?.*%
+    !rollback
+    ?.*%
+    !commit
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.3.0 24;
+        available 10.0.0.0 24;
+        available 10.0.3.0 24;
+    }
+    """
+    ?.*%
+    !run show status resource-pools
+    """??
+    ip-address-pool management;
+    """
+    ?.*%
+
+    !set resource-pools ip-address-pool management subnet 192.168.1.0 24
+    ?.*%
+    !commit
+    ?.*%
+    !set services loop a device c0 pool management unit 4 description foo
+    ?.*%
+    !commit
+    !run show status resource-pools
+    """??
+    ip-address-pool management {
+        allocation a {
+            response {
+                subnet 10.0.0.1/32;
+                from   10.0.0.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.0.0 24;
+        subnet 10.0.3.0 24;
+        subnet 192.168.1.0 24;
+        available 10.0.0.0 32;
+        available 10.0.0.2 32;
+        available 10.0.0.3 32;
+        available 10.0.0.4 30;
+        available 10.0.0.8 29;
+        available 10.0.0.16 28;
+        available 10.0.0.32 27;
+        available 10.0.0.64 26;
+        available 10.0.0.128 25;
+        available 10.0.3.0 24;
+        available 192.168.1.0 24;
+        allocation 10.0.0.1 32 {
+            owner "/ncs:services/vl:loop{a}";
+        }
+    }
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool management subnet 10.0.0.0 24
+    ?.*%
+    !delete resource-pools ip-address-pool management subnet 10.0.3.0 24
+    ?.*%
+    !commit
+    !run show status resource-pools
+    """??
+    ip-address-pool management {
+        allocation a {
+            response {
+                subnet 192.168.1.1/32;
+                from   192.168.1.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 192.168.1.0 24;
+        available 192.168.1.0 32;
+        available 192.168.1.2 32;
+        available 192.168.1.3 32;
+        available 192.168.1.4 30;
+        available 192.168.1.8 29;
+        available 192.168.1.16 28;
+        available 192.168.1.32 27;
+        available 192.168.1.64 26;
+        available 192.168.1.128 25;
+        allocation 192.168.1.1 32 {
+            owner "/ncs:services/vl:loop{a}";
+        }
+    }
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool management subnet 192.168.1.0 24
+    ?.*%
+    !set resource-pools ip-address-pool management subnet 10.0.3.0 24
+    ?.*%
+    !commit
+    ?.*%
+    
+    !run show status resource-pools
+    """??
+    ip-address-pool management {
+        allocation a {
+            response {
+                subnet 10.0.3.1/32;
+                from   10.0.3.0/24;
+            }
+        }
+    }
+    """
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 10.0.3.0 24;
+        available 10.0.3.0 32;
+        available 10.0.3.2 32;
+        available 10.0.3.3 32;
+        available 10.0.3.4 30;
+        available 10.0.3.8 29;
+        available 10.0.3.16 28;
+        available 10.0.3.32 27;
+        available 10.0.3.64 26;
+        available 10.0.3.128 25;
+        allocation 10.0.3.1 32 {
+            owner "/ncs:services/vl:loop{a}";
+        }
+    }
+    """
+    ?.*%
+
+    !set resource-pools ip-address-pool management subnet 192.168.1.0 24
+    ?.*%
+    !delete resource-pools ip-address-pool management subnet 10.0.3.0 24
+    ?.*%
+    !commit
+    ?.*%
+    
+    !delete service loop
+    ?.*%
+    !commit
+    ?.*%
+
+    !set resource-pools ip-address-pool management6 subnet 2001:db8:1234:: 100
+    ?.*%
+    !commit
+    ?.*%
+
+    !set resource-pools ip-address-pool management6 allocation a request subnet-size 120
+    ?.*%
+    !commit
+    ?.*%
+
+    !run show status resource-pools
+    """??
+    ip-address-pool management;
+    ip-address-pool management6 {
+        allocation a {
+            response {
+                subnet 2001:db8:1234::/120;
+                from   2001:db8:1234::/100;
+            }
+        }
+    }
+    """
+    ?.*%
+
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 192.168.1.0 24;
+        available 192.168.1.0 24;
+    }
+    pool management6 {
+        subnet 2001:db8:1234:: 100;
+        available 2001:db8:1234::100 120;
+        available 2001:db8:1234::200 119;
+        available 2001:db8:1234::400 118;
+        available 2001:db8:1234::800 117;
+        available 2001:db8:1234::1000 116;
+        available 2001:db8:1234::2000 115;
+        available 2001:db8:1234::4000 114;
+        available 2001:db8:1234::8000 113;
+        available 2001:db8:1234::1:0 112;
+        available 2001:db8:1234::2:0 111;
+        available 2001:db8:1234::4:0 110;
+        available 2001:db8:1234::8:0 109;
+        available 2001:db8:1234::10:0 108;
+        available 2001:db8:1234::20:0 107;
+        available 2001:db8:1234::40:0 106;
+        available 2001:db8:1234::80:0 105;
+        available 2001:db8:1234::100:0 104;
+        available 2001:db8:1234::200:0 103;
+        available 2001:db8:1234::400:0 102;
+        available 2001:db8:1234::800:0 101;
+        allocation 2001:db8:1234:: 120 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+
+    !rollback
+    ?.*%
+    !commit
+    ?.*%
+
+    !set resource-pools ip-address-pool management exclude 192.168.1.1 32
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 192.168.1.0 24;
+        exclude 192.168.1.1 32;
+        available 192.168.1.0 32;
+        available 192.168.1.2 32;
+        available 192.168.1.3 32;
+        available 192.168.1.4 30;
+        available 192.168.1.8 29;
+        available 192.168.1.16 28;
+        available 192.168.1.32 27;
+        available 192.168.1.64 26;
+        available 192.168.1.128 25;
+    }
+    pool management6 {
+        subnet 2001:db8:1234:: 100;
+        available 2001:db8:1234:: 100;
+    }
+    """
+    ?.*%
+
+    !set resource-pools ip-address-pool management allocation a request subnet-size 32
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 192.168.1.0 24;
+        exclude 192.168.1.1 32;
+        available 192.168.1.0 32;
+        available 192.168.1.3 32;
+        available 192.168.1.4 30;
+        available 192.168.1.8 29;
+        available 192.168.1.16 28;
+        available 192.168.1.32 27;
+        available 192.168.1.64 26;
+        available 192.168.1.128 25;
+        allocation 192.168.1.2 32 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool management exclude 192.168.1.2 32
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool management {
+        subnet 192.168.1.0 24;
+        exclude 192.168.1.1 32;
+        exclude 192.168.1.2 32;
+        available 192.168.1.0 32;
+        available 192.168.1.4 30;
+        available 192.168.1.8 29;
+        available 192.168.1.16 28;
+        available 192.168.1.32 27;
+        available 192.168.1.64 26;
+        available 192.168.1.128 25;
+        allocation 192.168.1.3 32 {
+            owner "";
+        }
+    }
+    pool management6 {
+        subnet 2001:db8:1234:: 100;
+        available 2001:db8:1234:: 100;
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool foo subnet 1.1.1.1 32
+    ?.*%
+    !set resource-pools ip-address-pool foo subnet 1.1.1.3 32
+    ?.*%
+    !set resource-pools ip-address-pool foo subnet 1.1.1.4 32
+    ?.*%
+    !set resource-pools ip-address-pool foo subnet 1.1.1.33 32
+    ?.*%
+    !commit
+    ?.*%
+
+    !run show status ip-allocator
+    """??
+    pool foo {
+        subnet 1.1.1.1 32;
+        subnet 1.1.1.3 32;
+        subnet 1.1.1.4 32;
+        subnet 1.1.1.33 32;
+        available 1.1.1.1 32;
+        available 1.1.1.3 32;
+        available 1.1.1.4 32;
+        available 1.1.1.33 32;
+    }
+    """
+    ?.*%
+    !set resource-pools ip-address-pool foo allocation a request subnet-size 32
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator
+    """??
+    pool foo {
+        subnet 1.1.1.1 32;
+        subnet 1.1.1.3 32;
+        subnet 1.1.1.4 32;
+        subnet 1.1.1.33 32;
+        available 1.1.1.3 32;
+        available 1.1.1.4 32;
+        available 1.1.1.33 32;
+        allocation 1.1.1.1 32 {
+            owner "";
+        }
+    }
+    """
+    ?.*%
+
+    !load merge z1.cli
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator pool z
+    """??
+    subnet 83.131.11.160 28;
+    exclude 83.131.11.161 32;
+    exclude 83.131.11.162 32;
+    exclude 83.131.11.163 32;
+    exclude 83.131.11.164 32;
+    exclude 83.131.11.165 32;
+    exclude 83.131.11.166 32;
+    exclude 83.131.11.167 32;
+    exclude 83.131.11.168 32;
+    exclude 83.131.11.169 32;
+    exclude 83.131.11.170 32;
+    exclude 83.131.11.171 32;
+    exclude 83.131.11.172 32;
+    exclude 83.131.11.173 32;
+    exclude 83.131.11.174 32;
+    exclude 83.131.11.175 32;
+    available 83.131.11.160 32;
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool z
+    ?.*%
+    !load merge z2.cli
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator pool z
+    """??
+    subnet 83.131.11.160 27;
+    exclude 83.131.11.161 32;
+    exclude 83.131.11.162 32;
+    exclude 83.131.11.163 32;
+    exclude 83.131.11.164 32;
+    exclude 83.131.11.165 32;
+    exclude 83.131.11.166 32;
+    exclude 83.131.11.167 32;
+    exclude 83.131.11.168 32;
+    exclude 83.131.11.169 32;
+    exclude 83.131.11.170 32;
+    exclude 83.131.11.171 32;
+    exclude 83.131.11.172 32;
+    exclude 83.131.11.173 32;
+    exclude 83.131.11.174 32;
+    exclude 83.131.11.175 32;
+    exclude 83.131.11.176 32;
+    exclude 83.131.11.177 32;
+    exclude 83.131.11.178 32;
+    exclude 83.131.11.179 32;
+    exclude 83.131.11.180 32;
+    available 83.131.11.160 32;
+    available 83.131.11.181 32;
+    available 83.131.11.182 32;
+    available 83.131.11.183 32;
+    available 83.131.11.184 29;
+    """
+    ?.*%
+    !delete resource-pools ip-address-pool z
+    ?.*%
+    !commit
+    ?.*%
+    !load merge z2.cli
+    ?.*%
+    !commit
+    ?.*%
+    !run show status ip-allocator pool z
+    """??
+    subnet 83.131.11.160 27;
+    exclude 83.131.11.161 32;
+    exclude 83.131.11.162 32;
+    exclude 83.131.11.163 32;
+    exclude 83.131.11.164 32;
+    exclude 83.131.11.165 32;
+    exclude 83.131.11.166 32;
+    exclude 83.131.11.167 32;
+    exclude 83.131.11.168 32;
+    exclude 83.131.11.169 32;
+    exclude 83.131.11.170 32;
+    exclude 83.131.11.171 32;
+    exclude 83.131.11.172 32;
+    exclude 83.131.11.173 32;
+    exclude 83.131.11.174 32;
+    exclude 83.131.11.175 32;
+    exclude 83.131.11.176 32;
+    exclude 83.131.11.177 32;
+    exclude 83.131.11.178 32;
+    exclude 83.131.11.179 32;
+    exclude 83.131.11.180 32;
+    available 83.131.11.160 32;
+    available 83.131.11.181 32;
+    available 83.131.11.182 32;
+    available 83.131.11.183 32;
+    available 83.131.11.184 29;
+
+    """
+    ?.*%
+
+    !exit
+    ?.*>
+
+    [progress Validation]
+    # z contains 83.131.11.160/27
+    !config
+    ?.*%
+
+    # 1. Check that we refuse sub-ranges
+    !set resource-pools ip-address-pool z subnet 83.131.11.160 28
+    ?.*%
+    -
+    !validate
+    ?Failed
+    ?\[error\]
+    ?.*%
+    !revert no-confirm
+    ?\[ok\]
+    ?.*%
+
+    # 2. Check that we refuse super-ranges
+    !set resource-pools ip-address-pool z subnet 83.131.11.160 26
+    ?.*%
+    -
+    !validate
+    ?Failed
+    ?\[error\]
+    ?.*%
+    !revert no-confirm
+    ?\[ok\]
+    ?.*%
+
+    # 3. Check that we are allowed a neighbouring range
+    !set resource-pools ip-address-pool z subnet 83.131.11.128 27
+    ?.*%
+    -
+    !commit
+    ?\[ok\]
+    ?.*%
+
+    # 4. Check that an exclude must be in a subnet
+    !set resource-pools ip-address-pool z exclude 83.131.11.192 30
+    ?.*%
+    -
+    !validate
+    ?Failed
+    ?\[error\]
+    ?.*%
+    !revert no-confirm
+    ?\[ok\]
+    ?.*%
+
+    # 5. Check that we won't allow super-exclusions
+    !set resource-pools ip-address-pool z exclude 83.131.11.0 24
+    ?.*%
+    -
+    !validate
+    ?Failed
+    ?\[error\]
+    ?.*%
+    !revert no-confirm
+    ?\[ok\]
+    ?.*%
+
+    # 6. Verify that either of the subnets are okay.
+    !set resource-pools ip-address-pool z exclude 83.131.11.130 32
+    ?.*%
+    !set resource-pools ip-address-pool z exclude 83.131.11.181 32
+    ?.*%
+    -
+    !validate
+    ?\[ok\]
+    ?.*%
+    !revert no-confirm
+    ?\[ok\]
+    ?.*%
+
+    !exit
+    ?.*>
+
+    -$fail_pattern
+
+    # Finish and exit ncs
+    !exit
+    ?SH-PROMPT
+
+
+[cleanup]
+    !$MAKE stop
+    !echo ==$$?==
+    ?==0==
+

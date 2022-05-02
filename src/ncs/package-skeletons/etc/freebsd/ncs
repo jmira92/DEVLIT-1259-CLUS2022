@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# Start up for the NCS daemon. Use this script for FreeBSD versions 9 or greater.
+#
+
+# PROVIDE: ncs
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+ncsdir=%ncsdir%
+confdir=%confdir%
+rundir=%rundir%
+logdir=%logdir%
+
+name="ncs"
+start_precmd="${name}_prestart"
+stop_cmd="ncs_stop"
+status_cmd="ncs_status"
+command="${ncsdir}/bin/${name}"
+rcvar="ncs_enable"
+required_files=${confdir}/ncs.conf"
+
+ncs_prestart() {
+        . ${ncsdir}/ncsrc
+        NCS_CONFIG_DIR=${confdir}
+        NCS_RUN_DIR=${rundir}
+        NCS_LOG_DIR=${logdir}
+        export NCS_CONFIG_DIR NCS_RUN_DIR NCS_LOG_DIR
+        rc_flags="--cd ${rundir} --heart -c ${confdir}/ncs.conf ${rc_flags}"
+}
+
+ncs_stop() {
+        $command  --stop
+}
+
+ncs_status() {
+        $command --status
+}
+
+load_rc_config $name
+run_rc_command "$1"

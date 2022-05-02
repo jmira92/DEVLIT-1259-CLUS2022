@@ -1,0 +1,359 @@
+This example illustrates how to migrate devices between different NED
+versions.
+
+We will migrate one of the devices to a new NED version by using the
+/ncs:devices/device/migrate action. The action will change the NED
+identity and migrate all service meta-data. As a side-effect it will
+read and commit the actual device configuration.
+
+By comparing the YANG files you could see the differences between the
+NED versions.
+
+$ diff packages/router-nc-1.0/src/yang packages/router-nc-1.1/src/yang
+78a79,89
+>   typedef syslogOption {
+>     type enumeration {
+>       enum "cons";
+>       enum "ndelay";
+>       enum "nowait";
+>       enum "odelay";
+>       enum "perror";
+>       enum "pid";
+>     }
+>   }
+>
+106,109c117,118
+<         container option {
+<           leaf pid {
+<             type empty;
+<           }
+---
+>         leaf-list option {
+>           type syslogOption;
+
+By viewing the service template you could also see how the syslog
+service is prepared to handle these two NED versions.
+
+$ cat packages/syslog/templates/syslog.xml
+
+      ...
+      <config>
+        <?if-ned-id
+          router-nc-1.0:router-nc-1.0?>
+          <sys xmlns="http://example.com/router">
+            <syslog>
+              <server foreach="{/server}">
+                ...
+                <selector foreach="{selector}">
+                  ...
+                  <option>
+                    <pid/>
+                  </option>
+                  ...
+                </selector>
+              </server>
+            </syslog>
+          </sys>
+        <?elif-ned-id
+          router-nc-1.1:router-nc-1.1?>
+          <sys xmlns="http://example.com/router">
+            <syslog>
+              <server foreach="{/server}">
+                ...
+                <selector foreach="{selector}">
+                  ...
+                  <option>pid</option>
+                  ...
+                </selector>
+              </server>
+            </syslog>
+          </sys>
+        <?end?>
+      </config>
+      ...
+
+To build the packages, do:
+
+$ make all
+
+To start the ncs-netsim network, do:
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+
+To run the example we do:
+
+$ ncs
+
+This will start NCS and load the packages.
+
+We now start a CLI to begin our work:
+
+$ ncs_cli -u admin
+
+We need an initial sync-from devices:
+
+admin@ncs> request devices sync-from
+sync-result {
+    device ex0
+    result true
+}
+sync-result {
+    device ex1
+    result true
+}
+
+We create a service instance touching configuration on the devices
+we are about to migrate:
+
+admin@ncs> configure
+admin@ncs% set services syslog devices [ ex0 ex1 ]
+admin@ncs% set services syslog server 1.2.3.4 enabled selector 1 comparison same facility [ all ] level info
+admin@ncs% commit
+
+View the service meta-data:
+
+admin@ncs% show devices device ex0..1 config r:sys syslog server | display xml
+
+To illustrate the migration to a different device model we need to make
+some changes to our simulated device. In another shell, copy the
+device model from the package we are about to migrate to:
+
+$ cp packages/router-nc-1.1/netsim/router.fxs netsim/ex/ex0/router.fxs
+
+Then restart the device:
+
+$ ncs-netsim stop ex0
+DEVICE ex0 STOPPED
+$ ncs-netsim start ex0
+DEVICE ex0 OK STARTED
+
+Enter the CLI of the device:
+$ ncs-netsim cli ex0
+
+admin@ex0> configure
+admin@ex0% set sys syslog server 1.2.3.4 selector 1 option [ pid ]
+admin@ex0% commit
+admin@ex0% exit
+admin@ex0> exit
+
+In the NCS CLI it is time to migrate the device:
+
+admin@ncs% request devices device ex0 migrate new-ned-id router-nc-1.1 verbose
+modified-path {
+    path /r:sys/syslog/server/selector/option/pid
+    info sub-tree has been deleted
+}
+modified-path {
+    path /r:sys/syslog/server/selector/option
+    info node type has changed from non-presence container to leaf-list
+}
+affected-services [ /services/sls:syslog ]
+
+The migrate action reports what paths have been modified and the
+services affected by those changes. The verbose option makes the
+action report all service instances instead of just the service
+points. If the dry-run option is used, the action simply reports what
+it would do. If the no-networking option is used, no southbound
+traffic is generated towards the devices. Only the device
+configuration in CDB is used for the migration.
+
+We will now view how the service data has been affected on the device:
+
+admin@ncs% show devices device ex0 config r:sys syslog server | display xml
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <devices xmlns="http://tail-f.com/ns/ncs">
+  <device>
+    <name>ex0</name>
+      <config>
+      <sys xmlns="http://example.com/router">
+      <syslog>
+      <server refcounter="1"  backpointer="[ /ncs:services/sls:syslog ]" >
+        <name>1.2.3.4</name>
+        <enabled refcounter="1" >true</enabled>
+        <selector refcounter="1"  backpointer="[ /ncs:services/sls:syslog ]" >
+          <name>1</name>
+          <comparison refcounter="1" >same</comparison>
+          <level refcounter="1" >info</level>
+          <option>pid</option>
+          <facility refcounter="1"  backpointer="[ /ncs:services/sls:syslog ]" >all</facility>
+        </selector>
+      </server>
+      <server>
+        <name>10.3.4.5</name>
+        <enabled>true</enabled>
+        <selector>
+          <name>8</name>
+          <facility>auth</facility>
+          <facility>authpriv</facility>
+          <facility>local0</facility>
+        </selector>
+      </server>
+      </syslog>
+      </sys>
+      </config>
+  </device>
+  </devices>
+</config>
+
+admin@ncs% request services syslog get-modifications
+cli {
+    local-node {
+        data  devices {
+                   device ex0 {
+                       config {
+                           r:sys {
+                               syslog {
+              +                    server 1.2.3.4 {
+              +                        enabled;
+              +                        selector 1 {
+              +                            comparison same;
+              +                            level info;
+              +                            facility [ all ];
+              +                        }
+              +                    }
+                               }
+                           }
+                       }
+                   }
+                   device ex1 {
+                       config {
+                           r:sys {
+                               syslog {
+              +                    server 1.2.3.4 {
+              +                        enabled;
+              +                        selector 1 {
+              +                            comparison same;
+              +                            level info;
+              +                            option {
+              +                                pid;
+              +                            }
+              +                            facility [ all ];
+              +                        }
+              +                    }
+                               }
+                           }
+                       }
+                   }
+               }
+
+    }
+}
+
+As you could see the service still works but does not longer own the
+data with the backwards incompatible change. That data now looks like
+it has been manually configured below the service data. Since this is
+not desired we use the action:
+
+admin@ncs% request services syslog re-deploy reconcile { discard-non-service-config }
+
+Now the service once again owns the data affected by the NED
+migration. Let's view the service data on the device once again:
+
+admin@ncs% show devices device ex0 config r:sys syslog server | display xml
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <devices xmlns="http://tail-f.com/ns/ncs">
+  <device>
+    <name>ex0</name>
+      <config>
+      <sys xmlns="http://example.com/router">
+      <syslog>
+      <server refcounter="1"  backpointer="[ /ncs:services/sls:syslog ]" >
+        <name>1.2.3.4</name>
+        <enabled refcounter="1" >true</enabled>
+        <selector refcounter="1"  backpointer="[ /ncs:services/sls:syslog ]" >
+          <name>1</name>
+          <comparison refcounter="1" >same</comparison>
+          <level refcounter="1" >info</level>
+          <option refcounter="1"  backpointer="[ /ncs:services/sls:syslog ]" >pid</option>
+          <facility refcounter="1"  backpointer="[ /ncs:services/sls:syslog ]" >all</facility>
+        </selector>
+      </server>
+      <server>
+        <name>10.3.4.5</name>
+        <enabled>true</enabled>
+        <selector>
+          <name>8</name>
+          <facility>auth</facility>
+          <facility>authpriv</facility>
+          <facility>local0</facility>
+        </selector>
+      </server>
+      </syslog>
+      </sys>
+      </config>
+  </device>
+  </devices>
+</config>
+
+admin@ncs% request services syslog get-modifications
+cli {
+    local-node {
+        data  devices {
+                   device ex0 {
+                       config {
+                           r:sys {
+                               syslog {
+              +                    server 1.2.3.4 {
+              +                        enabled;
+              +                        selector 1 {
+              +                            comparison same;
+              +                            level info;
+              +                            option [ pid ];
+              +                            facility [ all ];
+              +                        }
+              +                    }
+                               }
+                           }
+                       }
+                   }
+                   device ex1 {
+                       config {
+                           r:sys {
+                               syslog {
+              +                    server 1.2.3.4 {
+              +                        enabled;
+              +                        selector 1 {
+              +                            comparison same;
+              +                            level info;
+              +                            option {
+              +                                pid;
+              +                            }
+              +                            facility [ all ];
+              +                        }
+              +                    }
+                               }
+                           }
+                       }
+                   }
+               }
+
+    }
+}
+
+It is important to re-deploy all affected services touching the device
+after the device migration, even though there are no backwards
+incompatible data model changes affecting the service. When reading
+the reverse/forward diffset of a service, NCS will detect changes to
+the NED identity of a device touched by the service and migrate the
+diffset on the fly. Thus the diffsets are still valid, but until the
+new diffset is written (typically through a re-deploy) this migration
+procedure will add extra time in handling the reverse/forward diffset
+(e.g. when using the get-modifications action).
+
+- To start the emulated network, do ncs-netsim start | help
+- To start NCS, do ncs  [--verbose --foreground]
+- To stop NCS, do ncs --stop
+- To get a Juniper CLI into NCS, do ncs_cli -u admin
+
+- To restart NCS from scratch, ncs-setup --reset
+    this will ensure NCS is reinitialized from the ncs-cdb/*.xml files
+    when restarted
+
+- To restart the netsim network from scratch, do
+    ncs-netsim stop
+    ncs-netsim reset
+    ncs-netsim start
+       or in one swoop
+    ncs-netsim restart

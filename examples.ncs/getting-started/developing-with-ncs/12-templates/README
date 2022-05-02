@@ -1,0 +1,495 @@
+Example #12: Using Templates
+============================
+
+Introduction
+------------
+
+This example uses the same simulated network as in the example
+0-router-network. The simulated network and tools to manipulate it
+is fully described in that example. This example will illustrate
+how to use templates as a mean to initialize and manipulate device
+configuration data.
+
+Starting the simulated network
+------------------------------
+
+The ncs-netsim network we run in this suite of examples looks like:
+
+                 -------
+                 | NCS |
+                 -------
+                    |
+                    |
+----------------------------------------------------------
+     |                      |                      |
+     |                      |                      |
+  -------                -------                -------
+  | ex0 |                | ex1 |                | ex2 |
+  -------                -------                -------
+
+In order to start the simulated devices, we need to build them using
+make:
+
+    $ make all
+
+this builds the packages and creates a ncs-netsim simulated network.
+
+To start our "network", use the ncs-netsim command:
+
+    $ ncs-netsim start
+    DEVICE ex0 OK STARTED
+    DEVICE ex1 OK STARTED
+    DEVICE ex2 OK STARTED
+
+At this point, we have three running simulated "routers".
+
+Starting NCS
+------------
+
+To start the NCS server with the default configuration, simply run
+
+    $ ncs
+
+NCS will now load the data models, packages and initialization
+data. NCS will not connect to any real or simulated devices until an
+operator tells it to. NCS is now ready for operators to log in.
+
+To login on the NCS Command Line Interface (CLI), run
+
+    $ ncs_cli -u admin
+    >
+
+Sync from the device device
+
+    > request devices sync-from
+    > configure
+    %
+
+Using template
+--------------
+
+Have a look at the data model for the router. Each router has three servers
+dns, ntp and syslog. Below in the example these three servers will have
+their configuration data changed by means of templates.
+
+To get a better understanding of the strength of templates the example is
+divided into four separate sections. The techniques shown in the sections
+can be combined in any suitable way.
+
+    o Static templates
+    o Templates with variables
+    o Templates with expressions
+    o Templates combined
+
+Static templates
+----------------
+The values are just static values set to the leaf values which needs to
+be changed.
+
+Templates with variables
+------------------------
+The values are set on the command line in the CLI through the use of
+variables.
+
+Templates with expressions
+--------------------------
+The values are set as a result an evaluation of of an XPath expression.
+
+Templates combined
+------------------
+This is a combination of the above techniques.
+
+Prerequisites
+-------------
+Start the cli and get NCS in sync with the devices.
+
+    $ ncs_cli -u admin
+    > configure
+    % request devices sync-from
+
+The examples below are explained inline. The whole text can by highlighted
+and pasted into the ncs_cli to execute the commands
+
+Static templates
+----------------
+This illustrates a plain template with static data
+The existing dns, ntp and syslog servers will be replaced by new ones.
+We create a template servers-static and fill it with static data
+
+Set the ip address of the dns server
+
+    set devices template servers-static config r:sys dns server 93.188.0.20
+
+Add a tag so any existing servers are replaced by this new
+
+    tag add devices template servers-static config r:sys dns replace
+
+Set up ntp the same way
+
+    set devices template servers-static config r:sys ntp server 83.227.219.208
+    tag add devices template servers-static config r:sys ntp replace
+    set devices template servers-static config r:sys ntp server 83.227.219.208 \
+    key 2
+    set devices template servers-static config r:sys ntp controlkey 2 key 2
+
+and the syslog
+
+    set devices template servers-static config r:sys syslog server 192.168.2.14
+    tag add devices template servers-static config r:sys syslog replace
+    set devices template servers-static config r:sys syslog server 192.168.2.14 \
+    enabled true
+    set devices template servers-static config r:sys syslog server 192.168.2.14 \
+    selector 8 facility [ auth authpriv ]
+
+display the changes
+
+    compare running brief
+
+commit changes if they are correct
+
+    commit
+
+Change dns, ntp and syslog servers on ex0 by applying the template
+to devices ex0, ex1 and ex2
+
+    request devices device ex0..2 apply-template template-name servers-static
+
+Check what the template has done
+
+    compare running brief
+
+revert changes as we are doing the same changes again but with different
+methods
+
+    revert no-confirm
+
+
+Templates with variables
+------------------------
+This example will show how the same as the previous example but in this
+example all the relevant data is provided on the command line.
+
+Start by defining the template. Variables are tokens with the dollar
+character in the first position.
+
+NOTE the variable is enclosed within curly brackets. Strings
+within curly braces will be evaluated. Any combination of
+constant strings and curly braces can be used:
+foo_{$bar}_fuzz_{$nik}
+if the variable bar = XXX and nik = YYYY the result will be
+foo_XXX_fuzz_YYYY
+
+Start of template
+
+Setup dns
+
+    set devices template servers-variables \
+    config r:sys dns server {$dns}
+    tag add devices template servers-variables \
+    config r:sys dns replace
+
+
+Setup ntp
+
+    set devices template servers-variables \
+    config r:sys ntp server {$ntp}
+    tag add devices template servers-variables \
+    config r:sys ntp replace
+    set devices template servers-variables \
+    config r:sys ntp server {$ntp} key 2
+    set devices template servers-variables \
+    config r:sys ntp controlkey 2 key 2
+
+
+Setup syslog
+
+    set devices template servers-variables \
+    config r:sys syslog server {$syslog}
+    tag add devices template servers-variables \
+    config r:sys syslog replace
+    set devices template servers-variables \
+    config r:sys syslog server {$syslog} enabled true
+    set devices template servers-variables \
+    config r:sys syslog server {$syslog} selector 8 facility [ auth authpriv ]
+
+have a look at the template and commit the changes
+
+    compare running brief
+    commit
+
+apply the template to one device
+
+    request devices device ex0 apply-template \
+    template-name servers-variables \
+    variable { name syslog value '192.168.2.14' } \
+    variable { name ntp value '83.227.219.208' } \
+    variable { name dns value '93.188.0.20' }
+
+Look at the changes done
+
+    compare running brief
+
+Revert the changes
+
+    revert no-confirm
+
+Templates with expressions
+--------------------------
+The string enclosed within curly brackets is in fact an XPath
+expressions. We have in the previous example used a very simple
+expression consisting of just one variable. In this example
+we will select the value from an other node to retrieve its value
+The device 'ex0' will be used as the master device from where we
+get the values.
+
+Getting the XPath expressions right can be little tricky at times.
+Open two new terminals and change directory to the directory of this
+example.
+
+To see what is actually selected or as a debug tool the XPath expression
+can be evaluated in a terminal shell by the use of 'ncs_cmd':
+
+    $ ncs_cmd -c "x /devices/device[name='ex0']/config/r:sys/dns/server/address"
+    /devices/device{ex0}/config/r:sys/dns/server{10.2.3.4}/address [10.2.3.4]
+    $
+
+This selects the address node of the dns server, ie. gives the ip-address of
+the server
+
+    $ ncs_cmd -c "x /devices/device[name='ex1']/config/r:sys/syslog/server/*"
+    /devices/device{ex1}/config/r:sys/syslog/server{10.3.4.5}/name [10.3.4.5]
+    /devices/device{ex1}/config/r:sys/syslog/server{10.3.4.5}/enabled [true]
+    /devices/device{ex1}/config/r:sys/syslog/server{10.3.4.5}/selector{8} []
+
+This selects all child nodes to the server node. ncs_cmd is useful to
+understand the selection of XPath and to get the path right.
+
+To understand the XPath expression when the template is applied the
+xpath trace is a valuable tool. XPath trace is enabled in the
+examples. See the configuration file of NCS: ncs.conf
+
+In the terminal window issue the command
+
+    $ tail -f logs/xpath.trace
+
+Keep an eye on the output in this window when the template is applied
+
+Start by defining some new value to device ex0, we use the previous
+template for this
+
+    request devices device ex0 apply-template \
+    template-name servers-variables \
+    variable { name syslog value '192.168.2.14' } \
+    variable { name ntp value '83.227.219.208' } \
+    variable { name dns value '93.188.0.20' }
+    commit
+
+
+Define a template which will use ex0 as the master for dns, ntp and
+syslog. The template uses XPath expressions to select the nodes
+to copy values from.
+
+Setup dns
+
+    set devices template servers-expr config r:sys dns \
+    server {/devices/device[name='ex0']/config/r:sys/dns/server/address}
+
+    tag add devices template servers-expr \
+    config r:sys dns replace
+
+
+Setup ntp
+
+    set devices template servers-expr config r:sys ntp \
+    server {/devices/device[name='ex0']/config/r:sys/ntp/server/name}
+
+    tag add devices template servers-expr \
+    config r:sys ntp replace
+
+    set devices template servers-expr config r:sys ntp \
+    server {/devices/device[name='ex0']/config/r:sys/ntp/server/name} \
+    key {key}
+
+    set devices template servers-expr config r:sys ntp \
+    key {/devices/device[name='ex0']/config/r:sys/ntp/key/name} \
+    trusted {trusted}
+
+    set devices template servers-expr config r:sys ntp \
+    controlkey {/devices/device[name='ex0']/config/r:sys/ntp/controlkey}
+
+
+
+Setup syslog
+
+    set devices template servers-expr config r:sys syslog \
+    server {/devices/device[name='ex0']/config/r:sys/syslog/server/name}
+
+    tag add devices template servers-expr \
+    config r:sys syslog replace
+
+    set devices template servers-expr config r:sys syslog \
+    server {/devices/device[name='ex0']/config/r:sys/syslog/server/name} \
+    enabled true
+
+    set devices template servers-expr config r:sys syslog \
+    server {/devices/device[name='ex0']/config/r:sys/syslog/server/name} \
+    selector {selector/name} facility [ {facility} security ]
+
+
+Have a look at the defined template.
+
+    compare running brief
+
+Especially note the difference between absolute paths and relative paths
+in the expressions.
+
+When a list element is created the current context is changed to the context
+of the key for that list element.
+In the the printout from 'compare running brief' this can be seen.
+Look at the syslog server list element with its key:
+"{/devices/device[name='ex0']/config/r:sys/syslog/server/name}"
+that expression is evaluated to a node-set. For every node in that
+node-set a list element is created.
+
+For every created server element the XPath context is changed to:
+/devices/device[name='ex0']/config/r:sys/syslog/server[name=KEY]
+KEY takes the value of each node in the node-set
+
+The expression "{selector/name}" is evaluated in this context, therefore
+the relative path. When the selector list element is created the context
+is changed again and "{facility}" is evaluated in this new context.
+
+Commit the changes
+------------------
+
+    commit
+
+Use the template to setup ex1 and ex2 with values from ex0
+
+    request devices device ex1..2 apply-template template-name servers-expr
+
+Look at the changes done
+
+    compare running brief
+
+Revert the changes
+
+    revert no-confirm
+
+
+Templates combined
+------------------
+The above techniques can be combined in any way to receive the
+desired result.
+This example shows the combined usage of variables and selections
+We use a variable to select which device we want to copy the
+relevant data from
+
+Setup dns
+
+    set devices template servers-combined config r:sys dns \
+    server {/devices/device[name=$master]/config/r:sys/dns/server/address}
+
+    tag add devices template servers-combined \
+    config r:sys dns replace
+
+Setup ntp
+
+    set devices template servers-combined config r:sys ntp \
+    server {/devices/device[name=$master]/config/r:sys/ntp/server/name}
+
+    tag add devices template servers-combined \
+    config r:sys ntp replace
+
+    set devices template servers-combined config r:sys ntp \
+    server {/devices/device[name=$master]/config/r:sys/ntp/server/name} \
+    key {key}
+    set devices template servers-combined config r:sys ntp \
+    key {/devices/device[name=$master]/config/r:sys/ntp/key/name} \
+    trusted {trusted}
+    set devices template servers-combined config r:sys ntp \
+    controlkey {/devices/device[name=$master]/config/r:sys/ntp/controlkey}
+
+Setup syslog
+
+    set devices template servers-combined config r:sys syslog \
+    server {/devices/device[name=$master]/config/r:sys/syslog/server/name}
+
+    tag add devices template servers-combined \
+    config r:sys syslog replace
+
+    set devices template servers-combined config r:sys syslog \
+    server {/devices/device[name=$master]/config/r:sys/syslog/server/name} \
+    enabled true
+
+    set devices template servers-combined config r:sys syslog \
+    server {/devices/device[name=$master]/config/r:sys/syslog/server/name} \
+    selector {selector/name} facility [ security {facility} ]
+
+    commit
+
+Apply the template to ex1 and ex2 and use ex0 as the master
+
+    request devices device ex1..2 apply-template template-name \
+    servers-combined variable { name master value 'ex0' }
+
+Look at the changes
+
+    compare running brief
+
+From a shell, look at the output in the terminal running the command:
+
+    tail -f logs/xpath.trace
+
+RESTCONF
+--------
+The above examples can be requested over the RESTCONF interface as
+well using the apply-template action. Using the utility
+program curl and the same names as above:
+
+servers-static
+~~~~~~~~~~~~~~
+
+curl -s -X POST -T RESTCONF/servers-static.xml \
+admin:admin@localhost:8080/restconf/data/\
+tailf-ncs:devices/device=ex0/apply-template
+
+servers-variables
+~~~~~~~~~~~~~~~~~
+curl -s -X POST -T RESTCONF/servers-variables.xml \
+admin:admin@localhost:8080/restconf/data/\
+tailf-ncs:devices/device=ex0/apply-template
+
+servers-expr
+~~~~~~~~~~~~
+curl -s -X POST -T RESTCONF/servers-expr.xml \
+admin:admin@localhost:8080/restconf/data/\
+tailf-ncs:devices/device=ex0/apply-template
+
+servers-combined
+~~~~~~~~~~~~~~~~
+curl -s -X POST -T RESTCONF/servers-combined.xml \
+admin:admin@localhost:8080/restconf/data/\
+tailf-ncs:devices/device=ex0/apply-template
+
+NETCONF
+-------
+The above examples can be requested over the NETCONF interface as
+well using the apply-template action. Using the utility program
+netconf-console and the same names as above:
+
+servers-static
+~~~~~~~~~~~~~~
+netconf-console --rpc=NETCONF/nc-servers-static.xml
+
+servers-variables
+~~~~~~~~~~~~~~~~~
+netconf-console --rpc=NETCONF/nc-servers-variables.xml
+
+servers-expr
+~~~~~~~~~~~~
+netconf-console --rpc=NETCONF/nc-servers-expr-ex1.xml
+
+servers-combined
+~~~~~~~~~~~~~~~~
+netconf-console --rpc=NETCONF/nc-servers-combined-ex2.xml

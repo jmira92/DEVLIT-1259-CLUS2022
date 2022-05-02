@@ -1,0 +1,39 @@
+module encryption-usm {
+
+  namespace "http://tailf.com/ns/encryption-usm";
+  prefix "encryption-usm";
+
+  import SNMP-USER-BASED-SM-MIB {
+    prefix USM;
+  }
+
+  grouping keys {
+    leaf password {
+      /* This must be stored in the config; it cannot be derived from
+         the SNMP table.  Also, if SNMP is used to set the key,
+         this password will not be used anymore */
+      type USM:KeyChange;
+      description "Localized key.";
+    }
+    leaf key {
+      type USM:KeyChange;
+      description "Authentication key";
+    }
+  }
+
+  augment /USM:SNMP-USER-BASED-SM-MIB/USM:usmUserTable/USM:usmUserEntry {
+    container usm-crypto {
+      /*tailf:hidden full;*/
+      description
+        "Stores password-encryption key info of User Based Access Module";
+
+      container auth {
+        uses keys;
+      }
+      container priv {
+        uses keys;
+      }
+    }
+  }
+
+}

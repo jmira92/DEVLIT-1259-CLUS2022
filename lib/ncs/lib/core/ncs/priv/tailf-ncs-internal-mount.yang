@@ -1,0 +1,53 @@
+module tailf-ncs-internal-mount {
+  yang-version 1.1;
+  namespace "http://tail-f.com/ns/ncs";
+  prefix ncsms;
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  tailf:export no-fxs; // do not allow fxs compilation
+
+  description
+    "This module is used internally by the compilation process
+     when a device model is being compiled.  It is not supposed to
+     be used in run time.";
+
+  container devices {
+    container device {
+      container config;
+      container live-status {
+        config false;
+      }
+      container notifications {
+        container received-notifications {
+          container notification {
+            config false;
+            container data;
+          }
+        }
+      }
+      container netconf-notifications {
+        container received-notifications {
+          container notification {
+            config false;
+            container data;
+          }
+        }
+      }
+      container rpc;
+    }
+    container template {
+      container ned-id {
+        container config;
+      }
+    }
+    container device-group {
+      container ned-id {
+        config false;
+        container rpc;
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+<ncs-package xmlns="http://tail-f.com/ns/ncs-packages">
+  <name>qinqui</name>
+  <package-version>1.0</package-version>
+  <description>Queue In Queue WebUI</description>
+  <ncs-min-version>3.0</ncs-min-version>
+
+  <required-package>
+    <name>ncsuiutil</name>
+  </required-package>
+
+</ncs-package>

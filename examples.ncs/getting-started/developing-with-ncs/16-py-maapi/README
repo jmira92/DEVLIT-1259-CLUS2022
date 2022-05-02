@@ -1,0 +1,55 @@
+
+This example shows some aspects of the Python MAAPI  API
+
+
+This example uses one NCS package. The router package introduced in
+../0-router-network.
+
+$ ls ./packages
+router
+
+To build the package, do
+
+$ make all
+
+To start the ncs-netsim network, follow the instructions in
+../0-router-network, it's the same network here. If you have already started
+the simulated network you can omit this step.
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+
+Start ncs:
+
+$ ncs
+
+
+Low level MAAPI Python API
+==========================
+
+The low level read example prints name, address and port for the three devices.
+
+$ python low-level-read.py
+llr: ex0 127.0.0.1 12022
+llr: ex1 127.0.0.1 12023
+llr: ex2 127.0.0.1 12024
+
+
+High level MAAPI Python API
+==========================
+
+The high level read example is similar to the low-level read example,
+but it uses "with contexts" to simplify resource handling. 
+
+The device names are read from the device list with a cursor instance.
+
+$ python high-level-read.py
+hlr: ex0 127.0.0.1 12022
+hlr: ex1 127.0.0.1 12023
+hlr: ex2 127.0.0.1 12024
+
+
+
+

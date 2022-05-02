@@ -1,0 +1,332 @@
+'\" t
+.\"     Title: nct-get-logs
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 01/26/2022
+.\"    Manual: NCS Manual
+.\"    Source: Cisco Systems, Inc.
+.\"  Language: English
+.\"
+.TH "NCT\-GET\-LOGS" "1" "01/26/2022" "Cisco Systems, Inc." "NCS Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nct-get-logs \- Get a tar\-ball of the NSO log dir from the specified host(s)
+.SH "SYNOPSIS"
+.sp
+\fBnct\-get\-logs\fR [\fIOPTIONS\fR]
+.SH "DESCRIPTION"
+.sp
+The command nct\-get\-logs(1) will create a tar\-ball, with the name ${hostname}\-${timestamp}\&.tar, of the NSO log dir and copy the tar\-ball to the local host from the specified host(s)\&. If no local directory is specified, \fI/tmp\fR will be used\&. If no log\-dir is specified, \fI/var/log/ncs\fR will be used\&.
+.SH "OPTIONS"
+.PP
+\fB\-\-local\-dir \fR\fB\fIDir\fR\fR
+.RS 4
+The directory used to store the fetched tar\-balls If the
+\fB\-\-local\-dir\fR
+option is omitted,
+/tmp
+will be used for
+\fIDir\fR\&.
+.RE
+.PP
+\fB\-\-log\-dir \fR\fB\fILogDir\fR\fR
+.RS 4
+This directory is used for the different log files written by NCS\&. If the
+\fB\-\-log\-dir\fR
+option is omitted,
+/var/log/ncs
+will be used for
+\fILogDir\fR\&.
+.RE
+.SH ""
+.SS "COMMON OPTIONS"
+.PP
+\fB\-\-concurrent\fR \fIBOOL\fR
+.RS 4
+Each
+\fIHOST\fR
+will be operated upon concurrently\&. The default value is
+\fItrue\fR\&. If set to
+\fIfalse\fR, each
+\fIHOST\fR
+will be dealt with in sequence\&. Obviously, the default behaviour often results in a faster total execution time\&. However, when debugging a command it can be useful to only execute one
+\fIHOST\fR
+at a time\&.
+.RE
+.PP
+\fB\-\-name\fR \fINAME\fR
+.RS 4
+Restrict the command to only operate on the given
+\fINAME\fR\&. See the
+NAME section\&.
+.RE
+.PP
+\fB\-\-group\fR \fIGROUP\fR[,\fIGROUP\fR]
+.RS 4
+Restrict the command to only operate on the given
+\fIGROUP\fR
+or groups\&. See the
+GROUPS section\&.
+.RE
+.PP
+\fB\-\-groupoper\fR \fIGROUPOPER\fR
+.RS 4
+If several groups are specified with the
+\fI\-\-group\fR
+switch\&. This switch defines if the union or intersection of those groups should be used\&. Possible values are:
+\fIor\fR
+(default) or:
+\fIand\fR\&. See the
+GROUPS section\&.
+.RE
+.PP
+\fB\-\-help\fR
+.RS 4
+Will print out a short help text and then terminate the command\&.
+.RE
+.PP
+\fB\-h, \-\-host\fR \fIHOST\fR[,\fIHOST\fR]+
+.RS 4
+Define one
+\fIHOST\fR, or several comma separated
+\fIHOST\fR\&. The given hosts are the ones the command will operate upon\&.
+.RE
+.PP
+\fB\-\-hostsfile\fR \fIHOSTSFILE\fR
+.RS 4
+The
+\fIHOSTSFILE\fR
+containing the
+\fIHOST\fR
+entries\&. See the
+HOSTSFILE section\&. By setting the environment variable \(oqNCT_HOSTSFILE\(cq to
+\fIHOSTSFILE\fR
+this switch can be omitted\&.
+.RE
+.PP
+\fB\-\-progress\fR \fIBOOL\fR
+.RS 4
+If
+\fIBOOL\fR
+is
+\fItrue\fR, then some progress indication will be displayed\&. The default is
+\fIfalse\fR\&.
+.RE
+.PP
+\fB\-\-user\fR \fIUSER\fR
+.RS 4
+The user passed the ncs_cli command, with the ncs_cli \-u flag\&. If not present the
+\fI\-u\fR
+flag will not be used by ncs_cli, resulting in the user being the
+\fISSHUSER\fR\&.
+.RE
+.PP
+\fB\-\-ssh\-key\-name\fR \fISSHKEYNAME\fR
+.RS 4
+Per default, the default filename of the SSH key pair will be used; for example `id_rsa\*(Aq for RSA keys, or `id_ed25519\*(Aq for ED25519 keys\&. To override this behaviour you can specify another key name using this switch\&. See also the
+SSH section\&.
+.RE
+.PP
+\fB\-\-ssh\-pass\fR \fISSHPASS\fR
+.RS 4
+The SSH password to be used\&. See also the
+SSH section\&.
+.RE
+.PP
+\fB\-\-ssh\-port\fR \fISSHPORT\fR
+.RS 4
+The SSH Port number to be used (default: 22)\&.
+.RE
+.PP
+\fB\-\-ssh\-timeout\fR \fISSHTIMEOUT\fR
+.RS 4
+This switch is only needed in case the default timeout, which is
+\fIinfinity\fR, need to be changed\&. The SSH timeout is specified in milliseconds\&. Depending on the type of operation\&. This timeout may have to be increased\&.
+.RE
+.PP
+\fB\-\-ssh\-user\fR \fISSHUSER\fR
+.RS 4
+The SSH user to be used\&.
+.RE
+.PP
+\fB\-\-sudo\-pass\fR \fISUDOPASS\fR
+.RS 4
+The optional sudo password to be used if the ssh\-command is prompting for a password\&.
+.RE
+.PP
+\fB\-\-sudo\-prompt\fR \fISUDOPROMPT\fR
+.RS 4
+If a command that runs over SSH uses \*(Aqsudo\*(Aq, and \*(Aqsudo\*(Aq requires a password for the NCT user, this switch decides what prompt to use, so that NCT can match for it and provide a password\&. Normally this switch is not intended to be used, as a default value exists\&. The default is
+\fINCT\-sudo\-prompt:\fR\&.
+.RE
+.PP
+\fB\-\-timeout\fR \fITIMEOUT\fR
+.RS 4
+This switch is only needed in case the default timeout, which is
+\fIinfinity\fR, need to be changed\&. A general timeout which may expire if the ongoing operations takes a too long time to finish\&. In this case it may be good to increase this value\&.
+.RE
+.PP
+\fB\-v, \-\-verbose\fR \fIVERBOSE\fR
+.RS 4
+To increase the output two werbose levels exist\&. Level
+\fI2\fR
+will output as much information as possible\&. Level
+\fI1\fR
+will output a little less information\&. This is mostly useful debugging a command\&.
+.RE
+.SS "HOSTSFILE"
+.sp
+The \fIHOSTSFILE\fR contains entries, called Tuples, looking like:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.98", OPTIONS}\&.
+{"192\&.168\&.23\&.99", OPTIONS}\&.
+\&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Note the dot at the end of each Tuple, it is significant\&. The \fIOPTIONS\fR is a list containing options\&. For example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.98", [ {ssh_user,"bill"} , \&.\&.\&. ] }\&.
+{"192\&.168\&.23\&.98", [ {ssh_user,"bill"} , \&.\&.\&. ] }\&.
+\&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+The \fIOPTIONS\fR is enclosed with \fI[\fR \fI]\fR brackets\&. Each option consist of a Tuple with a \fIKEY\fR and a \fIVALUE\fR\&. The \fIKEY\fR mostly corresponds to a command switch, where the \(oq\-\(cq in a switch corresponds to a: \(oq_\(cq in the hostsfile (e\&.g \-\-ssh\-user vs ssh_user)\&. An unary switch is represented as just the switch name\&.
+.SS "GROUPS"
+.sp
+Often it can be useful to be able to group a subset of the \fIHosts\fR in the hostsfile when you want to restrict an operation to only those \fIHosts\fR\&. This can be done with the group mechanism\&. Study the example below:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{groups,["service","london"]}, \&.\&.\&. ]}\&.
+{"192\&.168\&.24\&.98",[{groups,["service","paris"]},  \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.11",[{groups,["device","london"]},  \&.\&.\&. ]}\&.
+{"192\&.168\&.24\&.12",[{groups,["device","paris"]},   \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+In the example above, we have 4 NCS nodes grouped into two groups named: "london" and: "paris" but also two other groups named: "service" and: "device"\&. Imagine that we may want to do certain operations only on the members in the "london" group or perhaps only on the members in the "device" group\&. This can easily be achived by using the \(oq\-\-group\(cq switch to a NCS tools command\&. For example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+nct upgrade \-\-group paris \&.\&.\&.
+nct stop \-\-group service \&.\&.\&.
+nct check \-\-group london,device \-\-groupoper and \&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+In the last example we specify two groups and require the (to be) affected \fIHosts\fR to be member in both groups\&. This is controlled by the \(oq\-\-groupoper and\*(Aq switch which means that the intersection of the specified groups should yield the affected \*(AqHosts\*(Aq\&. The default of the group mechanism is to use the union if several groups are specified (`\-\-groupoper or\(cq)\&.
+.SS "SSH"
+.sp
+It is possible to specify the \(oqSSH User\(cq and \(oqSSH Password\(cq to be used for each Host, either with a switch to a command or in the \fIhostsfile\fR\&. It is recommended to add the \(oqSSH Password\(cq to the \fIhostsfile\fR and prohibit other users read access to the file for security reasons\&.
+.sp
+It is also possible to use \(oqSSH KEYS\(cq as long as they do not require a passphrase\&.
+.sp
+Then, for each \fIHost\fR, setup the SSH key authentication\&. This can easily be done with the \(oqssh\-copy\-id\(cq command\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+Per default, the default filename of the SSH key pair will be used; for example \fIid_rsa\fR for RSA keys, or \fIid_ed25519\fR for ED25519 keys\&. To override this behaviour you can use the \fI\-\-ssh\-key\-name\fR switch with any NCT command\&.
+.sp .5v
+.RE
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+.sp
+For security reasons, it is not recommended to login as \fIroot\fR on the target machines\&. Instead, create a user on the target where you install the SSH key, and then use \fIsudo\fR to gain root privileges on the target machine\&.
+.sp .5v
+.RE
+.SS "NAME"
+.sp
+You can select a specific host from the hostsfile by a given name if you have added name entries in the hostsfile\&. Study the example below:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{name, "pariss"}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{name, "londons"}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+With the above in your hostsfile, you can select a host by name:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+nct upgrade \-\-name pariss \-\-hostsfile \&.\&.\&.
+nct stop \-\-name londons \-\-hostsfile \&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.SH "AUTHOR"
+.br
+.RS 4
+Author.
+.RE
+.SH "COPYRIGHT"
+.br
+Copyright \(co 2021, 2022 Cisco Systems, Inc. All rights reserved.
+.br

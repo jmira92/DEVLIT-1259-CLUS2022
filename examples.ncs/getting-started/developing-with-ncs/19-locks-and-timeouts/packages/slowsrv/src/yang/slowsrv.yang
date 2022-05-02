@@ -1,0 +1,53 @@
+module slowsrv {
+  namespace "http://com/example/slowsrv";
+  prefix slowsrv;
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import tailf-ncs {
+    prefix ncs;
+  }
+
+  container example {
+    tailf:action a1 {
+      tailf:actionpoint a1;
+      input {
+        leaf sleep-secs {
+          type int32;
+        }
+        leaf system-session {
+          type boolean;
+        }
+      }
+    }
+  }
+
+  list slowsrv {
+    uses ncs:service-data;
+    ncs:servicepoint slowsrv-servicepoint;
+
+    key name;
+    leaf name {
+      type string;
+    }
+    leaf sleep-secs {
+      type int32;
+    }
+  }
+
+  list slowsrv-prelock {
+    uses ncs:service-data;
+    ncs:servicepoint slowsrv-prelock-servicepoint;
+
+    key name;
+    leaf name {
+      type string;
+    }
+    leaf sleep-secs {
+      type int32;
+    }
+  }
+
+
+}

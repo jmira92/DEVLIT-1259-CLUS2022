@@ -1,0 +1,541 @@
+
+
+1. Introduction
+
+    This example illustrates how to create q-in-q tunnel in a data center
+    using NCS.
+    In data centers it is often desirable to be able to separate traffic at
+    at layer2 between different customers or to be able to virtualize a
+    complete data center. One way to achieve this is to setup Q-in-Q (dot1q)
+    tunneling to create layer2 VPN's.
+
+    In this example we will create two different customer networks spanning
+    different edge and core switches. The network consists of Cisco and Pica8
+    devices. For an overview of the network please refer to the network.pdf
+    picture included in the example.
+
+    We have created a service model that defines a customer QinQ VPN.
+
+2. Starting the Example
+
+    Make sure you start clean, ie. no old configuration data is present.
+    If you have been running this or some other example before, be sure to stop
+    NCS and the simulated network. Output like 'connection refused (stop)'
+    means no previous NCS was running and
+    'DEVICE c0 connection refused (stop)...' no simulated network was running.
+
+    $ ncs --stop
+    $ ncs-netsim stop
+    $ make clean
+
+    Running towards an emulated network with 3 Cisco IOS routers and
+    4 Pica8 switches.
+
+    1) Run make all to setup the emulated network and build
+       our service package.
+
+       $ make all
+
+       This creates the emulated network in ./netsim
+
+    3) Start the simulated network
+
+       $ ncs-netsim start
+
+    4) Start ncs
+
+       $ ncs
+
+    5) Connect to the NCS CLI
+
+       $ ncs_cli -u admin
+
+3. Syncing from the network
+
+    NCS knows about which devices exist in the network, but it has not yet
+    connected to any of them.
+
+    In the NCS CLI take a look at all configured devices:
+
+      show configuration devices device
+
+    Here you see information such as what address and port they are configured
+    on and which authgroup should be used when authenticating to the device.
+
+    It's important to note that there is no actual "device config" present at
+    this time. Only meta data about the device.
+
+    So before we can provision any services we need to pull all the configuration
+    from the devices in the network.
+
+    We start off by syncing from device. In the NCS CLI:
+
+      request devices sync-from
+
+    Now NCS has retrieved all config it could from the devices, and is now ready to
+    manage the network. Inspect the configuration by checking what's in the database
+    now:
+
+      show configuration devices device config
+
+    This lists the configuration for all devices at once. Now we can start deploying
+    services.
+
+4. Configuring the service
+
+    Start by entering into configuration mode.
+
+       configure
+
+    First we configure customer1 according to the network picture. We start
+    off with setting the S-VLAN that this customer network will use.
+    NOTE, there are no guards preventing using the same S-VLAN between the
+    Java based service and the template based service. If you experiment
+    with this you should keep track of that yourself.
+
+       set services service customer1 type qinq s-vlan 444
+
+    We continue with setting up the edge devices and interfaces to be used:
+
+        set services service customer1 type qinq edge-switch p0 trunk-interface ae10
+        set services service customer1 type qinq edge-switch p0 edge-interface ge-1/1/1 c-vlan [ 13 15 ]
+        set services service customer1 type qinq edge-switch p1 trunk-interface ae10
+        set services service customer1 type qinq edge-switch p1 edge-interface ge-1/1/1 c-vlan [ 15 ]
+        set services service customer1 type qinq edge-switch p2 trunk-interface ae10
+        set services service customer1 type qinq edge-switch p2 edge-interface ge-1/1/1 c-vlan [ 13 ]
+
+    Then we configure the core switches:
+
+        set services service customer1 type qinq core-switch c1 trunk-interface [ "FastEthernet 1/1" "FastEthernet 1/2" ]
+        set services service customer1 type qinq core-switch c2 trunk-interface [ "FastEthernet 1/1" "FastEthernet 1/2" ]
+
+    Commit the changes:
+
+        commit
+
+    Then we configure customer2:
+
+        set services service customer2 type qinq s-vlan 777
+
+    Edge devices and interfaces:
+
+        set services service customer2 type qinq edge-switch p2 trunk-interface ae10
+        set services service customer2 type qinq edge-switch p2 edge-interface ge-1/1/2 c-vlan [ 13 ]
+        set services service customer2 type qinq edge-switch p2 edge-interface ge-1/1/3 c-vlan [ 15 ]
+        set services service customer2 type qinq edge-switch c0 trunk-interface "FastEthernet 1/2"
+        set services service customer2 type qinq edge-switch c0 edge-interface "FastEthernet 1/0" c-vlan [ 13 15 ]
+
+    Then we configure the core switches:
+
+        set services service customer2 type qinq core-switch c1 trunk-interface [ "FastEthernet 1/1" "FastEthernet 1/2" ]
+        set services service customer2 type qinq core-switch c2 trunk-interface [ "FastEthernet 1/1" "FastEthernet 1/2" ]
+
+    A very useful tool is commit dry-run. It lets you look at what
+    device configuration that will be sent to the devices if we commit
+    the service configuration we just added. In this case we will also
+    use the extra parameters 'outformat native' to view the
+    configuration changes in its actual device native format.
+
+        commit dry-run outformat native
+
+    The resulting information is rather big but lets look at output for c0
+    and c1, a cisco edge and core switch.
+
+        native {
+            device {
+                name c0
+                data vlan 777
+                     !
+                     interface FastEthernet1/0
+                      switchport access vlan 777
+                      switchport mode dot1q-tunnel
+                      spanning-tree bpduguard enable
+                      spanning-tree portfast
+                     exit
+                     interface FastEthernet1/2
+                      switchport mode trunk
+                      switchport trunk allowed vlan 777
+                     exit
+            }
+            device {
+                name c1
+                data vlan 777
+                     !
+                     interface FastEthernet1/1
+                      switchport trunk allowed vlan 444,777
+                     exit
+                     interface FastEthernet1/2
+                      switchport trunk allowed vlan 444,777
+                     exit
+            }
+        }
+
+    Note that this is the configuration change and not the complete device
+    configuration.
+    We can see that the edge and core interfaces are setup with the
+    appropriate S-VLAN.
+    One thing to note here is the configuration for c1 where both S-VLAN 444
+    and 777 are allowed on the trunks since they used by both customer networks.
+
+    We commit the changes
+
+        commit
+
+
+5. NCS Power Tools
+
+    NCS comes loaded with a number of extremely useful features and tools for
+    provisioning configuration changes and maintaining service configuration
+    integrity.
+
+    commit dry-run as shown above is one of them. This section will use it
+    again and also show the power of NCS.
+
+    With very big customer networks changing for example the S-VLAN will be a
+    challenge.
+    Using NCS this becomes rather easy.
+
+    We change the S-VLAN for customer2 to 200:
+
+        set services service customer2 type qinq s-vlan 200
+
+    Again we use commit dry-run to look at the resulting changes to the devices.
+
+        commit dry-run outformat native
+
+    You can see from the output that NCS will automatically
+    reconfigure all affected devices.
+
+        commit
+
+  5.1 Out-of-band Configuration
+
+    Next we will show how NCS can be used to check if the configuration in the
+    network is up to date.
+
+    In a new terminal window we connect directly to the device c0 that
+    is a Cisco device emulated by the tool ncs-netsim.
+
+        ncs-netsim cli-c c0
+
+    We will now reconfigure an edge interface that we previously
+    configured using NCS.
+
+        config
+        vlan 1234
+        exit
+        interface FastEthernet 1/0
+        switchport access vlan 1234
+        commit
+
+    Going back to the terminal with NCS we can now check the status of
+    the network configuration:
+
+        request devices check-sync
+
+    Giving the following output showing that the configuration on c0
+    is out-of-sync with NCS:
+
+            sync-result {
+                device c0
+                result out-of-sync
+            }
+            sync-result {
+                device c1
+                result in-sync
+            }
+
+    Before we repair our network configuration lets try to add a new
+    service instance that uses the out-of-sync device and see how NCS
+    responds.
+
+        configure
+        set services service customer3 type qinq s-vlan 999
+        set services service customer3 type qinq edge-switch c0 trunk-interface "FastEthernet 1/2"
+        set services service customer3 type qinq edge-switch c0 edge-interface "FastEthernet 1/1" c-vlan [ 13 15 ]
+        commit
+
+    That will give us the following output from NCS:
+
+        Aborted: Network Element Driver: device c0: out of sync
+
+    We are unable to create another service as long as the network is
+    out of sync.  Lets revert the proposed changes:
+
+        revert
+
+
+    Lets sync from the device and see how it affects our services.
+
+        request devices device c0 sync-from
+        request services check-sync
+
+    It will give us the following output:
+
+        sync-result {
+            service-id customer1
+            in-sync true
+        }
+        sync-result {
+            service-id customer2
+            in-sync false
+        }
+
+    We can see that our service 'customer2' is out of sync from the
+    service configuration.  Lets see what the problem is:
+
+        request services service customer2 check-sync outformat cli
+
+    Gives us the output:
+
+    cli  devices {
+             device c0 {
+                 config {
+                     ios:interface {
+                         FastEthernet 1/0 {
+                             switchport {
+                                 access {
+        -                            vlan 1234;
+        +                            vlan 200;
+                                 }
+                             }
+                         }
+                     }
+                 }
+             }
+         }
+
+    Cleary someone has been messing with the vlan configuration.
+
+    To repair our service in the network, we can just use NCS to redeploy it:
+
+        exit
+        request services service customer2 type qinq re-deploy
+
+    We can check if we are in sync again:
+
+        request devices check-sync
+
+
+  5.2 Service-list
+
+    Another useful tool is to list what services are configured on what devices.
+
+        show devices device service-list
+
+    It will give us the following output:
+
+        NAME  SERVICE LIST
+        -------------------------------
+        c0    [ customer2 ]
+        c1    [ customer2 customer1 ]
+        c2    [ customer2 customer1 ]
+        p0    [ customer1 ]
+        p1    [ customer1 ]
+        p2    [ customer2 customer1 ]
+        p3    [  ]
+
+  5.3 Must validation
+
+    In the YANG modelling language you can put logical constraints in
+    the actual data model using xpath statements.
+
+    In our service model we have two must statements:
+
+        must "not (/ncs:services/ncs:service"+
+          "[ncs:object-id != current()/../../ncs:object-id]/"+
+          "ncs:type/q:qinq"+
+          "[s-vlan = current()/q:s-vlan])"
+        {
+          error-message "The S-VLAN must be unique within the "+
+            "network";
+        }
+
+    The first statement ensures that an S-VLAN must be unique among all service
+    instances.
+
+         must "not (/ncs:services/ncs:service"+
+         "[ncs:object-id != current()/../../../../../ncs:object-id]/"+
+         "ncs:type/q:qinq"+
+         "/q:edge-switch[q:switch = current()/../../switch]"+
+         "/q:edge-interface[q:interface = current()])"
+         {
+           error-message "Edge interface must be unique";
+         }
+
+    The second ensures that an edge interface can only be used by one
+    service instance.  Lets see how this works in NCS when we
+    configure a service:
+
+        configure
+        set services service customer3 type qinq s-vlan 444
+        commit
+
+    This will trigger an error in the first must expression:
+
+        Aborted: 'services service customer3 type qinq' : The S-VLAN must be unique within the network
+
+    Lets check if the second one works:
+
+        set services service customer3 type qinq s-vlan 555
+        set services service customer3 type qinq edge-switch c0 trunk-interface "FastEthernet 1/2"
+        set services service customer3 type qinq edge-switch c0 edge-interface "FastEthernet 1/0" c-vlan [ 13 15 ]
+        set services service customer3 type qinq core-switch c1 trunk-interface [ "FastEthernet 1/1" "FastEthernet 1/2" ]
+        set services service customer3 type qinq core-switch c2 trunk-interface [ "FastEthernet 1/1" "FastEthernet 1/2" ]
+        commit
+
+    This will trigger the second must statement:
+
+        Aborted: 'services service customer3 type qinq edge-switch c0 edge-interface "FastEthernet 1/0" interface'
+            (value "FastEthernet 1/0"): Edge interface must be unique
+
+        revert
+
+
+6. Alarms
+
+   NCS can manage alarms. NCS models alarms as states where an alarm
+   is raised, can change severity, be cleared and come active
+   again. Users can also set the states like acknowledged.
+
+   NCS "groups" together underlying events (coming from traps, syslog,
+   application code...) into states of the same alarm. The info for an
+   alarm is:
+   * device
+   * object within the device; such as a specific interface
+   * alarm-type: a defined YANG identity that uniquely defines the
+     type of alarm
+   * specific-problem: if the type of alarm can only be defined at
+     run-time, for example the value of a SNMP notification var-bind,
+     the specific problem which is a string can be used to separate
+     alarm-types.
+
+   Lets generate an alarm:
+
+   $cd examples.ncs/datacenter-qinq/alarms
+   $make alarm-1
+
+   From the NCS CLI:
+
+   > show alarms alarm-list
+   alarms alarm-list number-of-alarms 1
+   alarms alarm-list last-changed 2013-03-21T05:44:06.521714+00:00
+   alarms alarm-list alarm c0 spanning-tree-alarm "/devices/device[name=\"c0\"]/config/ios:interface/FastEthernet[name=\"1/0\"]" spanning-tree
+    impacted-objects        [ "/ncs:services/ncs:service[ncs:object-id=\"customer2\"]" ]
+    is-cleared              false
+    last-status-change      2013-03-20T17:45:01.779+00:00
+    last-perceived-severity critical
+    last-alarm-text         "Spanning Tree BPDU received on edge interface. Interface set to errdisable state."
+                                                                  PERCEIVED
+    EVENT TIME                     RECEIVED TIME                  SEVERITY   ALARM TEXT
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------
+    2013-03-20T17:45:01.779+00:00  2013-03-20T17:45:01.782+00:00  critical   Spanning Tree BPDU received on edge interface. Interface set to errdisable state.
+
+    Here we see that we have one alarm with the following keys:
+   * device : c0
+   * object : "/devices/device[name=\"c0\"]/config/ios:interface/FastEthernet[name=\"1/0\"]"
+   * alarm-type: spanning-tree-alarm (see packages/qinq-alarm/src/yang.qinq-alarm.yang)
+   * specific-problem: "spanning-tree", this is not really needed here but set anyhow
+
+   If we toggle the alarm, what happens?
+   $cd examples.ncs/datacenter-qinq/alarms
+   $make alarm-1
+   $make clear-1
+
+   > show alarms alarm-list
+   alarms alarm-list number-of-alarms 1
+   alarms alarm-list last-changed 2013-03-21T06:00:11.586+00:00
+   alarms alarm-list alarm c0 spanning-tree-alarm "/devices/device[name=\"c0\"]/config/ios:interface/FastEthernet[name=\"1/0\"]" spanning-tree
+    impacted-objects        [ "/ncs:services/ncs:service[ncs:object-id=\"customer2\"]" ]
+    is-cleared              false
+    last-status-change      2013-03-21T06:00:11.586+00:00
+    last-perceived-severity critical
+    last-alarm-text         "Spanning Tree BPDU received on edge interface. Interface set to errdisable state."
+                                                                  PERCEIVED
+    EVENT TIME                     RECEIVED TIME                  SEVERITY   ALARM TEXT
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------
+    2013-03-20T17:45:01.779+00:00  2013-03-20T17:45:01.782+00:00  critical   Spanning Tree BPDU received on edge interface. Interface set to errdisable state.
+    2013-03-21T06:00:07.056+00:00  2013-03-21T06:00:07.072+00:00  cleared    Spanning Tree errdisable state recovered.
+    2013-03-21T06:00:11.586+00:00  2013-03-21T06:00:11.589+00:00  critical   Spanning Tree BPDU received on edge interface. Interface set to errdisable state.
+
+
+    It is still the same alarm, the value of is-cleared has had the values,
+    false, true, and now false again. The history of all state changes are
+    stored as a list of status-changes with the time-stamp as index.
+
+    Since NCS maintains the relationship between device configurations and
+    services an alarm handling application can do root-cause analysis or
+    service impact by look-ups in CDB. This can be used to filter
+    traps before making them into an alarm or just a log item. For
+    example, is the interface actually carrying any service, if not,
+    do not make it an alarm? In this example we look up the corresponding
+    Q-in-Q tunnel and set the field impacted-objects in the alarm.
+
+    Users can set state on the alarms:
+    > request alarms alarm-list alarm c0 spanning-tree-alarm /devices/device[name=\"c0\"]/config/ios:interface/FastEthernet[name=\"1/0\"] \
+      spanning-tree handle-alarm state ack description "Joe will check"
+
+    > request alarms alarm-list alarm c0 spanning-tree-alarm /devices/device[name=\"c0\"]/config/ios:interface/FastEthernet[name=\"1/0\"] \
+      spanning-tree handle-alarm state closed  description "Fixed"
+
+    > admin@wallair> show alarms alarm-list
+      alarms alarm-list number-of-alarms 1
+      alarms alarm-list last-changed 2013-03-21T06:08:34.227518+00:00
+      alarms alarm-list alarm c0 spanning-tree-alarm "/devices/device[name=\"c0\"]/config/ios:interface/FastEthernet[name=\"1/0\"]" spanning-tree
+       impacted-objects           [ "/ncs:services/ncs:service[ncs:object-id=\"customer2\"]" ]
+       is-cleared                 false
+       last-status-change         2013-03-21T06:00:11.586+00:00
+       last-perceived-severity    critical
+       last-alarm-text            "Spanning Tree BPDU received on edge interface. Interface set to errdisable state."
+                                                                  PERCEIVED
+    EVENT TIME                     RECEIVED TIME                  SEVERITY   ALARM TEXT
+    ------------------------------------------------------------------------------------------------------------------------------------------------------------
+    2013-03-20T17:45:01.779+00:00  2013-03-20T17:45:01.782+00:00  critical   Spanning Tree BPDU received on edge interface. Interface set to errdisable state.
+    2013-03-21T06:00:07.056+00:00  2013-03-21T06:00:07.072+00:00  cleared    Spanning Tree errdisable state recovered.
+    2013-03-21T06:00:11.586+00:00  2013-03-21T06:00:11.589+00:00  critical   Spanning Tree BPDU received on edge interface. Interface set to errdisable state.
+
+    last-alarm-handling-change 2013-03-21T06:08:34.227518+00:00
+    TIME                              STATE   USER   DESCRIPTION
+    -----------------------------------------------------------------
+    2013-03-21T06:07:23.587865+00:00  ack     admin  Joe will check
+    2013-03-21T06:08:34.227518+00:00  closed  admin  Fixed
+
+    Note, that NCS does not delete alarms that are cleared (as seen by the
+    underlying device) or closed as seen by the user. Alarms can be purged
+    by a house-keeping routine that deletes alarms according to a criteria,
+    for example, cleared AND closed AND older than 1 day.
+
+    The purge action exists for the complete alarm-list and for individual
+    alarms.
+
+    Purging an individual alarm:
+    > request alarms alarm-list alarm c0 spanning-tree-alarm /devices/device[name=\"c0\"]/config/ios:interface/FastEthernet[name=\"1/0\"] spanning-tree purge
+
+    Purging the alarm-list with criteria:
+    > request alarms purge-alarms ?
+    Description: Remove alarms
+    Possible completions:
+        alarm-handling-state-filter  alarm-status  older-than  severity
+
+    Another useful action is to compress the list of state-changes, this
+    will remove all state-changes except the last:
+
+    > request alarms compress-alarms
+    result Compressed
+    compressed-elements 2
+
+
+    How are alarms created in NCS? In contrast to many naive management systems
+    NCS does not by default show SNMP traps as alarms. These are two very different
+    things. An alarm is an *undesired state* that *requires action*.
+    A user can handle 5-10 alarms per hour. Alarms must contain useful information.
+
+    Therefore NCS has a separate Notification Receiver which subscribes
+    to traps. User code makes careful decisions if the trap is an alarm or not
+    aggregates traps, enriches with information from CDB, checks desired
+    state in CDB etc, before actually submitting it as an alarm to NCS.
+
+    Any source can be an alarm, not just SNMP traps.
+
+    See the User Guide for more information on the Alarm Manager
+    and the SNMP Notification Receiver.

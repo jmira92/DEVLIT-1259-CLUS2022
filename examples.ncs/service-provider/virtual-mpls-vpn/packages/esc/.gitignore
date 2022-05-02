@@ -1,0 +1,7 @@
+*.fxs
+*.beam
+*.hrl
+/src/java/build
+/private-jar
+/shared-jar
+

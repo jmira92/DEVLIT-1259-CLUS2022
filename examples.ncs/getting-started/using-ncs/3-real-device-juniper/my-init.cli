@@ -1,0 +1,36 @@
+devices {
+    global-settings {
+        read-timeout  45;
+        write-timeout 45;
+    }
+    authgroups {
+        group junipers {
+            umap admin {
+                remote-name     admin;
+                remote-password Admin99;
+            }
+        }
+     }
+    device olive1 {
+        address   olive1.lab;
+        port      22;
+        authgroup junipers;
+        device-type {
+            netconf;
+        }
+        state {
+            admin-state unlocked;
+        }
+    }
+    device olive2 {
+        address   olive2.lab;
+        port      22;
+        authgroup junipers;
+        device-type {
+            netconf;
+        }
+        state {
+            admin-state unlocked;
+        }
+    }
+}

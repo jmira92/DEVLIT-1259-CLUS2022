@@ -1,0 +1,104 @@
+
+Hello World
+-----------
+
+The purpose of this example is to start NCS, understand the different
+directories and files NCS uses. As well as starting the NCS CLI, and
+Web UI.
+
+Preparations
+------------
+1) Make sure you have sourced the ncsrc file in $NCS_DIR. This sets up paths and
+   environment variables in order to run NCS. So this must be done all times
+   before running NCS, so it is recommended to put that in your profile.
+
+Optional:
+If you do not want to create the example files in the NCS installation
+directory $NCS_DIR/examples.ncs/getting-started/using-ncs/0-hello-world,
+for example if you are several users sharing the same installation, you can
+run the example in a separate directory.
+
+2) Create an empty directory, for example in your home directory. NCS and the
+   simulator will create files and directories in this example. Make sure you
+   change to this directory before continuing.
+
+NCS runs as a daemon, and needs a couple of directories (for logs, its
+database etc). The location of all these are in a configuration file,
+usually called ncs.conf. Unless supplied as an argument (using the -c
+option) the NCS daemon will look for ./ncs.conf, followed by
+etc/ncs/ncs.conf in the NCS installation directory. In order to make
+it easy to get started NCS includes a script called ncs-setup, this
+script will create the directories and files needed to get started (by
+default in the current working directory).
+
+  $ ls
+
+  $ ncs-setup --dest .
+  $ ls
+  README.ncs          ncs-cdb/        packages/
+  logs/     	      ncs.conf        state/		scripts/
+
+An initial configuration file, ./ncs.conf and the directories need to
+run NCS were created. Now, to start the NCS daemon run "ncs"
+(optionally providing the configuration file as argument: -c
+./ncs.conf)
+
+  $ ncs
+
+The NCS daemon is now running, we can make sure it is by issuing:
+
+  $ ncs --status
+
+The next thing to do is to start the CLI. The CLI is started using the
+ncs_cli command. By default you start the CLI as the user you are
+running the shell as. Most examples will use a default built-in user
+called 'admin', to start the CLI as user admin, use:
+
+  $ ncs_cli -u admin
+
+
+By default NCS also starts it's built-in SSH server, listening on port
+2024. So ssh can also be used to log into the CLI:
+
+  $ ssh -l admin -p 2024 localhost
+  admin@localhost's password: 
+
+The default password for the 'admin' user is: admin. Type exit to get
+out of the CLI.
+
+  admin connected from 127.0.0.1 using ssh on host.example.org
+  admin@host> exit
+  Connection to localhost closed.
+
+
+NCS also starts a web-server, listening on port 8080. By directing a
+browser to http://localhost:8080/ you can login using the Web UI with
+user admin again.
+
+
+ stop the NCS daemon use the --stop option:
+
+  $ ncs --stop
+
+
+NCS will now have lots of logs in the logs directory. The main log
+being logs/ncs.log, look at the log to see when it was started, what
+files were loaded during start etc
+
+  $ less logs/ncs.log
+
+
+To wipe all log-files, restore all settings done in NCS, and to revert
+to the "empty" factory default configuration, use the --reset option
+to ncs-setup.
+
+ $ ncs-setup --reset
+
+
+
+Further reading
+---------------
+
+ Man-pages: ncs-setup(1) ncs(1) ncs_cli(1)
+
+

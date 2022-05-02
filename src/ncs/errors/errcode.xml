@@ -1,0 +1,3130 @@
+<?xml version="1.0"?>
+<!--
+
+  This file contains the definitions of customizable errors generated
+  by ConfD and NCS.
+
+  Each error has a type, a unique code, and a format string.  In the
+  format string, variables are denoted with descriptive names on the
+  form {NAME}.
+
+  See the section 'ERROR FORMATTING CALLBACK' in confd_lib_dp(3).
+
+-->
+<errors>
+
+  <type name="validation">
+
+    <description>This error type denotes a validation error.</description>
+
+    <code name="unset" id="CONFD_ERR_NOTSET">
+      <fmt>
+        {path} is not configured
+      </fmt>
+      <description>
+        This error is generated when a mandatory leaf is not set.
+      </description>
+    </code>
+
+    <code name="unset_choice" id="CONFD_ERR_UNSET_CHOICE">
+      <fmt>
+        {path}: must configure one of: {tags}
+      </fmt>
+      <description>
+        This error is generated when no nodes from a mandatory choice
+        are set.
+      </description>
+    </code>
+
+    <code name="too_few_elems" id="CONFD_ERR_TOO_FEW_ELEMS">
+      <fmt>
+        too few {path}, {n} configured, at least {n} must be configured
+      </fmt>
+      <description>
+        This error is generated when a list or leaf-list must have a
+        minimum number of entries, but too few are set.
+      </description>
+    </code>
+
+    <code name="too_many_elems" id="CONFD_ERR_TOO_MANY_ELEMS">
+      <fmt>
+        too many {path}, {n} configured, at most {n} must be configured
+      </fmt>
+      <description>
+        This error is generated when a list or leaf-list must have a
+        maximum number of entries, but too many are set.
+      </description>
+    </code>
+
+    <code name="non_unique" id="CONFD_ERR_NON_UNIQUE">
+      <fmt>
+        values are not unique: {values}\n{paths}
+      </fmt>
+      <description>
+        This error is generated when a set of leafs must be unique in a list,
+        but there are more than one set of leafs with the same values.
+      </description>
+    </code>
+
+    <code name="bad_keyref" id="CONFD_ERR_BAD_KEYREF">
+      <fmt>
+        illegal reference {path}
+      </fmt>
+      <description>
+        This error is generated when a leafref leaf has a value which
+        refers to a non-existing leaf.
+      </description>
+    </code>
+
+    <code name="missing_instance_identifier" id="CONFD_ERR_MISSING_INSTANCE">
+      <fmt>
+        {path}: missing required instance: {val}
+      </fmt>
+      <description>
+        This error is generated when an instance-identifier leaf
+        marked with 'require-instance true' has a value which refers
+        to a non-existing instance.
+      </description>
+    </code>
+
+    <code name="invalid_instance_identifier" id="CONFD_ERR_INVALID_INSTANCE">
+      <fmt>
+        {path}: invalid instance: {val} doesn't conform to specified
+        path filters
+      </fmt>
+      <description>
+        This error is generated when an instance-identifier leaf
+        marked with 'tailf:path-filters' has a value which does not
+        match the filters.
+      </description>
+    </code>
+
+    <code name="must_failed" id="CONFD_ERR_MUST_FAILED">
+      <fmt>
+        {path} {valstr}: {error-apptag-str}{error-message}
+      </fmt>
+      <description>
+        This error is generated when a 'must' expression specified in a YANG
+        module fails.
+
+        If the node does not have a value, {valstr} is empty,
+        otherwise the value is printed as: (value "{val}").
+
+        If no error-apptag is associated with the error,
+        {error-apptag-str} is empty, otherwise it is printed as
+        "({error-apptag})".
+
+        If the 'must' expression specified in the YANG module has an
+        error-message statement, this message is printed as
+        {error-message}, otherwise it is printed as: the 'must'
+        expression "{must}" failed.
+      </description>
+    </code>
+
+    <code name="policy_failed" id="CONFD_ERR_POLICY_FAILED">
+      <fmt>
+        {str}
+      </fmt>
+      <description>
+        This error is generated when a user-defined policy expression
+        evaluates to false.  The error message {str} is defined by the user.
+        See the YANG module tailf-configuration-policy for details.
+      </description>
+    </code>
+
+    <code name="policy_compilation_failed" id="CONFD_ERR_POLICY_COMPILATION_FAILED">
+      <fmt>
+        {str} for policy {name} ({expr})
+      </fmt>
+      <description>
+        This error is generated when a user-defined policy XPath
+        expression cannot be compiled.
+      </description>
+    </code>
+
+    <code name="policy_evaluation_failed" id="CONFD_ERR_POLICY_EVALUATION_FAILED">
+      <fmt>
+        {str} for policy {name} ({expr})
+      </fmt>
+      <description>
+        This error is generated when a user-defined policy expression
+        fails XPath evaluation.
+      </description>
+    </code>
+
+    <code name="stale_instance_identifier" id="CONFD_ERR_STALE_INSTANCE">
+      <fmt>
+        {path}: instance has stale data after upgrading: {val}
+      </fmt>
+      <description>
+        This error is generated when an instance-identifier leaf
+        marked with 'require-instance true' has stale data after upgrading.
+      </description>
+    </code>
+
+  </type>
+
+  <type name="bad_value">
+    <description>
+      This error type denotes a type error.  It is generated when an
+      invalid value is specified for a certain leaf.
+    </description>
+
+    <code name="string_fun">
+      <fmt>
+        expected type {type-name}, got {type-name}.
+      </fmt>
+      <description>
+        This value can not be converted to a string. The reason for
+        this problem is most probably due to an error in the the code
+        which handles user defined types.
+      </description>
+    </code>
+
+    <code name="wrong_decimal64_fraction_digits">
+      <fmt>
+        wrong fraction-digits {n} for type decimal64.
+      </fmt>
+      <description>
+        This value can not contain more decimals than specified in its
+        type specification.
+      </description>
+    </code>
+
+    <code name="fraction_digits">
+      <fmt>
+        "{lexical-val}" contains more decimals than {n}.
+      </fmt>
+      <description>
+        This value can not contain more decimals than specified in its
+        type specification.
+      </description>
+    </code>
+
+    <code name="total_digits">
+      <fmt>
+        "{lexical-val}" contains more digits than {n}.",
+      </fmt>
+      <description>
+        This value can not contain more digits than specified in its
+        type specification.
+      </description>
+    </code>
+
+    <code name="max_exclusive">
+      <fmt>
+        "{lexical-val}" is too large.
+      </fmt>
+      <description>
+        This value can not be larger than specified in its type
+        specification
+      </description>
+    </code>
+
+    <code name="max_inclusive">
+      <fmt>
+        "{lexical-val}" is too large.
+      </fmt>
+      <description>
+        This value can not be larger than specified in its type
+        specification.
+      </description>
+    </code>
+
+    <code name="min_exclusive">
+      <fmt>
+        "{lexical-val}" is too small.
+      </fmt>
+      <description>
+        This value can not be smaller than specified in its type
+        specification.
+      </description>
+    </code>
+
+    <code name="min_inclusive">
+      <fmt>
+        "{lexical-val}" is too small.
+      </fmt>
+      <description>
+        This value can not be smaller than specified in its type
+        specification.
+      </description>
+    </code>
+
+    <code name="invalid_regex">
+      <fmt>
+        "{lexical-val}" is an invalid value.
+      </fmt>
+      <description>
+        This value has an invalid regular expression in its type
+        specification.
+      </description>
+    </code>
+
+    <code name="uniqueList">
+      <fmt>
+        "{lexical-val}" has non-unique members.
+      </fmt>
+      <description>
+        This value can not have non-unique members as specified in its
+        type specification.
+      </description>
+    </code>
+
+    <code name="enumeration">
+      <fmt>
+        "{lexical-val}" is an invalid value.
+      </fmt>
+      <description>
+        This value can not differ from the enumerations specified in
+        its type specification.
+      </description>
+    </code>
+
+    <code name="pattern">
+      <fmt>
+        "{lexical-val}" is an invalid value.
+      </fmt>
+      <description>
+        This value can not differ from a pattern specified in its type
+        specification.
+      </description>
+    </code>
+
+    <code name="min_length">
+      <fmt>
+        "{lexical-val}" has a length/size smaller than {n}.
+      </fmt>
+      <description>
+        This value can not have a length/size larger than specified in
+        its type specification.
+      </description>
+    </code>
+
+    <code name="max_length">
+      <fmt>
+        "{lexical-val}" has a length/size larger than {n}.
+      </fmt>
+      <description>
+        This value can not have a length/size smaller than specified
+        in its type specification.
+      </description>
+    </code>
+
+    <code name="length">
+      <fmt>
+        "{lexical-val}" has a bad length/size.
+      </fmt>
+      <description>
+        This value can not differ from the length/size specified in
+        its type specification.
+      </description>
+    </code>
+
+    <code name="custom_facet_error_message">
+      <fmt>
+        {custom-error}
+      </fmt>
+      <description>
+        A static custom error message specified in the data model.
+      </description>
+    </code>
+
+    <code name="user_error">
+      <fmt>
+        {custom-error}
+      </fmt>
+      <description>
+        A custom error message returned by code taking care of user
+        defined types.
+      </description>
+    </code>
+
+    <code name="invalid_facet">
+      <fmt>
+        A type restriction with base type {type-name} uses a non-allowed facet {facet-name}. The facet is either not applicable to the base type or it is mutually exclusive in combination with its sibling facets.
+      </fmt>
+    </code>
+
+    <!-- -->
+
+    <code name="bad_lexical">
+      <fmt>
+        "{lexical-unicode}" is not a valid value.
+      </fmt>
+    </code>
+
+    <code name="bad_value">
+      <fmt>
+        {native-val} is not a valid value.
+      </fmt>
+    </code>
+
+    <code name="bad_tag">
+      <fmt>
+        bad element: {tag}.
+      </fmt>
+      <description>
+        XPath path has an invalid element.
+      </description>
+    </code>
+
+    <code name="unknown_bit_label">
+      <fmt>
+        "{lexical-val}" contains an invalid bit field "{label}".
+      </fmt>
+    </code>
+
+    <code name="invalid_type_name">
+      <fmt>
+        {type-name} is not a known simpleType.
+      </fmt>
+    </code>
+
+    <code name="no_default_namespace">
+      <fmt>
+        No default namespace has been defined.
+      </fmt>
+    </code>
+
+    <code name="unknown_namespace_prefix">
+      <fmt>
+        "{lexical-val}" is an unknown prefix.
+      </fmt>
+    </code>
+
+    <code name="unknown_namespace">
+      <fmt>
+        {namespace} is an unknown namespace.
+      </fmt>
+    </code>
+
+    <code name="missing_namespace">
+      <fmt>
+        No namespace has been specified.
+      </fmt>
+    </code>
+
+    <code name="value2value_fun">
+      <fmt>
+        "{lexical-val}" is not a valid value.
+      </fmt>
+    </code>
+
+    <!--
+    <code name="callback">
+      <fmt>
+        {error-message}
+      </fmt>
+    </code>
+    -->
+
+    <code name="range">
+      <fmt>
+        "{lexical-val}" is out of range.
+      </fmt>
+      <description>
+        This value must be with the range specified in its type
+        specification
+      </description>
+    </code>
+
+    <code name="wrong_number_identifiers">
+      <fmt>
+        wrong number of keys.
+      </fmt>
+      <description>
+        XPath has the wrong number of keys.
+      </description>
+    </code>
+
+    <code name="pop_too_far">
+      <fmt>
+        too many .. in relative XPath.
+      </fmt>
+      <description>
+        Relative XPath has too many levels of "..".
+      </description>
+    </code>
+
+    <code name="bad_key_tag">
+      <fmt>
+        bad element: {keytag}.
+      </fmt>
+      <description>
+        XPath has an invalid key element.
+      </description>
+    </code>
+
+    <code name="symlink_bad_key_reference">
+      <fmt>
+        bad key reference in symlink: {reference}.
+      </fmt>
+      <description>
+        Symlink has an invalid key reference.
+      </description>
+    </code>
+
+    <code name="invalid_xpath">
+      <fmt>
+        invalid path.
+      </fmt>
+      <description>
+        XPath is invalid.
+      </description>
+    </code>
+
+    <code name="not_restricted_xpath">
+      <fmt>
+        The XPath {xpath-expr} doesn't belong to the restricted subset.
+      </fmt>
+      <description>
+        The XPath expression is not restricted according to ConfD's
+        defintion of restricted XPath expressions.
+      </description>
+    </code>
+
+    <code name="xpath_error">
+      <fmt>
+        {xpath-expr}: {error-string}
+      </fmt>
+      <description>
+        A badly formed XPath expression has been found.
+      </description>
+    </code>
+
+    <code name="missing_key">
+      <fmt>
+        Incomplete value
+      </fmt>
+      <description>
+        A badly formatted key value.
+      </description>
+    </code>
+  </type>
+
+  <type name="cli">
+    <description>
+      This error type contains CLI-specific errors.
+    </description>
+
+    <code name="command_error">
+      <fmt>
+        {prefix}{str}
+      </fmt>
+      <description>
+        A command failed due to the reason given by {str}, which is the
+        message for another error described here. The default {prefix}
+        is "Error: ", but it may be modified by the confd.conf settings
+        /confdConfig/cli/addErrorPrefixSuffix,
+        /confdConfig/cli/jErrorPrefix, or /confdConfig/cli/cErrorPrefix.
+      </description>
+    </code>
+
+    <code name="command_aborted">
+      <fmt>
+        {prefix}{str}
+      </fmt>
+      <description>
+        A command failed due to the reason given by {str}, which is the
+        message for another error described here. The default {prefix}
+        is "Aborted: ", but it may be modified by the confd.conf
+        settings /confdConfig/cli/addErrorPrefixSuffix,
+        /confdConfig/cli/jAbortedPrefix, or
+        /confdConfig/cli/cAbortedPrefix.
+      </description>
+    </code>
+
+    <code name="command_failed">
+      <fmt>
+        {prefix}{str}
+      </fmt>
+      <description>
+        A command failed due to the reason given by {str}, which is the
+        message for another error described here. The default {prefix}
+        is "Failed: ", but it may be modified by the confd.conf
+        setting /confdConfig/cli/addErrorPrefixSuffix.
+      </description>
+    </code>
+
+    <code name="custom_error">
+      <fmt>
+        {str}
+      </fmt>
+      <description>
+        A command failed due to the reason given by {str}.
+      </description>
+    </code>
+
+    <code name="not_allowed">
+      <fmt>
+        not allowed
+      </fmt>
+      <description>
+        Operation not allowed.
+      </description>
+    </code>
+
+    <code name="bad_leaf_value">
+      <fmt>
+        bad value: {str}
+      </fmt>
+      <description>
+        Error when converting string to internal error
+      </description>
+    </code>
+
+    <code name="elem_not_writable">
+      <fmt>
+        element is not writeable
+      </fmt>
+      <description>
+        When trying to set the value of a non writeable leaf.
+      </description>
+    </code>
+
+    <code name="incomplete_path">
+      <fmt>
+        incomplete path: {path}
+      </fmt>
+      <description>
+        Trying to set a non-leaf, no-dynamic element
+      </description>
+    </code>
+
+    <code name="incomplete_command">
+      <fmt>
+        incomplete command
+      </fmt>
+      <description>
+        Issuing a too short command in the CLI.
+      </description>
+    </code>
+
+    <code name="delete_all_failed">
+      <fmt>
+        delete failed for all
+      </fmt>
+      <description>
+        Failed to delete the entire configuration.
+      </description>
+    </code>
+
+    <code name="delete_failed">
+      <fmt>
+        delete failed for {path}
+      </fmt>
+      <description>
+        Failed to delete a specific path
+      </description>
+    </code>
+
+    <code name="delete_error">
+      <fmt>
+        {str}
+      </fmt>
+      <description>
+        A delete command failed due to the reason given by {str}.
+      </description>
+    </code>
+
+
+    <code name="action_not_found">
+      <fmt>
+        action not found
+      </fmt>
+      <description>
+        Action does not exist.
+      </description>
+    </code>
+
+    <code name="element_not_found">
+      <fmt>
+        element not found
+      </fmt>
+      <description>
+        trying to delete a non-existing element
+      </description>
+    </code>
+
+    <code name="invalid_rollback_nr">
+      <fmt>
+        invalid rollback number
+      </fmt>
+      <description>
+        When using the rollback command
+      </description>
+    </code>
+
+    <code name="bad_action_response">
+      <fmt>
+        bad response from action
+      </fmt>
+      <description>
+        Action returned invalid response
+      </description>
+    </code>
+
+    <code name="missing_action_param">
+      <fmt>
+        missing parameter: {str}
+      </fmt>
+      <description>
+        Missing action parameter in the cli
+      </description>
+    </code>
+
+    <code name="missing_action_param_value">
+      <fmt>
+        missing value: {str}
+      </fmt>
+      <description>
+        Missing action parameter value in the cli
+      </description>
+    </code>
+
+    <code name="read_error">
+      <fmt>
+        read: {str}
+      </fmt>
+      <description>
+        Read error in the cli
+      </description>
+    </code>
+
+    <code name="open_file">
+      <fmt>
+        failed to open file: {str}
+      </fmt>
+      <description>
+        Failed to open file
+      </description>
+    </code>
+
+    <code name="invalid_password">
+      <fmt>
+        invalid password
+      </fmt>
+      <description>
+        When giving an invalid password to the unhide command.
+      </description>
+    </code>
+
+    <code name="unknown_hidegroup">
+      <fmt>
+        unknown hide group
+      </fmt>
+      <description>
+        When giving an unknown hide group to the unhide/hide command
+      </description>
+    </code>
+
+    <code name="create_path">
+      <fmt>
+        failed to create path {str}
+      </fmt>
+      <description>
+        Failed to create path when setting parameter
+      </description>
+    </code>
+
+    <code name="reallocate">
+      <fmt>
+        failed to reallocate_session: {str}
+      </fmt>
+      <description>
+        failed to reallocate transaction
+      </description>
+    </code>
+
+    <code name="on_line">
+      <fmt>
+        on line {n}: {str}
+      </fmt>
+      <description>
+        Error on line when parsing command
+      </description>
+    </code>
+
+    <code name="on_line_desc">
+      <fmt>
+        on line {n}: {str}
+      </fmt>
+      <description>
+        Error when reading xml file
+      </description>
+    </code>
+
+    <code name="not_writable">
+      <fmt>
+        {path} not writable
+      </fmt>
+      <description>
+        The path is not writable when trying to modify the value
+        from a set operation in the CLI
+      </description>
+    </code>
+
+    <code name="not_found">
+      <fmt>
+        {path} not found
+      </fmt>
+      <description>
+        The path is not found when trying to modify the value
+        from a set or move operation in the CLI
+      </description>
+    </code>
+
+    <code name="set_failed">
+      <fmt>
+        failed to set {path}
+      </fmt>
+      <description>
+        The set operation failed for a given path.
+      </description>
+    </code>
+
+    <code name="move_failed">
+      <fmt>
+        failed to move {path}
+      </fmt>
+      <description>
+        The move operation failed for a given path.
+      </description>
+    </code>
+
+    <code name="copy_failed">
+      <fmt>
+        failed to copy {path}
+      </fmt>
+      <description>
+        The copy operation failed for a given path.
+      </description>
+    </code>
+
+    <code name="copy_config_failed">
+      <fmt>
+        failed
+      </fmt>
+      <description>
+        The copy config operation failed.
+      </description>
+    </code>
+
+    <code name="copy_path_identical">
+      <fmt>
+        destination path is identical to source
+      </fmt>
+      <description>
+        Src and target path are identical
+      </description>
+    </code>
+
+    <code name="not_supported">
+      <fmt>
+        not supported
+      </fmt>
+      <description>
+        Operation not supported
+      </description>
+    </code>
+
+    <code name="target_exists">
+      <fmt>
+        {path} already exists
+      </fmt>
+      <description>
+        The set/move/copy operation failed for a given path.
+      </description>
+    </code>
+
+    <code name="unknown_mode">
+      <fmt>
+        unknown mode
+      </fmt>
+      <description>
+        Trying to enter an unknown mode
+      </description>
+    </code>
+
+    <code name="failed_create_context">
+      <fmt>
+        failed to create temporary context: {str}
+      </fmt>
+      <description>
+        failed to create temporary context
+      </description>
+    </code>
+
+    <code name="failed_copy_running">
+      <fmt>
+        failed to copy running: {str}
+      </fmt>
+      <description>
+        failed to copy running config
+      </description>
+    </code>
+
+    <code name="confirmed_not_supported">
+      <fmt>
+        confirmed commit is not supported in 'private' mode
+      </fmt>
+      <description>
+        when trying to commit
+      </description>
+    </code>
+
+    <code name="write_config_failed">
+      <fmt>
+        failed to write configuration
+      </fmt>
+      <description>
+        when trying to commit
+      </description>
+    </code>
+
+    <code name="failed_open_startup">
+      <fmt>
+        failed to open startup for writing: {str}
+      </fmt>
+      <description>
+        when trying to commit
+      </description>
+    </code>
+
+    <code name="failed_open_startup_config">
+      <fmt>
+        failed to open startup config
+      </fmt>
+      <description>
+        when displaying startup config
+      </description>
+    </code>
+
+    <code name="must_be_integer">
+      <fmt>
+        illegal argument, must be an integer
+      </fmt>
+      <description>
+        When stopping a batch job
+      </description>
+    </code>
+
+    <code name="no_such_session">
+      <fmt>
+        no such session exists
+      </fmt>
+      <description>
+        When logging out a user
+      </description>
+    </code>
+
+    <code name="no_such_element">
+      <fmt>
+        no such element
+      </fmt>
+      <description>
+        Trying to set a tag on a non-existing element
+      </description>
+    </code>
+
+    <code name="wildcard_not_allowed">
+      <fmt>
+        wildcards not allowed for xml
+      </fmt>
+      <description>
+        Trying to use a wildcard pattern when saving the configuration
+        to file on xml format.
+      </description>
+    </code>
+
+    <code name="no_such_user">
+      <fmt>
+        user {str} not logged on
+      </fmt>
+      <description>
+        When logging out a user and when sending a message to a user that
+        is not logged on.
+      </description>
+    </code>
+
+    <code name="message_too_large">
+      <fmt>
+        message exceeds maximum allowed size {n}
+      </fmt>
+      <description>
+        When sending message that is too large as defined in confd.conf
+        (messageMaxSize)
+      </description>
+    </code>
+
+    <code name="failed_term_redirect">
+      <fmt>
+        failed to redirect output from terminal: {str}
+      </fmt>
+      <description>
+        When setting output-file in the cli
+      </description>
+    </code>
+
+    <code name="not_a_directory">
+      <fmt>
+        not a directory
+      </fmt>
+      <description>
+        The value entered was expected to be the name of a directory but was not
+      </description>
+    </code>
+
+    <code name="not_a_file">
+      <fmt>
+        not a file
+      </fmt>
+      <description>
+        The value entered was expected to be the name of a file but was not
+      </description>
+    </code>
+
+    <code name="illegal_directory_name">
+      <fmt>
+        illegal directory name
+      </fmt>
+      <description>
+        The value entered was expected to be the name of a directory but was not
+      </description>
+    </code>
+
+    <code name="illegal_filename">
+      <fmt>
+        illegal filename
+      </fmt>
+      <description>
+        The value entered was expected to be the name of a file but was not
+      </description>
+    </code>
+    <code name="invalid_parameter">
+      <fmt>
+        invalid parameter specification
+      </fmt>
+      <description>
+        Generated when a custom CLI command has a key param with an
+        invalid path specification
+      </description>
+    </code>
+
+    <code name="missing_display_group">
+      <fmt>
+        missing display group
+      </fmt>
+      <description>
+        Generated when a display groups was expected in the CLI but none
+        entered by the user
+      </description>
+    </code>
+
+    <code name="expected_bol">
+      <fmt>
+        expected [
+      </fmt>
+      <description>
+        Generated when parsing a leaf-list parameter and the list is missing
+        the opening parenthesis
+      </description>
+    </code>
+
+    <code name="expected_eol">
+      <fmt>
+        expected ]
+      </fmt>
+      <description>
+        Generated when parsing a leaf-list parameter and the list is missing
+        the closing parenthesis
+      </description>
+    </code>
+
+    <code name="invalid_path">
+      <fmt>
+        invalid path
+      </fmt>
+      <description>
+        Generated when an invalid path is encountered for a display group
+      </description>
+    </code>
+
+    <code name="invalid_select">
+      <fmt>
+        invalid select
+      </fmt>
+      <description>
+        Generated when an invalid select argument is intered in the CLI
+      </description>
+    </code>
+
+
+    <code name="unknown_element">
+      <fmt>
+        unknown element
+      </fmt>
+      <description>
+        Unknown element encountered in the CLI when parsing a command line.
+      </description>
+    </code>
+
+    <code name="unknown_argument">
+      <fmt>
+        unknown argument
+      </fmt>
+      <description>
+        Unknown argument encountered in the CLI when parsing a command line.
+      </description>
+    </code>
+
+    <code name="unknown_command">
+      <fmt>
+        unknown command
+      </fmt>
+      <description>
+        Unknown command encountered in the CLI when parsing a command line.
+      </description>
+    </code>
+
+    <code name="ambiguous_command">
+      <fmt>
+        ambiguous command
+      </fmt>
+      <description>
+        An ambiguous command was encountered in the CLI.
+      </description>
+    </code>
+
+    <code name="incomplete_pattern">
+      <fmt>
+        incomplete pattern
+      </fmt>
+      <description>
+        An incomplete show pattern was entered in the CLI
+      </description>
+    </code>
+
+
+    <code name="missing_element">
+      <fmt>
+        missing element
+      </fmt>
+      <description>
+        Too few elements entered for a given command in the CLI
+      </description>
+    </code>
+
+    <code name="element_does_not_exist">
+      <fmt>
+        element does not exist
+      </fmt>
+      <description>
+        The user entered a list element name that does not exist in the
+        configuration.
+      </description>
+    </code>
+
+    <code name="incomplete_cmd_path">
+      <fmt>
+        incomplete path
+      </fmt>
+      <description>
+        An incomplete command path was entered in the CLI
+      </description>
+    </code>
+
+    <code name="missing_value">
+      <fmt>
+        missing value
+      </fmt>
+      <description>
+        An set command in the CLI is missing a leaf value
+      </description>
+    </code>
+
+    <code name="missing_argument">
+      <fmt>
+        missing argument
+      </fmt>
+      <description>
+        Too few arguments has been entered to a custom CLI command that
+        has a parameter of type choice with a min value that has not
+        been reached.
+      </description>
+    </code>
+
+    <code name="must_be_an_integer">
+      <fmt>
+        must be an integer
+      </fmt>
+      <description>
+        Generated when a custom CLI command expected a parameter of type integer
+      </description>
+    </code>
+
+    <code name="must_be_true_or_false">
+      <fmt>
+        must be true or false
+      </fmt>
+      <description>
+        Generated when a custom CLI command expected a parameter of type boolean
+      </description>
+    </code>
+
+    <code name="start_replay_failed">
+      <fmt>
+        start replay failed: {str}
+      </fmt>
+      <description>
+        Failed to start replay
+      </description>
+    </code>
+
+    <code name="sensitive_data">
+      <fmt>
+        not allowed to enter sensitive data in clear text.
+      </fmt>
+      <description>
+        When user has entered sensitive data outside of the autowizard.
+      </description>
+    </code>
+
+    <code name="cdm_not_supported">
+      <fmt>
+        This functionality is not supported over multiple NEDs
+      </fmt>
+      <description>
+        Common data model case not supported.
+      </description>
+    </code>
+
+    <code name="element_mandatory">
+      <fmt>
+        mandatory leaf cannot be deleted
+      </fmt>
+      <description>
+        The delete action tried to remove a mandatory leaf
+      </description>
+    </code>
+  </type>
+
+  <type name="misc">
+    <description>
+      This error type contains miscellaneous errors, which do not fit
+      into the other categories.
+    </description>
+
+    <code name="rollback_disabled">
+      <fmt>
+        rollback not enabled
+      </fmt>
+      <description>
+        Generated when trying to load a rollback file while rollback is
+        disabled in confd.conf
+      </description>
+    </code>
+
+    <code name="no_such_file">
+      <fmt>
+        no such file
+      </fmt>
+      <description>
+        When reading rollback files
+      </description>
+    </code>
+
+    <code name="in_use" errno="CONFD_ERR_INUSE">
+      <fmt>
+        the configuration database is locked by session {id} {identification}
+      </fmt>
+      <description>
+        This error is generated when the requested data store is in
+        use or locked, but not locked with an explicit lock operation.
+      </description>
+    </code>
+
+    <code name="locked_by" errno="CONFD_ERR_LOCKED">
+      <fmt>
+        the configuration database is locked by session {id} {identification}
+      </fmt>
+      <description>
+        This error is generated when the requested data store is
+        locked with an explicit lock operation (e.g. 'configure
+        exclusive' in the CLI).
+      </description>
+    </code>
+
+    <code name="access_denied" errno="CONFD_ERR_ACCESS_DENIED">
+      <fmt>
+        access denied
+      </fmt>
+      <description>
+        This error is generated when the user does not have access to
+        the requested data.  Strings associated with this error are
+        logged in the devel log, but are not presented to the user.
+      </description>
+    </code>
+
+    <code name="resource_denied" errno="CONFD_ERR_RESOURCE_DENIED">
+      <fmt>
+        resource denied
+      </fmt>
+      <description>
+        This error is generated when an application replies to ConfD
+        with a CONFD_ERRCODE_RESOURCE_DENIED error.  It is currently not
+        generated by ConfD itself.
+      </description>
+    </code>
+
+    <code name="inconsistent_value" errno="CONFD_ERR_INCONSISTENT_VALUE">
+      <fmt>
+        inconsistent value
+      </fmt>
+      <description>
+        This error is generated when an application replies to ConfD
+        with a CONFD_ERRCODE_INCONSISTENT_VALUE error.  It is never
+        generated by ConfD itself.
+      </description>
+    </code>
+
+    <code name="missing_instance" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        {path}: destination instance {path} does not exist
+      </fmt>
+      <description>
+        This error is generated when a ordered-by user list entry is
+        inserted or moved before or after another entry, and the other entry
+        does not exist.
+      </description>
+    </code>
+
+    <code name="when_failed" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        {path}: the 'when' expression "{when}" failed
+      </fmt>
+      <description>
+        This error is generated when a node that has a 'when' expression
+        is modified, but the 'when' expression evaluates to false.
+      </description>
+    </code>
+
+    <code name="interrupt" errno="CONFD_ERR_INTERNAL">
+      <fmt>
+        operation aborted by user
+      </fmt>
+      <description>
+        This error is generated if a transaction commit is aborted by
+        a CLI or WebUI user.
+      </description>
+    </code>
+
+    <code name="too_many_sessions" errno="CONFD_ERR_TOO_MANY_SESSIONS">
+      <fmt>
+        Too many sessions.
+      </fmt>
+      <description>
+        This error is generated when ConfD is configured to limit the
+        number of concurrent sessions, with one of the confd.conf
+        parameters /confdConfig/sessionLimits/maxSessions or
+        /confdConfig/sessionLimits/sessionLimit/maxSessions, and the
+        limit is reached.
+      </description>
+    </code>
+
+    <code name="too_many_transactions" errno="CONFD_ERR_TOOMANYTRANS">
+      <fmt>
+        <!-- FIXME -->
+        <!-- cli_cmd and webui_backend has: -->
+        session limit exceeded
+        <!-- cs_trans has:
+          too many transactions
+        -->
+      </fmt>
+      <description>
+        This error is generated when ConfD is configured to limit the
+        number of concurrent read-write transactions, with one of the
+        confd.conf parameters
+        /confdConfig/sessionLimits/maxConfigSessions or
+        /confdConfig/sessionLimits/configSessionLimit/maxSessions, and
+        the limit is reached.
+      </description>
+    </code>
+
+    <code name="node_is_readonly" errno="CONFD_ERR_BADSTATE">
+      <fmt>
+        node is in read-only mode
+      </fmt>
+      <description>
+        This error is generated when a user is trying to open a
+        read-write transaction, and ConfD is running in read-only mode
+        (see maapi_set_readonly_mode()) or when a ConfD HA node is a
+        slave.
+      </description>
+    </code>
+
+    <code name="node_was_readonly" errno="CONFD_ERR_BADSTATE">
+      <fmt>
+        node was in read-only mode
+      </fmt>
+      <description>
+        This error is generated when a user is trying to commit
+        in a transaction in a system that has been in read-only mode.
+      </description>
+    </code>
+
+    <code name="upgrade_in_progress" errno="CONFD_ERR_BADSTATE">
+      <fmt>
+        node is in upgrade mode
+      </fmt>
+      <description>
+        This error is generated when a user is trying to open a transaction,
+        and ConfD is in upgrade mode (see maapi_init_upgrade()).
+      </description>
+    </code>
+
+    <code name="bad_persist_id" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        incorrect persist-id
+      </fmt>
+      <description>
+        This errir is generated when a user gives an invalid
+        persist-id value to the commit command.
+      </description>
+    </code>
+
+    <code name="candidate_abort_bad_usid">
+      <fmt>
+        other session is doing confirmed commit
+      </fmt>
+      <description>
+        This error is generated when a session tries to abort an ongoing
+        confirmed commit which is owned by some other session.
+      </description>
+    </code>
+
+    <code name="indexed_view_list_too_big" errno="CONFD_ERR_BADTYPE">
+      <fmt>
+        renumbering would exceed type range
+      </fmt>
+      <description>
+        This error is generated when an entry is inserted into an
+        indexed-view list, and the last instance in the list would
+        have been moved outside the list.
+      </description>
+    </code>
+
+    <code name="application" errno="CONFD_ERR_EXTERNAL">
+      <fmt>
+        application error
+      </fmt>
+      <description>
+        This error denotes an unspecified error, generated by an
+        application.  Typically, when the application generates this
+        error, it generates an application-specific error string,
+        which is presented to the user.
+      </description>
+    </code>
+
+    <code name="application_internal" errno="CONFD_ERR_APPLICATION_INTERNAL">
+      <fmt>
+        internal error
+      </fmt>
+      <description>
+        This error denotes an unspecified error, generated by an
+        application.  If the application generates an
+        application-specific error string, the string is logged in the
+        devel log, but it is not presented to the user.
+      </description>
+    </code>
+
+    <code name="internal" errno="CONFD_ERR_INTERNAL">
+      <fmt>
+        internal error
+      </fmt>
+      <description>
+        This error type denotes a ConfD internal error.  Strings
+        associated with this error are logged in the devel log, but
+        are not presented to the user.
+      </description>
+    </code>
+
+    <code name="external" errno="CONFD_ERR_EXTERNAL">
+      <fmt>
+        application communication failure
+      </fmt>
+      <description>
+        This error type denotes a communication error between ConfD
+        and an application.  For example, this error is generated if
+        an application has not registered a callpoint.  Strings
+        associated with this error are logged in the devel log, but
+        are not presented to the user.
+      </description>
+    </code>
+
+    <code name="proto_usage" errno="CONFD_ERR_EXTERNAL">
+      <fmt>
+        application protocol error
+      </fmt>
+      <description>
+        This error type denotes a usage error in an application.
+        Strings associated with this error are logged in the devel
+        log, but are not presented to the user.
+      </description>
+    </code>
+
+    <code name="subagent_down" errno="CONFD_ERR_SUBAGENT_DOWN">
+      <fmt>
+        subagent down
+      </fmt>
+      <description>
+        This error is generated when ConfD could not communicate with
+        a configured subagent.
+      </description>
+    </code>
+
+    <code name="subagent_error" errno="CONFD_ERR_SUBAGENT_DOWN">
+      <fmt>
+        subagent error
+      </fmt>
+      <description>
+        This error is generated when ConfD could not parse a reply
+        from a subagent.
+      </description>
+    </code>
+
+    <code name="file_syntax_error_1">
+      <fmt>
+        {file}:{row}: {str}
+      </fmt>
+      <description>
+        The error is generated when an error is detected in some file.
+      </description>
+    </code>
+
+    <code name="file_open_error">
+      <fmt>
+        failed to open file {file}: {str}
+      </fmt>
+      <description>
+        The error is generated when a file could not be opened.
+      </description>
+    </code>
+
+    <code name="file_syntax_error">
+      <fmt>
+        syntax error on line {n}: {str}
+      </fmt>
+      <description>
+        The error is generated when reading a configuration file
+      </description>
+    </code>
+
+    <code name="file_create_path">
+      <fmt>
+        failed to create path on line {n}: {path}
+      </fmt>
+      <description>
+        The error is generated when reading a configuration file
+      </description>
+    </code>
+
+    <code name="file_move_path">
+      <fmt>
+        failed to move path on line {n}: {path}
+      </fmt>
+      <description>
+        The error is generated when reading a configuration file
+      </description>
+    </code>
+
+    <code name="file_set_path">
+      <fmt>
+        failed to set value on line {n}: {path}
+      </fmt>
+      <description>
+        The error is generated when reading a configuration file
+      </description>
+    </code>
+
+    <code name="file_delete_path">
+      <fmt>
+        failed to delete path on line {n}: {path}
+      </fmt>
+      <description>
+        The error is generated when reading a configuration file
+      </description>
+    </code>
+
+    <code name="file_access_path">
+      <fmt>
+        insufficent access privileges on line {n}: {path}
+      </fmt>
+      <description>
+        The error is generated when reading a configuration file
+      </description>
+    </code>
+
+    <code name="file_bad_path">
+      <fmt>
+        path does not exist on line {n}: {path}
+      </fmt>
+      <description>
+        The error is generated when reading a configuration file
+      </description>
+    </code>
+
+    <code name="file_bad_value">
+      <fmt>
+        bad value on line {n} '{path}': {str}
+      </fmt>
+      <description>
+        The error is generated when reading a configuration file
+      </description>
+    </code>
+
+    <code name="file_eof">
+      <fmt>
+        premature end of file
+      </fmt>
+      <description>
+        The error is generated when reading a configuration file
+      </description>
+    </code>
+
+    <code name="cdb_oper_unavailable" errno="CONFD_ERR_UNAVAILABLE">
+      <fmt>
+        CDB operational database unavailable ({reason})
+      </fmt>
+      <description>
+        The error is generated when trying to access the CDB operational
+        database when it is not available due to {reason} (e.g. disabled,
+        or in ConfD start phase 0)
+      </description>
+    </code>
+
+    <code name="operation_not_supported">
+      <fmt>
+        the operation is not supported on {path}
+      </fmt>
+      <description>
+        The error is generated when trying to perform an unsupported operation.
+      </description>
+    </code>
+
+    <code name="snmp_error">
+      <fmt>
+        SNMP error from {dev}: {snmp-error-code} - {path}
+      </fmt>
+      <description>
+        This error is generated when an unexpected SNMP error was
+        received from an SNMP agent.
+      </description>
+    </code>
+
+    <code name="snmp_timeout">
+      <fmt>
+        SNMP timeout waiting for {dev}
+      </fmt>
+      <description>
+        This error is generated when an SNMP agent does not respond.
+      </description>
+    </code>
+
+    <code name="snmp_bad_value">
+      <fmt>
+        SNMP bad value from {dev} {path}: {error-code}, got value "{val}"
+      </fmt>
+      <description>
+        This error is generated when the SNMP manager received an object
+        that it could not parse.
+      </description>
+    </code>
+
+    <code name="snmp_bad_index">
+      <fmt>
+        SNMP bad index from {dev} {path}: {reason}
+      </fmt>
+      <description>
+        This error is generated when the SNMP manager received an object
+        identifier where the index part does not match the MIB definition.
+      </description>
+    </code>
+
+    <code name="not_implemented">
+      <fmt>
+        not yet implemented
+      </fmt>
+      <description>
+        This error is generated when an rpc or tailf:action in a YANG data
+        model has not been implemented by any application.
+      </description>
+    </code>
+
+    <code name="data_missing" errno="CONFD_ERR_DATA_MISSING">
+      <fmt>
+        data missing
+      </fmt>
+      <description>
+        This error is generated when an application replies to ConfD
+        with a CONFD_ERRCODE_DATA_MISSING error.  It is never
+        generated by ConfD itself.
+      </description>
+    </code>
+
+    <code name="external_timeout" errno="CONFD_ERR_EXTERNAL">
+      <fmt>
+        application timeout
+      </fmt>
+      <description>
+        This error type denotes a timeout when ConfD is waiting for a
+        reply from an application.  For example, this error is generated
+        if a data provider callback does not reply within the configured
+        timeout.  Strings associated with this error are logged in the
+        devel and confd logs, but are not presented to the user.
+      </description>
+    </code>
+
+    <code name="indexed_view_list_hole">
+      <fmt>
+        would create a hole in the list
+      </fmt>
+      <description>
+        This error is generated when an entry is inserted into an
+        indexed-view list with auto-compact, and a hole would be created.
+      </description>
+    </code>
+
+    <code name="invalid_context_node" id="CONFD_ERR_XPATH"
+          errno="CONFD_ERR_XPATH">
+      <fmt>
+        The path {path} is not a valid context node
+      </fmt>
+      <description>
+        An XPath evaluation or Query was given an invalid or
+        non-existing IKeyapth as context node.
+      </description>
+    </code>
+
+    <code name="bad_transaction" id="CONFD_ERR_NOTRANS"
+          errno="CONFD_ERR_NOTRANS">
+      <fmt>
+        Bad or non-existing transaction id
+      </fmt>
+      <description>
+        An XPath evaluation or Query was started with an invalid transaction id.
+      </description>
+    </code>
+
+    <code name="invalid_sort_order" id="CONFD_ERR_XPATH"
+          errno="CONFD_ERR_XPATH">
+      <fmt>
+        Invalid sort order: {arg}
+      </fmt>
+      <description>
+        A Query expression was given an invalid sort-order.
+      </description>
+    </code>
+
+    <code name="invalid_sort_expression" id="CONFD_ERR_XPATH"
+          errno="CONFD_ERR_XPATH">
+      <fmt>
+        A Query expression was given an invalid sort-order expression.
+      </fmt>
+    </code>
+
+    <code name="xpath_compile" errno="CONFD_ERR_XPATH">
+      <fmt>
+        Invalid XPath expression {expr}: {reason}
+      </fmt>
+    </code>
+
+    <code name="file_corrupt">
+      <fmt>
+        file '{file}' is corrupt
+      </fmt>
+      <description>
+        The error is generated when reading a corrupt file
+      </description>
+    </code>
+
+    <code name="resolve_needed">
+      <fmt>
+        Transaction has conflicts with the following users: {Users}. {OBUPaths}
+      </fmt>
+      <description>
+        This error is generated when a transaction can not be commited
+        due to conflicts.
+      </description>
+    </code>
+
+  </type>
+
+  <type name="ncs" product="ncs">
+    <description>
+      This error type contains various ncs device manager
+      related errors
+    </description>
+
+    <code name="dev_auth_failed" errno="NCS_ERR_CONNECTION_REFUSED">
+      <fmt>
+        Failed to authenticate towards device {device}: {reason}
+      </fmt>
+      <description>
+        Bad credentials
+      </description>
+    </code>
+
+    <code name="no_exists" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        Resource {resource} doesn't exist
+      </fmt>
+      <description>
+        Missing device
+      </description>
+    </code>
+
+    <code name="locked" errno="CONFD_ERR_UNAVAILABLE">
+      <fmt>
+        Device {dev} is locked
+      </fmt>
+      <description>
+      </description>
+    </code>
+
+    <code name="southbound_locked" errno="CONFD_ERR_UNAVAILABLE">
+      <fmt>
+        Device {dev} is southbound locked
+      </fmt>
+      <description>
+      </description>
+    </code>
+
+    <code name="connection_refused" errno="NCS_ERR_CONNECTION_REFUSED">
+      <fmt>
+        Failed to connect to device {dev}: {reason}
+      </fmt>
+      <description>
+      </description>
+    </code>
+
+    <code name="ned_external_error" errno="CONFD_ERR_EXTERNAL">
+      <fmt>
+        External error in the NED implementation for device {dev}: {reason}
+      </fmt>
+      <description>
+      </description>
+    </code>
+
+    <code name="ned_internal_error" errno="CONFD_ERR_INTERNAL">
+      <fmt>
+        Internal error in the NED NCS framework affecting device {dev}: {reason}
+      </fmt>
+      <description>
+      </description>
+    </code>
+
+    <code name="connection_timeout" errno="NCS_ERR_CONNECTION_TIMEOUT">
+      <fmt>
+        Connection to {dev} timed out
+      </fmt>
+      <description>
+      </description>
+    </code>
+
+    <code name="rpc_error" errno="NCS_ERR_DEVICE">
+      <fmt>
+        RPC error towards {dev}: {err}
+      </fmt>
+      <description>
+      </description>
+    </code>
+
+    <code name="connection_closed" errno="NCS_ERR_CONNECTION_CLOSED">
+      <fmt>
+        The connection to {dev} was closed
+      </fmt>
+      <description>
+      </description>
+    </code>
+
+    <code name="xml_parse" errno="NCS_ERR_DEVICE">
+      <fmt>
+        Received XML from {dev} that wasn't correct: {rsn}
+      </fmt>
+      <description>
+      </description>
+    </code>
+
+    <code name="host_lookup" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        Failed to resolve IP address for {dev}
+      </fmt>
+      <description>
+      </description>
+    </code>
+
+    <code name="ns_support" errno="NCS_ERR_DEVICE">
+      <fmt>
+        Device {dev} does not support namespace {ns}
+      </fmt>
+      <description>
+        Namespace error
+      </description>
+    </code>
+
+    <code name="bad_capas" errno="NCS_ERR_DEVICE">
+      <fmt>
+        Device {dev} does not have sufficient capabilities
+      </fmt>
+      <description>
+        Bad capabilities
+      </description>
+    </code>
+
+    <code name="noned" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        Device {dev} does not have a Network Element Driver registered
+      </fmt>
+      <description>
+        No Network Element Driver
+      </description>
+    </code>
+
+    <code name="no_yang_modules" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        Device {dev} does not advertise any known YANG modules
+      </fmt>
+      <description>
+        The device does not advertise any YANG modules known to NCS.
+      </description>
+    </code>
+
+    <code name="revdrop" errno="NCS_ERR_DEVICE">
+      <fmt>
+        Device {dev} does not support all data tried in the revision
+        on the device and automatic revision dropping was disabled
+      </fmt>
+      <description>
+        Too old revision
+      </description>
+    </code>
+
+    <code name="ned_out_of_sync" errno="NCS_ERR_DEVICE">
+      <fmt>
+       Network Element Driver: device {dev}: {reason}
+      </fmt>
+      <description>
+        Network Element Driver: device out of sync
+      </description>
+    </code>
+
+    <code name="cli_load" errno="CONFD_ERR_EXTERNAL">
+      <fmt>
+       Network Element Driver: cli output couldn't be loaded: {reason}
+      </fmt>
+      <description>
+        Network Element Driver: cli load error
+      </description>
+    </code>
+
+    <code name="commit_queued" errno="CONFD_ERR_UNAVAILABLE">
+      <fmt>
+        Commit failed because device {dev} which is part of this
+        transaction also resides in the commit queue.
+      </fmt>
+      <description>
+        We cannot have transactions jump ahead of queued transactions.
+      </description>
+    </code>
+
+    <code name="cq_block_others" errno="CONFD_ERR_UNAVAILABLE">
+      <fmt>
+        Commit failed because commit queue item {CqId} is blocking
+        {blocking}. The queue item has the 'block-others' parameter
+        set.
+      </fmt>
+      <description>
+        We cannot have transactions jump ahead of queued transactions.
+      </description>
+    </code>
+
+    <code name="cq_remote_not_enabled" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        Commit failed because the commit queue is not correctly
+        configured in the cluster configuration.
+      </fmt>
+      <description>
+        Either the commit queue is not enabled in the cluster
+        configuration or the NSO device cannot be correctly mapped
+        to a cluster node.
+      </description>
+    </code>
+
+    <code name="ncs_duplicate_template" errno="CONFD_ERR_ALREADY_EXISTS">
+      <fmt>
+        The template '{Name}' already exists as a device-template or a
+        config-template.
+      </fmt>
+      <description>
+        The template already exists.
+      </description>
+    </code>
+
+    <code name="ncs_no_template_xml" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        The template file {Name} has not been loaded.
+      </fmt>
+      <description>
+        The referenced template does not exist.
+      </description>
+    </code>
+
+    <code name="ncs_xpath_compile_xml" errno="CONFD_ERR_XPATH">
+      <fmt>
+        {file}:{line} failed to compile: '{expr}' reason: {reason}
+      </fmt>
+      <description>
+        Could not compile the XPATH expression found in xml file.
+      </description>
+    </code>
+
+    <code name="ncs_xpath_xml" errno="CONFD_ERR_XPATH">
+      <fmt>
+        {file}:{line} the expression {expr} failed with result: {reason}
+      </fmt>
+      <description>
+        The stored XPath expression could not be evaluated.
+      </description>
+    </code>
+
+    <code name="ncs_template_when_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} only one XPATH expression: '{expr}' allowed in 'when'
+        attribute
+      </fmt>
+      <description>
+        Only one XPATH expression allowed.
+      </description>
+    </code>
+
+    <code name="ncs_template_when_key_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} 'when' attribute cannot be used on key elements
+      </fmt>
+      <description>
+        No 'when' expression on key elements
+      </description>
+    </code>
+
+    <code name="ncs_template_foreach_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} only one non-empty XPATH expression is allowed.
+        The expression '{expr}' is invalid in 'foreach' attribute
+      </fmt>
+      <description>
+        Only one non-empty XPATH expression allowed.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_missing_element_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} missing tag: {Tag}
+      </fmt>
+      <description>
+        The specified tag is missing.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_invalid_value_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} The node: {Tag} contains unexpected data: '{Str}'.
+      </fmt>
+      <description>
+        Found data where none should be.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unknown_attribute_xml"
+          errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} unknown attribute: {Attr} in {Tag}
+      </fmt>
+      <description>
+        An attribute on an XML node in template is not recognized.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_trailing_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Unexpected trailing data: '{Str}'.
+      </fmt>
+      <description>
+        Found data where none were expected.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_eof_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Unexpected end of file when loading XML.
+      </fmt>
+      <description>
+        Unexpected end of file when loading XML.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unknown_sp_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Unknown servicepoint: {SP}
+      </fmt>
+      <description>
+        The referenced servicepoint cannot be found in the YANG data model.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_multiple_sp_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Only one servicepoint can be specified.
+      </fmt>
+      <description>
+        Only one servicepoint can be specified in an template XML.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unknown_element_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Unknown element: '{Tag}'
+      </fmt>
+      <description>
+        Unknown element.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unknown_ns_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Unknown namespace: '{NS}'
+      </fmt>
+      <description>
+        Unknown namespace.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_multiple_elements_xml"
+          errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Tag: {Tag} has already been found
+      </fmt>
+      <description>
+        The tag has already been found.
+      </description>
+    </code>
+
+    <code name="ncs_template_ordered_list_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} The attributes 'insert', 'value' and 'guard' can only be
+        used on lists ordered by user.
+      </fmt>
+      <description>
+        Moving elements can only be performed on lists ordered by user.
+      </description>
+    </code>
+
+    <code name="ncs_template_insert_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Unknown value for 'insert' directive: '{tag}'. Supported
+        values are 'first', 'last', 'before' and 'after'.
+      </fmt>
+      <description>
+        Bad value for attribute insert. Supported values
+        are first, last, before and after.
+      </description>
+    </code>
+
+    <code name="ncs_template_missing_value_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} The 'value' or 'key' attribute is required for
+        'insert' directive '{insert}'.
+      </fmt>
+      <description>
+        When using the 'insert' directive 'before' or 'after' the 'value' or
+        'key' attribute has to be present.
+      </description>
+    </code>
+
+    <code name="ncs_template_lone_guard_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} The 'guard' attribute can only be specified if the
+        'insert' attribute is specified.
+      </fmt>
+      <description>
+        'guard' attribute cannot be used without 'insert' attribute.
+      </description>
+    </code>
+
+    <code name="ncs_template_value_length_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} The 'value' attribute has to have the matching
+        length that is: {length}.
+      </fmt>
+      <description>
+        The number of keys in the value attribute should match the number of
+        keys in the list.
+      </description>
+    </code>
+
+    <code name="ncs_template_guard_length_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} The 'guard' attribute has to have the matching
+        length that is: {length}.
+      </fmt>
+      <description>
+        The number of keys in the guard attribute should match the number of
+        keys in the list.
+      </description>
+    </code>
+
+    <code name="ncs_template_move_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Insert '{insert}' at '{dikp}' failed because '{to}'
+        does not exist.
+      </fmt>
+      <description>
+        The node at the path cannot be moved.
+      </description>
+    </code>
+
+    <code name="ncs_template_str2val_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Expression '{Expr}' resulted in an incompatible
+        value '{Str}' for {DIKP}
+      </fmt>
+      <description>
+        The string could not be converted to the data type specified in the
+        YANG data model.
+      </description>
+    </code>
+
+    <code name="ncs_no_template" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        The template {TIKP} does not exist
+      </fmt>
+      <description>
+        The referenced template does not exist.
+      </description>
+    </code>
+
+    <code name="ncs_no_sp_template" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        Unable to find template {Name} which is bound to servicepoint {SP}
+      </fmt>
+      <description>
+        The referenced template does not exist.
+      </description>
+    </code>
+
+    <code name="ncs_xpath_compile" errno="CONFD_ERR_XPATH">
+      <fmt>
+        Compilation of XPATH expression '{expr}' at {path} failed with
+        result: {reason}
+      </fmt>
+      <description>
+        The stored XPath expression could not be compiled.
+      </description>
+    </code>
+
+    <code name="ncs_template_when" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        Only one XPATH expression: '{expr}' at {path} allowed
+        in 'when' attribute
+      </fmt>
+      <description>
+        The stored XPath expression could not be compiled.
+      </description>
+    </code>
+
+    <code name="ncs_template_foreach" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        Only one non-empty XPATH expression is allowed.
+        The expression '{expr}' at {path} is invalid in 'foreach' attribute
+      </fmt>
+      <description>
+        The stored XPath expression could not be compiled.
+      </description>
+    </code>
+
+    <code name="ncs_missing_variables" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        A variable value has not been assigned to: {Missing}
+      </fmt>
+      <description>
+        A value has not been assigned to all required variables.
+      </description>
+    </code>
+
+    <code name="ncs_xpath" errno="CONFD_ERR_XPATH">
+      <fmt>
+        {path}: The expression {expr} failed with result: {reason}
+      </fmt>
+      <description>
+        The stored XPath expression could not be evaluated.
+      </description>
+    </code>
+
+    <code name="ncs_template_ordered_list" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {path}: The attributes 'insert', 'value' and 'guard' can only be used
+        on lists ordered by user.
+      </fmt>
+      <description>
+        Moving elements can only be performed on lists ordered by user.
+      </description>
+    </code>
+
+    <code name="ncs_template_insert" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        Unknown value for 'insert' directive: '{Tag}' at {path}. Supported
+        values are 'first', 'last', 'before' and 'after'.
+      </fmt>
+      <description>
+        Bad value for attribute insert. Supported values
+        are first, last, before and after.
+      </description>
+    </code>
+
+    <code name="ncs_template_missing_value" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        The 'value' or 'key' attribute is required for 'insert' directive
+        '{insert}' at {path}.
+      </fmt>
+      <description>
+        When using the 'insert' directive 'before' or 'after' the 'value' or
+        'key' attribute has to be present.
+      </description>
+    </code>
+
+    <code name="ncs_template_lone_guard" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {path}: The 'guard' attribute can only be specified if the 'insert'
+        attribute is specified.
+      </fmt>
+      <description>
+        'guard' attribute cannot be used without 'insert' attribute.
+      </description>
+    </code>
+
+    <code name="ncs_template_value_length" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {path}: The 'value' attribute has to have the matching
+        length that is: {length}.
+      </fmt>
+      <description>
+        The number of keys in the value attribute should match the number of
+        keys in the list.
+      </description>
+    </code>
+
+    <code name="ncs_template_guard_length" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {path}: The 'guard' attribute has to have the matching
+        length that is: {length}.
+      </fmt>
+      <description>
+        The number of keys in the guard attribute should match the number of
+        keys in the list.
+      </description>
+    </code>
+
+    <code name="ncs_template_move" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {path}: Insert '{insert}' at '{dikp}' failed because '{to}' does not
+        exist.
+      </fmt>
+      <description>
+        The node at the path cannot be moved.
+      </description>
+    </code>
+
+    <code name="ncs_template_str2val" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {path}: Expression '{Expr}' resulted in an incompatible value '{Str}'
+        for {DIKP}
+      </fmt>
+      <description>
+        The string could not be converted to the data type specified in the
+        YANG data model.
+      </description>
+    </code>
+
+    <code name="no_template" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        Template {TemplateName} for service point {SP} does not exist.
+      </fmt>
+      <description>
+        The template for serving this service point does not exist.
+      </description>
+    </code>
+
+    <code name="ncs_xpath_varbind" errno="CONFD_ERR_XPATH">
+      <fmt>
+        Variable: {var} could not be set to: {expr} due to: {error}. Did
+        you forget enclosing single quotes for string?
+      </fmt>
+      <description>
+        An error was encounetered when trying to evaluate the expression for
+        the variable.
+      </description>
+    </code>
+
+    <code name="ncs_no_capabilities" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        No capabilities found for device: {Devs}. Has a sync-from the device
+        been performed?
+      </fmt>
+      <description>
+        No capabilities for the device is known for NCS. NCS has to
+        connect to the device or sync-from the device to acquire list
+        of capabilities.
+      </description>
+    </code>
+
+    <code name="ncs_no_namespace" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        No matching ned-id/namespace found for device: {Devs}.
+      </fmt>
+      <description>
+        No part of the template constists of ned-id/namespace supported by
+        the device.
+      </description>
+    </code>
+
+    <code name="ncs_no_write_transaction" errno="CONFD_ERR_NOT_WRITABLE">
+      <fmt>
+        The supplied transaction cannot be written to.
+      </fmt>
+      <description>
+        The action needs a write transaction to execute. The transaction
+        is just open for reading.
+      </description>
+    </code>
+
+    <code name="ncs_action_no_transaction" errno="CONFD_ERR_NOTRANS">
+      <fmt>
+        A transaction is needed for action: '{action}'
+      </fmt>
+      <description>
+        A transaction is needed for the action to execute.
+      </description>
+    </code>
+
+    <code name="ncs_error" errno="CONFD_ERR_ABORTED">
+      <fmt>
+        Operation failed because: {Reason}
+      </fmt>
+      <description>
+        General errors from library
+      </description>
+    </code>
+
+    <code name="ncs_dev_error" errno="NCS_ERR_DEVICE">
+      <fmt>
+        {Reason}
+      </fmt>
+      <description>
+        General errors from library
+      </description>
+    </code>
+
+    <code name="ncs_error_ikp" errno="CONFD_ERR_ABORTED">
+      <fmt>
+        Operation on: {path} failed because: {Reason}
+      </fmt>
+      <description>
+        General errors from library involving a path
+      </description>
+    </code>
+
+    <code name="ncs_no_diff" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        No reverse diff found for this service. Either
+        the service has not been deployed or the action 'un-deploy'
+        has been run on this service.
+        A re-deploy of the service will correct the latter.
+      </fmt>
+      <description>
+        No reverse information is stored for this service.
+      </description>
+    </code>
+
+    <code name="ncs_no_forward_diff" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        No forward diff found for this service. Either
+        /services/global-settings/collect-forward-diff is false, or
+        the forward diff has become invalid.
+        A re-deploy of the service will correct the latter.
+      </fmt>
+      <description>
+        The data the service created cannot be calculated.
+      </description>
+    </code>
+
+    <code name="ncs_missing_cluster_auth" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        No umap found for user {username} to remote-node {remote-node} in
+        /cluster/authgroup
+      </fmt>
+      <description>
+        Neither a default-map nor umap found for the current NCS user in
+        /cluster/authgroup.
+      </description>
+    </code>
+
+    <code name="ncs_cluster_auth_failed" errno="NCS_ERR_CONNECTION_REFUSED">
+      <fmt>
+        Failed to authenticate towards remote-node {remote-node}: {reason}
+      </fmt>
+      <description>
+        Authentication failed towards a remote NCS cluster node.
+      </description>
+    </code>
+
+    <code name="commit_queue_has_sentinel" errno="CONFD_ERR_UNAVAILABLE">
+      <fmt>
+        No commits can be allowed through the commit queue beacuse
+        a sentinel exists for {dev}
+      </fmt>
+      <description>
+        Code that needs to issue sync-from operations while the commit
+        queue is running must block the queue prior to issuing the
+        sync-from action. This is on a per device basis.
+      </description>
+    </code>
+
+    <code name="ncs_ned_multi_error" errno="NCS_ERR_DEVICE">
+      <fmt>
+        Multiple device errors:\n{str}
+      </fmt>
+      <description>
+        Several devices failed, the error types may be different and it
+        is reported a string, assuming that
+        /devices/global-settings/report-multiple-errors has been set
+      </description>
+    </code>
+
+    <code name="ncs_load_template_multiple_key_leafs_xml"
+          errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} The key leaf '{tag}' cannot be given twice.
+      </fmt>
+      <description>
+        A key leaf cannot be given twice.
+      </description>
+    </code>
+
+    <code name="ncs_service_conflict" errno="NCS_ERR_SERVICE_CONFLICT">
+      <fmt>
+        Service invocation conflict
+      </fmt>
+      <description>
+        A service invocation running outside the transaction lock
+        modified data that was also modified by a service invocation in
+        another transaction.
+      </description>
+    </code>
+
+    <code name="ncs_template_not_created_xml" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} The node '{DIKP}' was not created. An explicit tag
+        'merge' or 'create' is needed.
+      </fmt>
+      <description>
+        The specified path needs an explicit tag 'merge' or 'create'
+        in the template in order to be created.
+      </description>
+    </code>
+
+    <code name="ncs_template_not_created" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {path}: The node '{DIKP}' was not created. An explicit tag
+        'merge' or 'create' is needed.
+      </fmt>
+      <description>
+        The specified path needs an explicit tag 'merge' or 'create'
+        in the template in order to be created.
+      </description>
+    </code>
+
+    <code name="dev_in_use" errno="CONFD_ERR_INUSE">
+      <fmt>
+        The configuration database is locked for device {dev}: {reason}
+      </fmt>
+      <description>
+        This error is generated when the requested data store for
+        a device is in use or locked.
+      </description>
+    </code>
+
+    <code name="ncs_already_exists" errno="CONFD_ERR_ALREADY_EXISTS">
+      <fmt>
+        Create of {DIKP} failed because: path already exists
+      </fmt>
+      <description>
+        An instance node could not be created since it already exists.
+      </description>
+    </code>
+
+    <code name="ncs_operation_locked" errno="NCS_ERR_DEVICE">
+      <fmt>
+        {Dev}: Device is locked in a {Op} operation by session {session-id}
+      </fmt>
+      <description>
+        The device is in use by another operation that makes
+        the invoked one irrelevant.
+      </description>
+    </code>
+
+    <code name="config_locked" errno="CONFD_ERR_UNAVAILABLE">
+      <fmt>
+        Device {dev} is config locked
+      </fmt>
+      <description>
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unknown_pi" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Unknown processing instruction.
+      </fmt>
+      <description>
+        Processing instruction not recognized by template engine.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_invalid_pi_syntax" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Invalid parameters for processing instruction {pitarget}.
+      </fmt>
+      <description>
+        Failed to parse parameters for the processing instruction.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unmatched_pi" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Unmatched processing instruction {pitarget}.
+      </fmt>
+      <description>
+        An out of sequence processing instruction found.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unclosed_pi" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Unclosed processing instruction {pitarget}.
+      </fmt>
+      <description>
+        Processing instruction block is not closed within scope.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unexpected_pi" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Processing instruction is unexpected here.
+      </fmt>
+      <description>
+        A processing instruction is only allowed to appear within a container
+        or within a list node after the keys.
+      </description>
+    </code>
+
+    <code name="ncs_template_context_node_noexists" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line}: The target node for processing instruction '{pitarget}'
+        does not exist.
+      </fmt>
+      <description>
+        The XPath expression evaluation did not produce a node that exists
+        in the current context.
+      </description>
+    </code>
+
+    <code name="ncs_template_saved_context_noexists" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line}: The saved context with name '{name}' does not exist.
+      </fmt>
+      <description>
+        'load-context' processing instruction used with context name that has
+        not been previously saved.
+      </description>
+    </code>
+
+    <code name="ncs_template_multiple_context_nodes" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line}: XPath expression for processing instruction '{pitarget}'
+        resulted in multiple nodes.
+      </fmt>
+      <description>
+        The XPath expression evaluation produced a node-set of more than one
+        node thus resulting in ambiguity. The context can only be a single node.
+      </description>
+    </code>
+
+    <code name="ncs_template_root_leaf_list" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line}: XPath expression for processing instruction
+        'set-root-node' resulted in a leaf-list element.
+      </fmt>
+      <description>
+        It is a limitation that the root context node cannot be a leaf-list
+        element.
+      </description>
+    </code>
+
+    <code name="ncs_template_copy_tree_bad_op" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line}: 'copy-tree' processing instruction can only be used
+        in the context of 'merge' or 'replace' operation.
+      </fmt>
+      <description>
+        Copy-tree operation is only defined for 'merge' and 'replace'
+        operations.
+      </description>
+    </code>
+
+    <code name="ncs_template_loop_prevention" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line}: no variable has changed between two consequent
+        iterations of the 'for' loop, infinite loop detected.
+      </fmt>
+      <description>
+        If the 'for'-loop has a variable-based condition and it has been
+        entered twice in a row with unchanged variable values, it means that
+        the loop is infinite. If such condition is detected at runtime, then
+        the template execution aborts with this error.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_copy_tree_cross_ns" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line}: 'copy-tree' is not allowed directly under device's
+        'config' container.
+      </fmt>
+      <description>
+        There is no mechanism to copy only the relevant namespaces for this
+        device inside the copy-tree. Copy-tree instruction should instead be
+        placed under the specific tags inside device's config.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unknown_element2_xml"
+          errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Unknown element: '{Tag}' for ned-id: {BadStr}
+      </fmt>
+      <description>
+        Unknown element.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_missing_element2_xml"
+          errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Element: '{Tag}' only exists for ned-id: {GoodStr}
+      </fmt>
+      <description>
+        Missing element for ned-id.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unknown_ned_id_xml"
+          errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} unknown ned-id: {BadStr}
+      </fmt>
+      <description>
+        The specified ned-id has not been loaded.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unsupported_ned_id_xml"
+          errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} the ned-id: {BadStr} is not possible,
+        only ned-id: {GoodStr} is.
+      </fmt>
+      <description>
+        The specified ned-id is not available at the tag.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unsupported_ned_id_at_tag_xml"
+          errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} the ned-id: {BadStr} is not supported at tag: {Tag},
+        only ned-id: {GoodStr} is available.
+      </fmt>
+      <description>
+        The specified ned-id is not available at the tag.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_tag_ambiguous_xml"
+          errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} the tag: {Tag} is different for ned-ids: {IdStr}
+      </fmt>
+      <description>
+        The tag differs for the different ned-ids,
+      </description>
+    </code>
+
+    <code name="commit_queue_has_overlapping" errno="CONFD_ERR_ABORTED">
+      <fmt>
+        Commit failed because commit queue item {CqId} has an
+        overlapping service or device modification.
+      </fmt>
+      <description>
+        The commit can not be allowed through the commit queue because
+        there exists an overlapping service or device modification.
+      </description>
+    </code>
+
+    <code name="bad_authgroup_callback_response">
+      <fmt>
+          Authgroup callback action failed for {LocalUser} to retrieve
+          remote login credentials of {Device}.
+      </fmt>
+      <description>
+          Authgroup callback action failed to retrieve remote login credentials
+          for a device.
+      </description>
+    </code>
+
+    <code name="unknown_ned_id" errno="CONFD_ERR_NOEXISTS">
+      <fmt>
+        The reverse/forward diff found for this service contains a reference
+        to an unknown ned-id; {ned-id}. Load the package with the missing
+        ned-id and re-deploy the service.
+      </fmt>
+      <description>
+        The specified ned-id is not loaded.
+      </description>
+    </code>
+
+    <code name="call_home" errno="NCS_ERR_CONNECTION_REFUSED">
+      <fmt>
+        Device {dev} has no call home connection established
+      </fmt>
+      <description>
+        Device connection can only be established when a TCP
+        connection is initiated from the device (a call home).
+      </description>
+    </code>
+
+    <code name="ned_offline_unavailable" errno="CONFD_ERR_UNAVAILABLE">
+      <fmt>
+        Device {dev} requires a device connection that is unavailable ({reason})
+      </fmt>
+      <description>
+        Device connection is required but can not be established,
+        either due to the configured admin-state or that no call home
+        connection has been established.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_shadowed_ned_id_xml"
+          errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} the ned-id: {BadStr} is shadowed by one of the
+        preceding clauses and thus unreachable
+      </fmt>
+      <description>
+        One or more ned-ids in elif-ned-id processing instruction are already
+        covered by the corresponding if-ned-id or elif-ned-id clauses.
+        Because the clauses are evaluated in order, this clause will never
+        be executed for this/these ned-ids.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_misplaced_if_ned_id_xml"
+          errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} &lt;?if-ned-id?&gt; processing instruction may only
+        be used in the context of device's configuration
+      </fmt>
+      <description>
+        The if-ned-id processing instruction is not allowed to be used outside
+        the /devices/device/config tree.
+      </description>
+    </code>
+
+    <code name="commit_queue_disabled" errno="CONFD_ERR_ABORTED">
+      <fmt>
+        The commit queue is disabled ({reason})
+      </fmt>
+      <description>
+        The error is generated when trying to perform an request
+        to the commit queue while disabled
+        (e.g. the HA node is in slave or none mode).
+      </description>
+    </code>
+
+    <code name="ncs_template_unsupported_ned_id" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} will not apply template to {device_or_template} {name}
+        with unsupported ned-id: {nedid}
+      </fmt>
+      <description>
+        If the list of supported-ned-id is defined in the package-meta-data.xml,
+        then all templates defined by this package can only be applied to the
+        devices within the list of supported-ned-ids. This error is raised when
+        attempting to apply such template to a device or device template with
+        the unsupported ned-id.
+      </description>
+    </code>
+
+    <code name="commit_queued_and_deleted" errno="CONFD_ERR_UNAVAILABLE">
+      <fmt>
+        Commit failed because device {dev} which is part of this
+        transaction also resides in the commit queue and cannot
+        automatically be pruned.
+      </fmt>
+      <description>
+        We cannot have transactions jump ahead of queued transactions.
+      </description>
+    </code>
+
+    <code name="yanglib_no_schema_for_running" errno="NCS_ERR_DEVICE">
+      <fmt>
+        {Dev}: no schema found for datastore running
+      </fmt>
+      <description>
+        An NMDA-enabled NETCONF device did not announce any schema in its
+        yang-library subtree for the datastore "running".
+      </description>
+    </code>
+
+    <code name="session_limit_exceeded" errno="NCS_ERR_CONNECTION_REFUSED">
+      <fmt>
+        Session limit exceeded.
+      </fmt>
+      <description>
+        This error is generated when NCS is configured to limit the
+        number of concurrent device sessions and one of these limits
+        has been reached.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_unknown_macro" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+        {file}:{line} Unknown macro - {name}
+      </fmt>
+      <description>
+        Macro name not recognized by template engine.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_missing_macro_vars" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+          {file}:{line} Required macro variables not specified: {vars}
+      </fmt>
+      <description>
+          Macro variables with neither a default value not an explicitly
+          specified value in 'expand' instruction.
+      </description>
+    </code>
+
+    <code name="ncs_load_template_extra_macro_vars" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+          {file}:{line} Unexpected macro variables: {vars}
+      </fmt>
+      <description>
+          An 'expand' instruction with unknown macro variables
+      </description>
+    </code>
+
+    <code name="ncs_load_template_duplicate_macro" errno="NCS_ERR_TEMPLATE">
+      <fmt>
+          {file}:{line} Macro '{name}' already defined at {file}:{line}
+      </fmt>
+      <description>
+          Duplicate macro defined in the same package. Reports where
+          the original macro was defined.
+      </description>
+    </code>
+
+    <code name="plan_location">
+      <fmt>
+        unable to evaluate plan location: {path}
+      </fmt>
+      <description>
+        This error is generated when evaluation of plan location XPath fails
+      </description>
+    </code>
+
+  </type>
+
+  <type name="operation">
+
+    <description>This error type denotes a validation error detected
+    when validating rpc or action input. The errors are the same as the
+    corresponding codes for type "validation", only the format string
+    and/or description differs in some cases.</description>
+
+    <code name="unset" id="CONFD_ERR_NOTSET">
+      <fmt>
+        {path} is not provided
+      </fmt>
+      <description>
+        This error is generated when a mandatory leaf is not provided.
+      </description>
+    </code>
+
+    <code name="unset_choice" id="CONFD_ERR_UNSET_CHOICE">
+      <fmt>
+        {path}: must provide one of: {tags}
+      </fmt>
+      <description>
+        This error is generated when no nodes from a mandatory choice
+        are provided.
+      </description>
+    </code>
+
+    <code name="too_few_elems" id="CONFD_ERR_TOO_FEW_ELEMS">
+      <fmt>
+        too few {path}, {n} provided, at least {n} must be provided
+      </fmt>
+      <description>
+        This error is generated when a list or leaf-list must have a
+        minimum number of entries, but too few are provided.
+      </description>
+    </code>
+
+    <code name="too_many_elems" id="CONFD_ERR_TOO_MANY_ELEMS">
+      <fmt>
+        too many {path}, {n} provided, at most {n} must be provided
+      </fmt>
+      <description>
+        This error is generated when a list or leaf-list must have a
+        maximum number of entries, but too many are provided.
+      </description>
+    </code>
+
+    <code name="non_unique" id="CONFD_ERR_NON_UNIQUE">
+      <fmt>
+        values are not unique: {values}\n{paths}
+      </fmt>
+      <description>
+        This error is generated when a set of leafs must be unique in a list,
+        but there are more than one set of leafs with the same values.
+      </description>
+    </code>
+
+    <code name="bad_keyref" id="CONFD_ERR_BAD_KEYREF">
+      <fmt>
+        illegal reference {path}
+      </fmt>
+      <description>
+        This error is generated when a leafref leaf has a value which
+        refers to a non-existing leaf.
+      </description>
+    </code>
+
+    <code name="missing_instance_identifier" id="CONFD_ERR_MISSING_INSTANCE">
+      <fmt>
+        {path}: missing required instance: {val}
+      </fmt>
+      <description>
+        This error is generated when an instance-identifier leaf
+        marked with 'require-instance true' has a value which refers
+        to a non-existing instance.
+      </description>
+    </code>
+
+    <code name="invalid_instance_identifier" id="CONFD_ERR_INVALID_INSTANCE">
+      <fmt>
+        {path}: invalid instance: {val} doesn't conform to specified
+        path filters
+      </fmt>
+      <description>
+        This error is generated when an instance-identifier leaf
+        marked with 'tailf:path-filters' has a value which does not
+        match the filters.
+      </description>
+    </code>
+
+    <code name="must_failed" id="CONFD_ERR_MUST_FAILED">
+      <fmt>
+        {path} {valstr}: {error-apptag-str}{error-message}
+      </fmt>
+      <description>
+        This error is generated when a 'must' expression specified in a YANG
+        module fails.
+
+        If the node does not have a value, {valstr} is empty,
+        otherwise the value is printed as: (value "{val}").
+
+        If no error-apptag is associated with the error,
+        {error-apptag-str} is empty, otherwise it is printed as
+        "({error-apptag})".
+
+        If the 'must' expression specified in the YANG module has an
+        error-message statement, this message is printed as
+        {error-message}, otherwise it is printed as: the 'must'
+        expression "{must}" failed.
+      </description>
+    </code>
+
+    <code name="policy_failed" id="CONFD_ERR_POLICY_FAILED">
+      <fmt>
+        {str}
+      </fmt>
+      <description>
+        This error is generated when a user-defined policy expression
+        evaluates to false.  The error message {str} is defined by the user.
+        See the YANG module tailf-configuration-policy for details.
+      </description>
+    </code>
+
+    <code name="policy_compilation_failed" id="CONFD_ERR_POLICY_COMPILATION_FAILED">
+      <fmt>
+        {str} for policy {name} ({expr})
+      </fmt>
+      <description>
+        This error is generated when a user-defined policy XPath
+        expression cannot be compiled.
+      </description>
+    </code>
+
+    <code name="policy_evaluation_failed" id="CONFD_ERR_POLICY_EVALUATION_FAILED">
+      <fmt>
+        {str} for policy {name} ({expr})
+      </fmt>
+      <description>
+        This error is generated when a user-defined policy expression
+        fails XPath evaluation.
+      </description>
+    </code>
+
+    <code name="case_exists">
+      <fmt>
+        {path} is not provided
+      </fmt>
+      <description>
+        This error is generated when nodes from multiple cases are provided.
+      </description>
+    </code>
+
+    <code name="stale_instance_identifier" id="CONFD_ERR_STALE_INSTANCE">
+      <fmt>
+        {path}: instance has stale data after upgrading: {val}
+      </fmt>
+      <description>
+        This error is generated when an instance-identifier leaf
+        marked with 'require-instance true' has stale data after upgrading.
+      </description>
+    </code>
+
+  </type>
+
+</errors>

@@ -1,0 +1,23 @@
+module l3vpn-types {
+  namespace "http://com/example/l3vpn-types";
+
+  prefix l3vpn-types;
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  typedef recovery-status {
+    type enumeration {
+      enum complete-success {
+tailf:info "ESC successfully restarted the VM";
+      }
+      enum complete-failure {
+tailf:info "ESC tried to restart the VM but failed";
+      }
+      enum undeployed {
+tailf:info "ESC has undeployed the VM";
+      }
+    }
+  }
+}

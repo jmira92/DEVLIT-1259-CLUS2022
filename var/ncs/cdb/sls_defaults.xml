@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<config:config xmlns:config="http://tail-f.com/ns/config/1.0"
+               xmlns="http://tail-f.com/ns/ncs">
+
+  <smart-license>
+    <smart-agent>
+      <enabled>true</enabled>
+    </smart-agent>
+  </smart-license>
+
+</config:config>

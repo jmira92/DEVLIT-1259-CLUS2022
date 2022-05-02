@@ -1,0 +1,56 @@
+module %NAME% {
+  namespace "http://%DIR%";
+  prefix %NAME%;
+
+  import ietf-inet-types {
+    prefix inet;
+  }
+  import tailf-common {
+    prefix tailf;
+  }
+  import tailf-ncs {
+    prefix ncs;
+  }
+
+  //AUGMENT_BEGIN
+  list %NAME% {
+    description "This is an RFS skeleton service";
+
+    key name;
+    leaf name {
+      tailf:info "Unique service id";
+      tailf:cli-allow-range;
+      type string;
+    }
+
+    // may replace this with other ways of refering to the devices.
+    leaf-list device {
+      type leafref {
+        path "/ncs:devices/ncs:device/ncs:name";
+      }
+    }
+
+    uses ncs:service-data;
+    ncs:servicepoint %NAME%-servicepoint;
+
+    tailf:action self-test {
+      tailf:info "Perform self-test of the service";
+      tailf:actionpoint %NAME%-self-test;
+      output {
+        leaf success {
+          type boolean;
+        }
+        leaf message {
+          type string;
+          description
+            "Free format message.";
+        }
+      }
+    }
+    // replace with your own stuff here
+    leaf dummy {
+      type inet:ipv4-address;
+    }
+  }
+  //AUGMENT_END
+}

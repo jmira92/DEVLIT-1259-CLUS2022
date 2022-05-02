@@ -1,0 +1,27 @@
+#!/bin/sh
+
+if [ $# -eq 0 ]; then
+    echo "Usage: $0 <git-cmd>"
+    exit 1
+fi
+
+PKGS=`grep GIT_PACKAGES .build-meta 2> /dev/null | cut -d= -f2`
+
+do_git_cmd()
+{
+    dir=$1
+    echo ""
+    echo "------ Package: $dir"
+    shift
+    (cd packages/$dir; git $@)
+}
+
+for q in $PKGS; do
+  do_git_cmd $q $@
+done
+
+p=`grep name project-meta-data.xml | head -1 | \
+sed -n 's:.*<name>\(.*\)</name>.*:\1:p'`
+echo ""
+echo "------ Project: $p"
+git $@

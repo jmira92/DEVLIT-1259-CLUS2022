@@ -1,0 +1,29 @@
+
+SNMPv2-MIB (RFC3418) 
+
+SNMP-FRAMEWORK-MIB (RFC3411)
+
+SNMP-USER-BASED-SM-MIB (RFC3414) 
+    - this is the User based security model (USM).
+
+SNMP-VIEW-BASED-ACM-MIB (RFC3415) 
+    - this is the view based access control model (VACM).
+
+SNMP-COMMUNITY-MIB (RFC3584)
+
+SNMP-TARGET-MIB (RFC3413)
+SNMP-NOTIFICATION-MIB (RFC3413 same as SNMP-TARGET-MIB)
+
+SNMP-MPD-MIB (RFC3412)
+
+----
+SNMPv2-TC (RFC2579)
+    - this is textual conventions for SMIv2
+
+SNMPv2-SMI (RFC2578)
+    - structure of management information version 2 (SMIv2)
+
+SNMPv2-CONF (RFC2580)
+   - conformance statements for SMIv2
+
+

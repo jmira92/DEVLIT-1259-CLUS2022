@@ -1,0 +1,26 @@
+<ncs-package xmlns="http://tail-f.com/ns/ncs-packages">
+  <name>ipaddress-allocator-example</name>
+  <package-version>0.0.0.0</package-version>
+  <description>Example PKG Resource allocator for ip addresses</description>
+  <ncs-min-version>3.0</ncs-min-version>
+
+  <!-- It's possible to add more components to the -->
+  <!-- same package, multiple services, data providers etc -->
+
+  <required-package>
+    <name>resource-manager-example</name>
+  </required-package>
+
+  <component>
+    <name>Reactive fastmap address allocation</name>
+    <application>
+      <java-class-name>com.cisco.nso.ipaddressallocator.IPAddressAllocator</java-class-name>
+    </application>
+  </component>
+  <component>
+    <name>Address allocation validation</name>
+    <callback>
+      <java-class-name>com.cisco.nso.ipaddressallocator.IPValidator</java-class-name>
+    </callback>
+  </component>
+</ncs-package>

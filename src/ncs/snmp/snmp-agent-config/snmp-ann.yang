@@ -1,0 +1,201 @@
+module snmp-ann {
+  namespace "urn:dummy";
+  prefix dummy;
+
+  import snmp {
+    prefix snmp;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  tailf:annotate-module "snmp-common" {
+    // To avoid enum vs node name clashes in confdc --emit-h
+    tailf:annotate-statement typedef[name='mp-model'] {
+      tailf:annotate-statement type[name='union'] {
+        tailf:annotate-statement type[name='enumeration'] {
+          tailf:annotate-statement enum[name='v1'] {
+            tailf:code-name v1_mp;
+          }
+          tailf:annotate-statement enum[name='v2c'] {
+            tailf:code-name v2c_mp;
+          }
+          tailf:annotate-statement enum[name='v3'] {
+            tailf:code-name v3_mp;
+          }
+        }
+      }
+    }
+    tailf:annotate-statement typedef[name='sec-model-no-wildcard'] {
+      tailf:annotate-statement type[name='union'] {
+        tailf:annotate-statement type[name='enumeration'] {
+          tailf:annotate-statement enum[name='v1'] {
+            tailf:code-name v1_sec;
+          }
+          tailf:annotate-statement enum[name='v2c'] {
+            tailf:code-name v2c_sec;
+          }
+          tailf:annotate-statement enum[name='usm'] {
+            tailf:code-name usm_sec;
+          }
+        }
+      }
+    }
+  }
+
+  tailf:annotate "/snmp:snmp" {
+
+    tailf:annotate "snmp:community" {
+      tailf:callpoint "community" {
+        tailf:transform true;
+      }
+      tailf:callpoint "community-hook" {
+        tailf:set-hook node;
+      }
+    }
+    tailf:annotate "snmp:target" {
+      tailf:callpoint "target" {
+        tailf:transform true;
+      }
+      tailf:annotate "snmp:engine-id" {
+        must '../usm/user-name' {
+          error-message
+            "When engine-id is set, usm/user-name must also be set.";
+          tailf:dependency "../usm/user-name";
+        }
+        must '/snmp/usm/remote[engine-id=current()]/'
+           + 'user[name=current()/../usm/user-name]' {
+          error-message
+            "When engine-id is set, the usm/user-name must exist in the
+            /snmp/usm/remote list for this engine-id.";
+          tailf:dependency "/snmp/usm/remote/engine-id";
+          tailf:dependency "/snmp/usm/remote/user/name";
+          tailf:dependency "/snmp/usm/remote/user";
+          tailf:dependency "../usm/user-name";
+        }
+      }
+    }
+    tailf:annotate "snmp:notify" {
+      tailf:callpoint "notify" {
+        tailf:transform true;
+      }
+    }
+    tailf:annotate "snmp:notify-profile" {
+      if-feature snmp:notification-filter;
+      tailf:callpoint "notify_profile" {
+        tailf:transform true;
+      }
+    }
+    tailf:annotate "snmp:agent" {
+      // annotate agent/... separately, so as to avoid engineId
+      tailf:annotate "snmp:enabled" {
+        tailf:callpoint "agent" {
+          tailf:transform true;
+        }
+      }
+      tailf:annotate "snmp:ip" {
+        tailf:callpoint "agent" {
+          tailf:transform true;
+        }
+      }
+      tailf:annotate "snmp:udp-port" {
+        tailf:callpoint "agent" {
+          tailf:transform true;
+        }
+      }
+      tailf:annotate "snmp:extra-listen" {
+        tailf:callpoint "agent" {
+          tailf:transform true;
+        }
+      }
+      tailf:annotate "snmp:version" {
+        tailf:callpoint "agent" {
+          tailf:transform true;
+        }
+      }
+      tailf:annotate "snmp:engine-id" {
+        tailf:callpoint "agent" {
+          /* the callpoint is the same, for simplicity,
+             but this is a transaction hook! */
+          tailf:transaction-hook subtree;
+        }
+      }
+      tailf:annotate "snmp:max-message-size" {
+        tailf:callpoint "agent" {
+          tailf:transform true;
+        }
+        /*config false;*/
+      }
+    }
+    tailf:annotate "snmp:system" {
+      tailf:callpoint "agent" {
+        tailf:transform true;
+      }
+    }
+    tailf:annotate "snmp:vacm" {
+      tailf:annotate "snmp:group" {
+        tailf:callpoint "vacm_group" {
+          tailf:transform true;
+        }
+      }
+      tailf:annotate "snmp:view" {
+        tailf:callpoint "vacm_view" {
+          tailf:transform true;
+        }
+      }
+    }
+    tailf:annotate "snmp:usm" {
+      tailf:callpoint "usm" {
+        tailf:transform true;
+      }
+    }
+
+    tailf:annotate "snmp:vacm/snmp:group" {
+      tailf:validate "vacm-group" {
+        tailf:call-once true;
+        tailf:dependency ".";
+        description
+          "Makes sure that a certain combination of sec-name and sec-model is
+          not mapped to more than one group.";
+      }
+    }
+
+    /*
+      Add dependencies for all must statements
+    */
+
+/* NOT YET READY
+    tailf:annotate "snmp:agent" {
+      tailf:annotate "snmp:version/snmp:v3" {
+        tailf:annotate-statement "must[0]" {
+          tailf:dependency "../../engine-id";
+        }
+      }
+    }
+
+    tailf:annotate "snmp:notify/snmp:type" {
+      tailf:annotate-statement "must[0]" {
+        tailf:dependency "/snmp/target";
+        tailf:dependency "/snmp/usm";
+      }
+    }
+
+    tailf:annotate "snmp:usm" {
+      tailf:annotate "snmp:local/snmp:user/snmp:priv" {
+        tailf:annotate-statement "must[0]" {
+          tailf:dependency "../auth";
+        }
+      }
+      tailf:annotate "snmp:remote/snmp:user/snmp:priv" {
+        tailf:annotate-statement "must[0]" {
+          tailf:dependency "../auth";
+        }
+      }
+    }
+*/
+
+  }
+}
+
+

@@ -1,0 +1,16 @@
+<ncs-package xmlns="http://tail-f.com/ns/ncs-packages">
+  <name>%NAME%</name>
+  <package-version>1.0</package-version>
+  <description>Java- and template-based %NAME% resource facing service</description>
+  <ncs-min-version>%NCSVER%</ncs-min-version>
+
+  <!-- It's possible to add more components to the -->
+  <!-- same package, multiple services, data providers etc -->
+
+  <component>
+    <name>RFSSkeleton</name>
+    <callback>
+      <java-class-name>%JAVAPACKAGE%.%CLASS%</java-class-name>
+    </callback>
+  </component>
+</ncs-package>

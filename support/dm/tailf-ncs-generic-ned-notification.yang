@@ -1,0 +1,42 @@
+module tailf-ncs-generic-ned-notification {
+  namespace "http://tail-f.com/ns/ncs-ned/notification/1.0";
+  prefix gnn;
+  tailf:id "";
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import tailf-common {
+    prefix tailf;
+  }
+
+  container internal {
+    config false;
+    tailf:callpoint ncagent {
+        tailf:internal;
+    }
+    container streams {
+      list stream {
+        key name;
+        leaf name {
+          type string;
+        }
+        leaf description {
+          type string;
+          mandatory true;
+        }
+        leaf replaySupport {
+          type boolean;
+          mandatory true;
+        }
+        leaf replayLogCreationTime {
+          type yang:date-and-time;
+          mandatory true;
+        }
+        leaf replayLogAgedTime {
+          type yang:date-and-time;
+        }
+      }
+    }
+  }
+}

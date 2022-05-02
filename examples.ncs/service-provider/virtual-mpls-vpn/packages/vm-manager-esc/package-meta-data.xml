@@ -1,0 +1,44 @@
+<ncs-package xmlns="http://tail-f.com/ns/ncs-packages">
+  <name>vm-manager-esc-example</name>
+  <package-version>0.0.0.0</package-version>
+  <description>ESC VM manager package</description>
+  <ncs-min-version>3.0</ncs-min-version>
+
+  <required-package>
+    <name>esc-example-nc-0.0</name>
+  </required-package>
+
+  <required-package>
+    <name>vm-manager-example</name>
+  </required-package>
+
+  <required-package>
+    <name>resource-manager-example</name>
+  </required-package>
+
+  <required-package>
+    <name>weblog</name>
+  </required-package>
+
+  <component>
+    <name>Service for VM starting</name>
+    <callback>
+      <java-class-name>com.cisco.escmanager.vmRFS</java-class-name>
+    </callback>
+  </component>
+
+  <component>
+    <name>Start VM Config Subscriber</name>
+    <application>
+      <java-class-name>com.cisco.escmanager.vmCdbSubscriber</java-class-name>
+    </application>
+  </component>
+
+  <component>
+    <name>VM notifications listener</name>
+    <application>
+      <java-class-name>com.cisco.escmanager.notifCdbSubscriber</java-class-name>
+    </application>
+  </component>
+
+</ncs-package>

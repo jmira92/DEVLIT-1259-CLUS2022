@@ -1,0 +1,85 @@
+module alloc-vlan-service {
+
+  namespace "http://example.com/alloc-vlan-service";
+  prefix avl;
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  import tailf-ncs {
+    prefix ncs;
+  }
+
+  description
+    "This service creates a vlan iface/unit on all routers
+     in our network. ";
+
+  revision 2014-08-20 {
+    description
+      "Initial revision.";
+  }
+
+
+  list alloc-vlan-data {
+    //tailf:hidden fastmap-private;
+
+    key name;
+    leaf name {
+      type string;
+    }
+
+    container request-allocate-unit {
+      presence "Request a unit to be allocated";
+      leaf unit {
+        config false;
+        type string;
+        tailf:cdb-oper  {
+          tailf:persistent true;
+        }
+      }
+    }
+
+    container request-allocate-vid {
+      presence "Request a vlan id to be allocated";
+      leaf vlan-id {
+        type uint16;
+        config false;
+        tailf:cdb-oper  {
+          tailf:persistent true;
+        }
+      }
+    }
+  }
+
+
+  list alloc-vlan {
+    key name;
+    leaf name {
+      tailf:info "Unique service id";
+      tailf:cli-allow-range;
+      type string;
+    }
+
+    uses ncs:service-data;
+    ncs:servicepoint alloc-vlanspnt;
+
+
+    leaf iface {
+      type string;
+      mandatory true;
+    }
+    leaf description {
+      type string;
+      mandatory true;
+    }
+
+    leaf-list arp {
+      type enumeration {
+        enum no-gratuitous-arp-reply;
+        enum no-gratuitous-arp-request;
+      }
+    }
+  }
+}
+

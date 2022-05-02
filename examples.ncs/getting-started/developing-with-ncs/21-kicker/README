@@ -1,0 +1,401 @@
+
+Reactive FastMap with kicker
+------------------------------
+
+This example illustrates how to write a reactive FastMap application
+using a help construct called a kicker.
+
+The idea behind the kicker is that service code can create a kicker
+which redeploys a service when something happens
+
+
+Kickers
+-------
+
+A kicker consists of these fields
+
+- A 'monitor', which is  what we refer to as a node-instance-identifier
+  pointing towards either configuration or operational data.
+  A node-instance-identifier is like an instance-identifier with the exception
+  that the keys may be omitted.
+  The purpose of the monitor is to identify what part of CDB to watch for
+  changes, and when that part changes, the kicker triggers.
+
+  For example, given a datamodel
+
+  container interfaces {
+    list interface {
+      key name;
+      leaf name {
+        type string;
+      }
+      leaf oper-state {
+        config false;
+        ....
+
+  Trigger if the interface 'eth0' is changed:
+  monitor: /interfaces/interface[name='eth0']
+
+  Trigger if the oper-state of interface 'eth0' is changed:
+  monitor: /interfaces/interface[name='eth0']/oper-state
+
+  Trigger if any interface is changed:
+  monitor: /interfaces/interface
+
+
+- An optional 'trigger-expr' which is An XPath 1.0 expression that is
+  evaluated when
+  any node matching 'monitor' is changed.  The 'trigger-type' is used to
+  determine if the kicker triggers or not.
+
+  If no trigger-expr has been defined, the kicker is always triggered
+  when any node matching 'monitor' is changed.
+
+  This XPath is evaluated with the node that matched 'monitor'
+  as the context node.
+
+
+  Trigger if the oper-state of interface 'eth0' is set to 'up':
+  monitor: /interfaces/interface[name='eth0']
+  trigger-expr: oper-state = 'up'
+
+             OR
+
+   monitor: /interfaces/interface[name='eth0']/oper-state
+   trigger-expr: . = 'up'
+
+
+- An optional 'trigger-type' which is used to control weather the kicker should
+  trigger when the 'trigger-expr' changes from or when it just changes to true.
+
+- A list of variable bindings used when evaluating the XPath in the trigger-expr
+
+- A 'kick-node'.
+   When the kicker is triggered, the 'action-name' action is invoked
+   on the 'kick-node' instance.
+
+   If the 'kick-node' is given as an XPath 1.0 expression, the
+   expression is evaluated with the node that matched
+   'monitor' as the context node, and the expression must
+   return a node set.  The 'action-name' action is invoked on
+   the nodes in this node set.
+
+   For example, suppose a service /bar creates an entry in
+   /bar-data, with the same id as /bar, and the service needs
+   to be re-deployed with the bar-data state changes.
+
+     list bar-data {
+       key id;
+       leaf id { type string; }
+       leaf state { type ... }
+     }
+
+   Then a single kicker with:
+      monitor: '/bar-data/state'
+      kick-node: '/bar[name=current()/../id]'
+      action-name: 'reactive-re-deploy'
+   can be created.
+
+   Alternatively, every service instance can create its own kicker
+   with:
+      monitor: '/bar-data[name=<id>]/state'
+      kick-node: '/bar[name=<id>]
+              action-name: 'reactive-re-deploy'
+
+- An action-name
+
+
+Kickers are defined in the tailf-kicker.yang file which is part of
+the distribution.
+
+
+
+Use cases
+---------
+
+
+Kickers are almost always used as an implementation technique for
+Reactive FastMap services.
+
+Assume an NFV/ESC based application which:
+
+a) Asks ESC to start a VM
+b) Once the VM is ready, wants to configure the VM
+
+Such an application would create a kicker with a monitor for
+/devices/device[name=<vmname>]/ready
+
+Once the VM is 'ready', the service would be redeployed and it can
+continue its Reactive FastMap execution further and provision config
+to the newly started VM.
+
+Prior to the kickers, it was common with CDB subscriber code that
+
+1. Subscribed to some change
+2. Read that change, and then redeployed some service which the
+   CDB subscriber code knew was waiting for that change
+
+Now, with kickers we can simply such code by having a CDB subscriber
+that simply
+
+1. Subscribes to some change (for example a NETCONF notification
+   listener)
+
+2. Writes some operational data field somewhere.
+
+The RFM service code is then responsible for setting up a kicker with
+the monitor pointing to that field written by the CDB subscriber.
+Thus effectively decoupling the CDB subscriber code from the RFM service
+code making them independent of each other.
+
+Another advantage, is that the error handling code when the redeploy
+fails, is unified inside NSO kicker implementation.
+
+
+This example
+------------
+
+
+The example uses two NSO packages. The router package introduced
+in ../0-router-network and a package called 'ppp-accounting' which
+be described in this section.
+
+The example is a bit contrived, but since want to exemplify the
+usage of kickers, it's simplified and artificial.
+
+
+$ ls ./packages
+router ppp-accounting
+
+To build the three packages, do
+
+$ make all
+
+To start the ncs-netsim network, follow the instructions in
+../0-router-network, it's the same network here.
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+
+All the code for this example resides in ./packages/ppp-accounting
+
+To run the example we do:
+
+$ ncs
+
+This will start NCS, and NCS will load the two packages, load the
+data models defined by the two packages and start the Java code
+defined by the packages.
+
+The service data model we have here looks like:
+
+  list ppp-accounting {
+
+    uses ncs:service-data;
+    ncs:servicepoint kickerspnt;
+
+    key "interface";
+    leaf interface {
+      type string;
+    }
+
+  }
+
+  list ppp-accounting-data {
+    description "This is helper data, created by the service code for
+                 /ppp-accounting";
+
+    key "interface";
+    leaf interface {
+      type string;
+    }
+    leaf accounting {
+      description "populated externally";
+      type string;
+    }
+  }
+
+
+The purpose of the service /ppp-accounting is to set the accounting
+field in the the provided ppp interface on all routers in our
+example network.
+The catch here is that the name of the 'accounting' field is not provided
+as in input parameter to the service, instead it is populated externally
+and read and used by the service code.
+
+The FastMap code tries to read the field
+/ppp-accounting-data[interface=<if>]/accounting and if it doesn't exist, the
+code creates a kicker on that field and returns.
+If the 'accounting' field exists, it used and data is written into the
+/devices tree for our routers.
+
+To run this we do:
+
+$ make all
+$ ncs-netsim start
+$ ncs
+$ ncs_cli -u admin
+
+admin connected from 127.0.0.1 using console on CEC-cwikstro-mac.local
+admin@ncs> request devices sync-from
+sync-result {
+    device ex0
+    result true
+}
+sync-result {
+    device ex1
+    result true
+}
+sync-result {
+    device ex2
+    result true
+}
+[ok][2016-12-13 16:18:45]
+admin@ncs> configure
+Entering configuration mode private
+[ok][2016-12-13 16:19:06]
+[edit]
+admin@ncs% set ppp-accounting ppp0
+[ok][2016-12-13 16:20:01]
+
+[edit]
+admin@ncs% commit
+Commit complete.
+[ok][2016-12-13 16:20:04]
+
+[edit]
+admin@ncs% request ppp-accounting ppp0 get-modifications
+cli {
+    local-node {
+        data
+    }
+}
+
+
+We created the service, and verified that it didn't do anything.
+Looking at the code in
+packages/ppp-accounting/src/java/src/com/example/kicker/KickerServiceRFS.java
+we can see though that the code created a kicker.
+
+Let's take a look at that:
+
+admin@ncs% show kickers
+----------------^
+syntax error: element does not exist
+[error][2016-12-13 16:22:53]
+
+The kicker data is hidden, and we cannot directly view it in the CLI.
+The tailf-kickers.yang file says:
+
+
+  container kickers {
+    tailf:info "Kicker specific configuration";
+    tailf:hidden debug;
+
+    list data-kicker {
+      key id;
+
+      ......
+
+
+To view the kickers data we must do two things.
+
+1. Provide an entry in the ncs.conf file
+
+
+  <hide-group>
+    <name>debug</name>
+  </hide-group>
+
+
+2. Unhide in the CLI
+
+admin@ncs% unhide debug
+[ok][2016-12-13 16:24:30]
+
+[edit]
+admin@ncs% show kickers
+data-kicker ncs-internal-side-effects {
+    monitor     /ncs:side-effect-queue;
+    kick-node   /ncs:side-effect-queue;
+    action-name invoke;
+}
+data-kicker ppp-accounting-ppp0 {
+    monitor     /ppp-accounting-data[interface='ppp0']/accounting;
+    kick-node   /ppp-accounting[interface='ppp0'];
+    action-name reactive-re-deploy;
+}
+
+There we can see our newly created kicker.
+
+To trigger this kicker, which will then execute the redeploy
+on the /ppp-accounting[interface='ppp0'] service, all we need to do
+is to assign some data to the field that is monitored by the kicker.
+
+admin@ncs% set ppp-accounting-data ppp0 accounting radius
+[ok][2016-12-13 16:26:43]
+
+[edit]
+admin@ncs% commit
+Commit complete.
+[ok][2016-12-13 16:26:46]
+
+[edit]
+
+admin@ncs% request ppp-accounting ppp0 get-modifications
+cli {
+    local-node {
+        data  devices {
+                   device ex0 {
+                       config {
+                           r:sys {
+                               interfaces {
+                                   serial ppp0 {
+                                       ppp {
+              -                            accounting acme;
+              +                            accounting radius;
+                                       }
+                                   }
+                               }
+                           }
+                       }
+                   }
+                   device ex1 {
+                       config {
+                           r:sys {
+                               interfaces {
+                                   serial ppp0 {
+                                       ppp {
+              -                            accounting acme;
+              +                            accounting radius;
+
+
+             ..........
+
+
+
+Debugging kickers can be done by providing debug flag to commit:
+
+admin@ncs% commit | debug kicker
+kicker: ppp-accounting-ppp0 at
+/ppp-accounting-data[interface='ppp0']/accounting changed,
+invoking 'reactive-re-deploy'
+
+Another valuable tool when debugging kickers is the devel.log which will
+contain entries when we for example provide bad monitors or bad
+XPath expressions in the instantiated kickers.
+
+
+
+Final Reactive FastMap note
+---------------------------
+
+Looking at the RFM java code we see that the /ppp-accounting-data help
+entry is created by a so called PRE_MODIFICATION hook.
+This is a common trick in RFM applications. We don't want that data to
+be part of the FastMap diffset. Usually the help entry is also used to
+contain various 'config false' fields pertaining to the service instance.
+If that data was part of FastMap diffset, the data would disappear with
+every redeploy turn, thus we use the PRE_MODIFICATION trick.

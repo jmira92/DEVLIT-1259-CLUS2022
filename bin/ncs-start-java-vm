@@ -1,0 +1,128 @@
+#!/bin/sh
+
+
+usage()
+{
+    cat <<EOF
+Usage: ncs-start-java-vm [-d|--debug] [-h|--help] [-m|--mainclass <classname>]
+  [--restart-enabled] [--restart-errcount <errcount>] [--restart-duration <dur>]
+
+This start script is sensitive to the following environment variables:
+  NCS_IPC_PORT        - If this env variable is set to a port number the
+                        java vm will be started with the
+                        "-Dport=${NCS_IPC_PORT}" system property
+  NCS_IPC_ADDR        - If this env variable is set to a ip address the
+                        java vm will be started with the
+                        "-Dhost=${NCS_IPC_ADDR}" system property
+  NCS_JAVA_VM_OPTIONS - If this env variable is set it is expected
+                        to set/replace any system property for the java vm.
+                        For instance "-Dport=1234 -Xmx512M" will
+                        replace the port number (even if NCS_IPC_PORT is set)
+                        and set the -Xmx max heap size to 512M
+EOF
+}
+
+add_if_not_contains() {
+  case "${1}" in
+    *${2}*) echo "${1}" ;;
+    *)  if [ "${4}" != "" ]; then
+          echo "${1} ${2}${3}${4}"
+        else
+          echo "${1} ${2}"
+        fi ;;
+  esac
+}
+
+dbg_p1="-Xdebug"
+dbg_p2="-Xrunjdwp:transport"
+dbg_p2_val="dt_socket,address=9000,server=y,suspend=n"
+
+bindir=`dirname $0`
+case ${bindir} in
+    /*) ncs_dir=`dirname ${bindir}`;;
+    *)  ncs_dir=`(cd ${bindir}/..; pwd)`;;
+esac
+
+mainclass="com.tailf.ncs.NcsJVMLauncher"
+
+opts="${NCS_JAVA_VM_OPTIONS}"
+
+clazzp="${CLASSPATH}"
+clazzp="${clazzp}:${ncs_dir}/java/jar/*"
+opts=`add_if_not_contains "${opts}" "-classpath" " " "${clazzp}"`
+
+if [ -n "${NCS_IPC_ADDR}" ]; then
+    opts=`add_if_not_contains "${opts}" "-Dhost" "=" "${NCS_IPC_ADDR}"`
+fi
+
+if [ -n "${NCS_IPC_PORT}" ]; then
+    opts=`add_if_not_contains "${opts}" "-Dport" "=" "${NCS_IPC_PORT}"`
+fi
+
+count=3
+duration=60
+enabled="false"
+
+while [ $# -gt 0 ]; do
+    arg="$1"
+    shift
+    case "$arg" in
+        -d | --debug)
+            opts=`add_if_not_contains "${opts}" "${dbg_p1}"`
+            opts=`add_if_not_contains "${opts}" "${dbg_p2}" "=" "${dbg_p2_val}"`
+            break;;
+        -m | --mainclass)
+            mainclass="$1"
+            shift
+            break;;
+        --restart-errcount)
+            count="$1"
+            shift
+            ;;
+        --restart-duration)
+            duration="$1"
+            shift
+            ;;
+        --restart-enabled)
+            enabled=true
+            ;;
+        -h | --help)
+            usage
+            exit;;
+        *)
+            error "${arg}: Unknown option";;
+    esac
+done
+
+## set properties for jvm restart on exceptions
+opts=`add_if_not_contains "${opts}" "-Djvm.restart.enabled" "=" "${enabled}"`
+opts=`add_if_not_contains "${opts}" "-Djvm.restart.errCount" "=" "${count}"`
+opts=`add_if_not_contains "${opts}" "-Djvm.restart.duration" "=" "${duration}"`
+
+## Per OS customizations
+case `uname` in
+    Darwin)
+        # MacOS: run in headless mode
+        opts=`add_if_not_contains "${opts}" "-Djava.awt.headless" "=" "true"`
+        ;;
+    *)
+        ;;
+esac
+
+## Avoid blocking call to /dev/random
+## Note the extra /./ it is essential due to a bug
+opts=`add_if_not_contains "${opts}" "-Djava.security.egd" "=" \
+         "file:/dev/./urandom"`
+opts=`add_if_not_contains "${opts}" "-Dfile.encoding" "=" \
+         "UTF-8"`
+
+opts=`add_if_not_contains "${opts}" \
+        "-Dorg.apache.logging.log4j.simplelog.StatusLogger.level=OFF"`
+
+##
+## In this command to control host and port for the socket connections
+## add -Dhost=... -Dport=... to the NCS_JAVA_VM_OPTIONS env variable
+## otherwise host="127.0.0.1" and port is the NCS default.
+##
+echo "Starting java-vm with options:\n'${opts}'"
+exec java ${opts} ${mainclass}

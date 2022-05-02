@@ -1,0 +1,449 @@
+This example illustrates how to design a Reactive FASTMAP service
+using Nano Services.
+
+To declare a Nano service three things are necessary in the service
+YANG model.
+
+1. The service must include the grouping
+
+   uses ncs:nano-plan-data;
+
+   This is an augmented variant of the ncs:plan-data that is extended
+   to make the plan executable. The grouping ncs:plan-data cannot be
+   used for a nano Service.
+
+2. There must be a plan definition declared with a ncs:plan-outline
+   statement in the YANG module.
+
+3. There must be a service behavior tree declared with a
+   ncs:service-behavior-tree statement in the YANG module.
+
+
+The ncs:plan-outline statement creates a plan definition with a given name,
+and contains a description of the possible component-types and their
+states that the service plan instance will use.  Note that an
+instantiated service can have a plan with zero, one or many different
+components based on the same component type.
+
+It is the responsibility of the ncs:service-behavior-tree to create the
+plan components that are included in the instantiated service plan at
+all times. For this the ncs:service-behavior-tree consists of a tree of rules
+for when a component is added or removed from the service instance
+plan.
+
+The package link defines a link Nano service setting up a vpn link.
+The service has a list containing at most 1 element which constitutes
+the vpn link and is keyed on a-device a-interface b-device b-interface
+The list element will correspond to a component type "link:vlan-link"
+in the plan.
+
+
+
+---- Plan definition ----
+
+
+The following is the Nano service plan definition:
+
+  identity vlan-link {
+    base ncs:plan-component-type;
+  }
+
+  identity dev-setup {
+    base ncs:plan-state;
+  }
+
+  ncs:plan-outline link-plan {
+    description
+      "Make before brake vlan plan";
+
+    ncs:component-type "ncs:self" {
+      ncs:state "ncs:init";
+      ncs:state "ncs:ready";
+    }
+
+    ncs:component-type "link:vlan-link" {
+      ncs:state "ncs:init";
+      ncs:state "link:dev-setup" {
+        ncs:create {
+          ncs:nano-callback;
+        }
+      }
+      ncs:state "ncs:ready" {
+        ncs:create {
+          ncs:monitor "{$SERVICE}/endpoints" {
+            ncs:trigger-expr "current()[test-passed = 'true']";
+          }
+        }
+        ncs:delete {
+          ncs:monitor "{$SERVICE}/plan" {
+            ncs:trigger-expr "boolean(current()/component[name != 'self']
+                [./back-track = 'false']/state[name='ncs:ready']
+                [./status = 'reached']) or
+                not(current()/component[back-track = 'false'])";
+          }
+        }
+      }
+    }
+  }
+
+
+To be noted in the plan definition is the following.
+There is only one Nano service callback registered for the service.
+This is on the "link:dev-setup" state in the "link:vlan-link"
+component type.
+This is represented in the plan as:
+      ncs:state "link:dev-setup" {
+        ncs:create {
+          ncs:nano-callback;
+        }
+      }
+The callback is a template and can be found under packages/link/templates as
+link-template.xml.
+
+For the state "ncs:ready in the "link:vlan-link" component type there
+are both a create and a delete pre-condition.
+The create pre-condition
+        ncs:create {
+          ncs:monitor "{$SERVICE}/endpoints" {
+            ncs:trigger-expr "current()[test-passed = 'true']";
+          }
+        }
+implies that the components based on this component type will not
+be regarded as finished until the test-passed leaf is set to "true".
+This will illustrate the scenario that after initial setup of a link
+is configured by the "link:dev-setup" state a manual test and setting
+of the test-passed leaf is necessary before the link is regarded as
+finished.
+
+The delete pre-condition
+        ncs:delete {
+          ncs:monitor "{$SERVICE}/plan" {
+            ncs:trigger-expr "boolean(current()/component[name != 'self']
+                [./back-track = 'false']/state[name='ncs:ready']
+                [./status = 'reached']) or
+                not(current()/component[back-track = 'false'])";
+          }
+        }
+implies that before starting to delete ("back-tracking") an old
+component, then all new components must have reached the "ncs:ready"
+state i.e. being tested.
+This is to illustrate a "create-before-break" scenario where the new
+link is created first and only when this is setup the old is removed.
+
+
+---- Behavior tree definition ----
+
+The ncs:service-behavior-tree for the example is the following:
+
+  ncs:service-behavior-tree link-servicepoint {
+    description
+      "Make before brake vlan example";
+
+    ncs:plan-outline-ref link-plan;
+
+    ncs:selector {
+      ncs:create-component "'self'" {
+        ncs:component-type-ref "ncs:self";
+      }
+
+      ncs:multiplier {
+        ncs:foreach "endpoints" {
+          ncs:variable "LINKNAME" {
+            ncs:value-expr "concat(a-device, '-',
+                                   a-interface, '-',
+                                   b-device, '-',
+                                   b-interface)";
+          }
+        }
+        ncs:create-component "$LINKNAME" {
+          ncs:component-type-ref "link:vlan-link";
+        }
+      }
+    }
+
+Here the the ncs:service-behavior-tree is registered on the servicepoint
+"link-servicepoint" defined by the Nano service. It refers to the plan
+definition named "link:link-plan".
+The behavior tree has a selector on top which chooses to synthesize it
+children depending on their pre-conditions, in this tree there are no
+pre-conditions so all children will be synthesized.
+
+First there is a component "self" based on the "ncs:self" component
+type in the plan that is always synthesized.
+
+Second there is a "multiplier" control node that selects a node-set
+create a variable named VALUE with a unique value for each node in
+that node-set and creates a component of type "link:vlan-link" for
+each node in the selected node-set. The name for each individual
+component is the value of the variable VALUE.
+
+Since the selected node-set is the "endpoints" list that can contain
+at most one element this will produce only one component.
+However if the link in the service is changed i.e. the old list entry
+is deleted and a new is created then the multiplier will create a
+component with a new name.
+
+This will force the old component (which no longer is synthesized) to
+be back-tracked and the plan definition above will handle the
+"create-before-break" behavior of this back-tracking.
+
+
+
+---- Running the example ----
+To run the example do the following:
+
+$ make all
+
+$ ncs-netsim restart
+
+$ ncs
+
+$ ncs_cli -C -u admin
+
+admin@ncs# devices sync-from
+sync-result {
+    device ex0
+    result true
+}
+sync-result {
+    device ex1
+    result true
+}
+sync-result {
+    device ex2
+    result true
+}
+
+
+admin@ncs# config
+Entering configuration mode terminal
+
+
+admin@ncs(config)# link t2 unit 17 vlan-id 1
+admin@ncs(config-link-t2)# link t2 endpoints ex1 eth0 ex2 eth0 test-passed true
+admin@ncs(config-endpoints-ex1/eth0/ex2/eth0)# commit
+admin@ncs(config-endpoints-ex1/eth0/ex2/eth0)# top
+
+This will create a service that is setup a vpn link between devices
+ex1 and ex2 and is completed immediately since the test-passed
+leaf is set to true.
+
+We can inspect the result of the commit
+
+admin@ncs(config)# exit
+admin@ncs# link t2 get-modifications
+cli  devices {
+          device ex1 {
+              config {
+                  r:sys {
+                      interfaces {
+                          interface eth0 {
+     +                        unit 17 {
+     +                            vlan-id 1;
+     +                        }
+                          }
+                      }
+                  }
+              }
+          }
+          device ex2 {
+              config {
+                  r:sys {
+                      interfaces {
+                          interface eth0 {
+     +                        unit 17 {
+     +                            vlan-id 1;
+     +                        }
+                          }
+                      }
+                  }
+              }
+          }
+      }
+
+The service setup the link between the devices.
+We inspect the plan:
+
+admin@ncs# show link t2 plan component * state * status
+NAME               STATE      STATUS
+---------------------------------------
+self               init       reached
+                   ready      reached
+ex1-eth0-ex2-eth0  init       reached
+                   dev-setup  reached
+                   ready      reached
+
+All components in the plan has reached its ready state.
+
+Now we change the link by changing the interface on one of the
+devices. To do this we must remove the old list entry in "endpoints"
+and create a new one.
+
+admin@ncs# config
+Entering configuration mode terminal
+admin@ncs(config)# no link t2 endpoints ex1 eth0 ex2 eth0
+admin@ncs(config)# link t2 endpoints ex1 eth0 ex2 eth1
+
+We commit dry-run to inspect what will happen
+
+admin@ncs(config-endpoints-ex1/eth0/ex2/eth1)# commit dry-run
+cli  devices {
+         device ex1 {
+             config {
+                 r:sys {
+                     interfaces {
+                         interface eth0 {
+                         }
+                     }
+                 }
+             }
+         }
+         device ex2 {
+             config {
+                 r:sys {
+                     interfaces {
+    +                    interface eth1 {
+    +                        unit 17 {
+    +                            vlan-id 1;
+    +                        }
+    +                    }
+                     }
+                 }
+             }
+         }
+     }
+     link t2 {
+    -    endpoints ex1 eth0 ex2 eth0 {
+    -        test-passed true;
+    -    }
+    +    endpoints ex1 eth0 ex2 eth1 {
+    +    }
+     }
+
+
+The service will at commit just add the new interface at this point
+and not remove anything. This is because the test-passed leaf will not
+be set to "true" for the new component.
+We commit this change and inspect the plan
+
+admin@ncs(config-endpoints-ex1/eth0/ex2/eth1)# commit
+admin@ncs(config-endpoints-ex1/eth0/ex2/eth1)# top
+admin@ncs(config)# exit
+admin@ncs# show link t2 plan
+
+show link t2 plan
+                                                                   ...
+                              BACK                                 ...
+NAME               TYPE       TRACK  GOAL  STATE      STATUS       ...
+-------------------------------------------------------------------...
+self               self       false  -     init       reached      ...
+                                           ready      reached      ...
+ex1-eth0-ex2-eth1  vlan-link  false  -     init       reached      ...
+                                           dev-setup  reached      ...
+                                           ready      not-reached  ...
+ex1-eth0-ex2-eth0  vlan-link  true   -     init       reached      ...
+                                           dev-setup  reached      ...
+                                           ready      reached      ...
+
+We see that the new component 'ex1-eth0-ex2-eth1' has not reached
+its ready state yet. Therefore the old component 'ex1-eth0-ex2-eth0'
+still exists in back-track mode but is still waiting for the
+new component to finish.
+
+
+
+If we check what the service has configured at this point we get the
+following:
+admin@ncs# link t2 get-modifications
+cli  devices {
+          device ex1 {
+              config {
+                  r:sys {
+                      interfaces {
+                          interface eth0 {
+     +                        unit 17 {
+     +                            vlan-id 1;
+     +                        }
+                          }
+                      }
+                  }
+              }
+          }
+          device ex2 {
+              config {
+                  r:sys {
+                      interfaces {
+                          interface eth0 {
+     +                        unit 17 {
+     +                            vlan-id 1;
+     +                        }
+                          }
+     +                    interface eth1 {
+     +                        unit 17 {
+     +                            vlan-id 1;
+     +                        }
+     +                    }
+                      }
+                  }
+              }
+          }
+      }
+
+So both the old and the new link exists at this point.
+Now we set the test-passed leaf to true to force the new
+component to reach its ready state.
+
+admin@ncs(config)# link t2 endpoints ex1 eth0 ex2 eth1 test-passed true
+admin@ncs(config-endpoints-ex1/eth0/ex2/eth1)# commit
+
+
+If we now check the service plan we see the following:
+
+
+admin@ncs(config-endpoints-ex1/eth0/ex2/eth1)# top
+admin@ncs(config)# exit
+admin@ncs# show link t2 plan
+                                                               ...
+                              BACK                             ...
+NAME               TYPE       TRACK  GOAL  STATE      STATUS   ...
+---------------------------------------------------------------...
+self               self       false  -     init       reached  ...
+                                           ready      reached  ...
+ex1-eth0-ex2-eth1  vlan-link  false  -     init       reached  ...
+                                           dev-setup  reached  ...
+                                           ready      reached  ...
+
+So the old component has been completely back-tracked and is removed
+because the new component is finished. We also check the service
+modifications and see that the old link endpoint is removed
+
+
+admin@ncs# link t2 get-modifications
+cli  devices {
+          device ex1 {
+              config {
+                  r:sys {
+                      interfaces {
+                          interface eth0 {
+     +                        unit 17 {
+     +                            vlan-id 1;
+     +                        }
+                          }
+                      }
+                  }
+              }
+          }
+          device ex2 {
+              config {
+                  r:sys {
+                      interfaces {
+     +                    interface eth1 {
+     +                        unit 17 {
+     +                            vlan-id 1;
+     +                        }
+     +                    }
+                      }
+                  }
+              }
+          }
+      }

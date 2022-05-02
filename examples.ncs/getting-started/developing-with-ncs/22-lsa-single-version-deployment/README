@@ -1,0 +1,397 @@
+This is a walk through to illustrate some aspects of an LSA
+cluster. Open two terminal windows one CLI terminal and one shell
+terminal. Lines beginning with $ are captured from shell terminal window
+and lines starting with > or % from the CLI terminal window.
+
+Follow the steps under 'Manual setup' for a description of the different
+steps needed to get the LSA service running or go to the 'Makefile
+setup' where those steps has been in-cooperated into the Makefile.
+
+Manual setup
+============
+
+In the CLI terminal window do:
+
+$ make clean all
+....
+DEVICE ex0 CREATED
+DEVICE ex1 CREATED
+DEVICE ex2 CREATED
+DEVICE ex3 CREATED
+DEVICE ex4 CREATED
+DEVICE ex5 CREATED
+
+$ make start-manual
+
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+DEVICE ex3 OK STARTED
+DEVICE ex4 OK STARTED
+DEVICE ex5 OK STARTED
+cd upper-nso;   NCS_IPC_PORT=4569 sname=upper-nso ncs -c ncs.conf
+cd lower-nso-1; NCS_IPC_PORT=4570 sname=lower-nso-1 ncs -c ncs.conf
+cd lower-nso-2; NCS_IPC_PORT=4571 sname=lower-nso-2 ncs -c ncs.conf
+./init-manual.sh
+
+Now all nodes are started enter the CLI of the upper-nso in the CLI
+window and configure the nodes in the cluster:
+
+$ make cli-upper-nso
+NCS_IPC_PORT=4569 ncs_cli -u admin
+admin connected from 127.0.0.1 using console on deva
+>
+
+Get into configuration mode and configure the remote nodes:
+
+> configure
+Entering configuration mode private
+[ok][2020-06-03 12:53:54]
+
+% set cluster device-notifications enabled
+% set cluster remote-node lower-nso-1 authgroup default username admin
+% set cluster remote-node lower-nso-1 address 127.0.0.1 port 2023
+% set cluster remote-node lower-nso-2 authgroup default username admin
+% set cluster remote-node lower-nso-2 address 127.0.0.1 port 2024
+% set cluster commit-queue enabled
+% commit
+Commit complete.
+[ok][2020-06-03 12:55:03]
+
+% request cluster remote-node lower-nso-* ssh fetch-host-keys
+cluster remote-node lower-nso-1 ssh fetch-host-keys
+    result updated
+    fingerprint {
+        algorithm ssh-ed25519
+        value 4a:c6:5d:91:6d:4a:69:7a:4e:0d:dc:4e:51:51:ee:e2
+    }
+cluster remote-node lower-nso-2 ssh fetch-host-keys
+    result updated
+    fingerprint {
+        algorithm ssh-ed25519
+        value 4a:c6:5d:91:6d:4a:69:7a:4e:0d:dc:4e:51:51:ee:e2
+    }
+[ok][2020-06-03 12:55:16]
+
+This sets up two remote nodes and configures upper-nso to listen to
+notifications from the lower nodes and enables the commit queue
+towards these two lower nodes.
+
+No devices have been configured yet:
+
+% show devices device
+No entries found.
+[ok][2020-06-03 12:55:45]
+
+Configure the two lower RFS nodes as LSA devices:
+
+% set ncs:devices device lower-nso-1 device-type netconf ned-id lsa-netconf
+% set ncs:devices device lower-nso-1 authgroup default
+% set ncs:devices device lower-nso-1 lsa-remote-node lower-nso-1
+% set ncs:devices device lower-nso-1 state admin-state unlocked
+% set ncs:devices device lower-nso-2 device-type netconf ned-id lsa-netconf
+% set ncs:devices device lower-nso-2 authgroup default
+% set ncs:devices device lower-nso-2 lsa-remote-node lower-nso-2
+% set ncs:devices device lower-nso-2 state admin-state unlocked
+
+% commit
+Commit complete.
+[ok][2020-06-03 12:59:23]
+
+% request ncs:devices fetch-ssh-host-keys
+fetch-result {
+    device lower-nso-1
+    result updated
+    fingerprint {
+        algorithm ssh-ed25519
+        value 4a:c6:5d:91:6d:4a:69:7a:4e:0d:dc:4e:51:51:ee:e2
+    }
+}
+fetch-result {
+    device lower-nso-2
+    result updated
+    fingerprint {
+        algorithm ssh-ed25519
+        value 4a:c6:5d:91:6d:4a:69:7a:4e:0d:dc:4e:51:51:ee:e2
+    }
+}
+[ok][2020-06-03 12:59:48]
+
+% request ncs:devices sync-from
+sync-result {
+    device lower-nso-1
+    result true
+}
+sync-result {
+    device lower-nso-2
+    result true
+}
+[ok][2020-06-03 13:00:16]
+
+At this point we will get alarms:
+% *** ALARM connection-failure: Device lower-nso-1 does not advertise ...
+% *** ALARM connection-failure: Device lower-nso-2 does not advertise ...
+
+Which is true as we do not have any YANG models compiled with the
+ned-id tailf-ncs-ned:lsa-netconf
+
+Now create a netconf package on the upper CFS node which can be used
+towards the rfs-vlan service on the lower RFS node, in the shell terminal
+window do:
+
+$ ncs-make-package --no-netsim --no-java --no-python                \
+    --lsa-netconf-ned package-store/rfs-vlan/src/yang               \
+    --dest upper-nso/packages/rfs-vlan-ned --build rfs-vlan-ned
+
+No netsim, java or python is needed as the cfs-vlan running on the
+upper CFS nso is a pure template service. Also this implies the lower RFS
+nodes are running the same version of NSO as the upper CFS node.
+The ned-id used in this case is tailf-ncs-ned:lsa-netconf
+
+To accomplish an LSA cluster running different versions of NSO see the
+example: 28-lsa-different-versions
+
+The created NED is an lsa-netconf NED based on the YANG files of the
+rfs-vlan service:
+
+--lsa-netconf-ned package-store/rfs-vlan/src/yang
+
+The package will be generated in the packages directory of the upper nso
+node:
+
+--dest upper-nso/packages/rfs-vlan-ned
+
+and the name of the package will be:
+
+rfs-vlan-ned
+
+Install the cfs-vlan service:
+
+$ ln -sf ../../package-store/cfs-vlan     upper-nso/packages
+
+Now in the CLI terminal window:
+
+% exit
+[ok][2020-06-03 13:02:27]
+> request packages reload
+
+>>> System upgrade is starting.
+>>> Sessions in configure mode must exit to operational mode.
+>>> No configuration changes can be performed until upgrade has completed.
+>>> System upgrade has completed successfully.
+reload-result {
+    package cfs-vlan
+    result true
+}
+reload-result {
+    package rfs-vlan-ned
+    result true
+}
+[ok][2020-06-03 13:02:45]
+> configure
+Entering configuration mode private
+[ok][2020-06-03 13:03:17]
+
+Now when YANG models are installed which are advertised by the the
+lower RFS node perform the sync-from again:
+
+% request ncs:devices sync-from
+sync-result {
+    device lower-nso-1
+    result true
+}
+sync-result {
+    device lower-nso-2
+    result true
+}
+[ok][2020-06-03 13:03:27]
+
+
+Set up the dispatch table for the different devices on the lower RFS
+nodes, this is just a simple example how dispatching can be done.
+In the CLI window do:
+
+% set cfs-vlan:devices device ex0 lower-node lower-nso-1
+% set cfs-vlan:devices device ex1 lower-node lower-nso-1
+% set cfs-vlan:devices device ex2 lower-node lower-nso-1
+% set cfs-vlan:devices device ex3 lower-node lower-nso-2
+% set cfs-vlan:devices device ex4 lower-node lower-nso-2
+% set cfs-vlan:devices device ex5 lower-node lower-nso-2
+% commit
+Commit complete.
+[ok][2020-06-03 13:07:23]
+
+Now go to the section 'Verify cfs-vlan service'
+
+Makefile setup:
+===============
+
+In the CLI terminal window do:
+
+$ make clean all
+....
+DEVICE ex0 CREATED
+DEVICE ex1 CREATED
+DEVICE ex2 CREATED
+DEVICE ex3 CREATED
+DEVICE ex4 CREATED
+DEVICE ex5 CREATED
+
+$ make start-all
+....
+Initialize NSO nodes:
+On lower-nso-1: fetch ssh keys from devices
+On lower-nso-1: perform sync-from
+On lower-nso-2: fetch ssh keys from devices
+On lower-nso-2: perform sync-from
+On upper-nso: fetch ssh keys from devices
+On upper-nso: perform sync-from
+On upper-nso: configure cluster remote nodes: lower-nso-1 and lower-nso-2
+On upper-nso: enable cluster device-notifications and cluster commit-queue
+On upper-nso: fetch ssh keys from cluster remote nodes
+
+$ make cli-upper-nso
+NCS_IPC_PORT=4569 ncs_cli -u admin
+admin connected from 127.0.0.1 using console on deva
+>
+
+Get into configuration mode:
+
+> configure
+Entering configuration mode private
+[ok][2020-06-03 13:12:15]
+
+Now go to the section 'Verify cfs-vlan service'
+
+Verify cfs-vlan service.
+========================
+
+Now when all packages are in place configure a cfs-vlan service:
+
+% set cfs-vlan v1 a-router ex0 z-router ex5 iface eth3 unit 3 vid 77
+
+The dispatcher code of cfs-vlan will use the location of the device to
+dispatch service instance data to the correct lower-node.
+
+Do a dry-run to see what happens:
+
+% commit dry-run
+.....
+    local-node {
+        data  devices {
+                  device lower-nso-1 {
+                      config {
+                          services {
+             +                vlan v1 {
+             +                    router ex0;
+             +                    iface eth3;
+             +                    unit 3;
+             +                    vid 77;
+             +                    description "Interface owned by CFS: v1";
+             +                }
+                          }
+                      }
+                  }
+                  device lower-nso-2 {
+                      config {
+                          services {
+             +                vlan v1 {
+             +                    router ex5;
+             +                    iface eth3;
+             +                    unit 3;
+             +                    vid 77;
+             +                    description "Interface owned by CFS: v1";
+             +                }
+                          }
+                      }
+                  }
+              }
+.....
+
+As ex0 resides on lower-nso-1 that part of the configuration goes
+there and the ex5 part goes to lower-nso-2.
+
+Further down in the output from dry-run the actual device code
+calculated on the lower-nodes are shown:
+
+lsa-node {
+    name lower-nso-1
+    data  devices {
+              device ex0 {
+                  config {
+                      sys {
+                          interfaces {
+         +                    interface eth3 {
+         +                        enabled;
+         +                        unit 3 {
+         +                            enabled;
+         +                            description "Interface owned by CFS: v1";
+         +                            vlan-id 77;
+         +                        }
+         +                    }
+                          }
+                      }
+                  }
+              }
+          }
+
+
+Now commit the changes to the lower nodes:
+
+% commit
+Commit complete.
+
+The above service creation first dispatches the service instance data to the
+lower-nodes through the template:
+
+./upper-nso/packages/cfs-vlan/templates/cfs-vlan-template.xml
+
+This template uses some very useful techniques in the dispatching
+process worth looking at.
+
+On the lower nodes the actual service is created through the template:
+
+./lower-nso-1/packages/rfs-vlan/templates/rfs-vlan-template.xml
+
+To see what has been modified use the get-modifications action:
+
+% request cfs-vlan v1 get-modifications
+.....
+local-node {
+.....
+  data devices {
+             device ex0 {
+                 config {
+                     sys {
+                         interfaces {
+        +                    interface eth3 {
+        +                        enabled;
+        +                        unit 3 {
+        +                            enabled;
+        +                            description "Interface owned by CFS: v1";
+        +                            vlan-id 77;
+        +                        }
+        +                    }
+                         }
+                     }
+                 }
+             }
+         }
+......
+
+All changed data both on the local node and on the remote lower nodes
+is displayed.
+
+After finishing the example in the shell terminal window do:
+
+$ make stop
+ncs-netsim stop
+DEVICE ex0 STOPPED
+DEVICE ex1 STOPPED
+DEVICE ex2 STOPPED
+DEVICE ex3 STOPPED
+DEVICE ex4 STOPPED
+DEVICE ex5 STOPPED
+NCS_IPC_PORT=4569 ncs --stop
+NCS_IPC_PORT=4570 ncs --stop
+NCS_IPC_PORT=4571 ncs --stop

@@ -1,0 +1,27 @@
+#!/bin/sh
+
+bindir=`dirname $0`
+case $bindir in
+    /*) ncsdir=`dirname $bindir`;;
+    *)  ncsdir=`(cd $bindir/..; pwd)`;;
+esac
+
+if [ -d $ncsdir/ncs_dir/lib ]; then
+    ncsdir=$ncsdir/ncs_dir
+fi
+
+pyang=$ncsdir/lib/pyang/bin/pyang
+
+if [ "x${PYTHONPATH}" != "x" ]; then
+    PYTHONPATH=$ncsdir/lib/pyang:$PYTHONPATH
+else
+    PYTHONPATH=$ncsdir/lib/pyang
+fi
+if [ "x${YANG_MODPATH}" != "x" ]; then
+    YANG_MODPATH=$ncsdir/src/ncs/yang:$YANG_MODPATH
+else
+    YANG_MODPATH=$ncsdir/src/ncs/yang
+fi
+export PYTHONPATH YANG_MODPATH
+
+exec $pyang "$@"

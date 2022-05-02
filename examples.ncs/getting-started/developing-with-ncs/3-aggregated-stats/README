@@ -1,0 +1,133 @@
+
+This example illustrates how to
+
+- write a user defined data provider which displays some
+  user defined runtime data.
+
+- how to aggregate runtime data from the network and display
+  it a "higher level"
+
+
+This example uses two NCS packages.The router package introduced
+in ../0-router-network and a package called 'stats' with some
+Java code examples
+
+$ ls ./packages
+stats  router
+
+To build the two packages, do
+
+$ make all
+
+To start the ncs-netsim network, follow the instructions in
+../0-router-network, it's the same network here.
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+
+All the code for this example resides in
+./packages/stats
+
+To run the example we do:
+
+$ ncs
+
+This will start ncs, and ncs will load the two packages, load the
+data models defined by the two packages and start the Java code defined
+by the packages.
+
+This example is initially loaded with some device groups, see the init file
+./ncs-cdb/ncs_init.xml
+
+
+$ ncs_cli -u admin
+admin connected from 127.0.0.1 using console on iron.local
+
+admin@iron> show configuration devices device-group
+device-group g1 {
+    device-name [ ex0 ex1 ];
+}
+device-group g2 {
+    device-name  [ ex0 ex2 ];
+    device-group [ g3 ];
+}
+device-group g3 {
+    device-name [ ex1 ];
+}
+[ok][2012-07-12 13:44:31]
+
+
+    Now we invoke the user example code
+
+
+admin@iron> show status aggregate-stats
+device-group g1 {
+    packet-errors  0;
+    packet-dropped 4;
+}
+device-group g2 {
+    packet-errors  0;
+    packet-dropped 6;
+}
+device-group g3 {
+    packet-errors  0;
+    packet-dropped 2;
+}
+[ok][2012-07-12 13:17:30]
+
+
+View the log output in logs/ncs-java-vm.log
+
+
+To study this example, first take a look at the file
+packages/actions/package-meta-data.xml, it defines one component
+which is
+
+  <component>
+    <name>stats</name>
+    <callback>
+      <java-class-name>com.example.stats.Stats</java-class-name>
+    </callback>
+  </component>
+
+This means that the class Stats has callbacks of some type, and
+we want them registered. Study the file. The yang files in the
+'stats' package reside under ./packages/stats/src/yang
+The file packages/stats/src/yang/aggregate.yang defines
+a list called device-group. This list maps precisely to the
+built-in list /devices/device-group. Study the code in
+packages/stats/src/java/src/com/example/stats/Stats.java
+to see how it reuses the keys from /devices/device-group.
+
+The code itself illustrates several interesting points.
+
+- How to define user code that aggregates runtime data from
+  the network and displays it at a higher level
+  This code (yang/Java) collects interface error counters and
+  displays them per device group.
+
+- It uses Navu, Navu caches data, once we've read data into the
+  navu tree (implicitly using Maapi in this case) the data is
+  there and will not be re-read. If a transaction is longlived,
+  which would be the case for a CLI session or a Webui session,
+  the data becomes stale. This code has a timeout on 5 seconds, after
+  which it throws away the Navu tree and creates a new empty one.
+
+
+- To start the emulated network, do ncs-netsim start | help
+- To start NCS, do ncs  [--verbose --foreground]
+- To stop NCS, do ncs --stop
+- To get a Juniper CLI into NCS, do ncs_cli -u admin
+
+- To restart NCS from scratch, ncs-setup --reset
+    this will ensure NCS is reinitialized from the ncs-cdb/*.xml files
+    when restarted
+
+- To restart the netsim network from scratch, do
+    ncs-netsim stop
+    ncs-netsim reset
+    ncs-netsim start
+       or in one swoop
+    ncs-netsim restart

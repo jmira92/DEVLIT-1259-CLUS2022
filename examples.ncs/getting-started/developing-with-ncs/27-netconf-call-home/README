@@ -1,0 +1,210 @@
+This example demonstrates the built-in support for NETCONF SSH Call
+Home client protocol operations over SSH as defined in RFC 8071
+(section 3.1).
+
+With NETCONF SSH Call Home, the NETCONF client listens for TCP
+connection requests from NETCONF servers. The SSH client protocol
+is started when the connection is accepted. The SSH client
+validates the server's presented host key with credentials stored in
+NSO. If no matching host key is found the TCP connection is closed
+immediately. Otherwise the SSH connection is established, and NSO is
+enabled to communicate with the device. The SSH connection is kept
+open until the devices itself terminates the connection, a NSO user
+disconnects the device, or the idle connection timeout is triggered
+(configurable in the ncs.conf file).
+
+
+              NETCONF                              NETCONF
+               Server                              Client
+                 |                                    |
+                 |   1. TCP connect                   |
+                 |----------------------------------->|
+                 |                                    |
+                 |                                    |
+                 |   2. SSH over the TCP session      |
+                 |<-----------------------------------|
+                 |                                    |
+                 |                                    |
+                 |   3. NETCONF over the SSH session  |
+                 |<-----------------------------------|
+                 |                                    |
+
+                       Call Home Sequence Diagram
+
+
+NETCONF Call Home is enabled and configured under
+/ncs-config/netconf-call-home in the ncs.conf file. By default NETCONF
+Call Home is disabled.
+
+<ncs-config xmlns="http://tail-f.com/yang/tailf-ncs-config">
+...
+  <netconf-call-home>
+    <enabled>true</enabled>
+    <transport>
+      <ssh>
+        <idle-connection-timeout>PT10S</idle-connection-timeout>
+      </ssh>
+    </transport>
+  </netconf-call-home>
+...
+</ncs-config>
+
+See tailf-ncs-config.yang for additional configuration parameters.
+
+To build the packages, do:
+
+$ make all
+
+To start the ncs-netsim network, do:
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+
+To run the example we do:
+
+$ ncs
+
+This will start NSO and load the packages.
+
+We now start a CLI to begin our work:
+
+$ ncs_cli -C -u admin
+
+We need an initial sync-from devices:
+
+admin@ncs# devices sync-from
+sync-result {
+    device ex0
+    result true
+}
+
+A device can be connected through the NETCONF Call Home client only if
+/devices/device/state/admin-state is set to call-home. This state
+prevents any southbound communication to the device unless the
+connection has already been established through the NETCONF Call Home
+client protocol.
+
+admin@ncs# config
+Entering configuration mode terminal
+admin@ncs(config)# devices device ex0 state admin-state call-home
+admin@ncs(config-device-ex0)# local-user admin
+admin@ncs(config-device-ex0)# ssh host-key-verification reject-mismatch
+admin@ncs(config-device-ex0)# ssh host-key ssh-ed25519
+Value for 'key-data' (<SSH public host key>):
+[Multiline mode, exit with ctrl-D.]
+> [[ enter SSH key from netsim/ex/ex0/ssh/ssh_host_ed25519_key.pub here ]]
+>
+admin@ncs(config-host-key-ssh-ed25519)# exit
+admin@ncs(config-device-ex0)# commit
+Commit complete.
+admin@ncs(config-device-ex0)# sync-from
+sync-result {
+    result false
+    info Device ex0 has no call home connection established
+}
+
+NSO will generate an asynchronous notification event whenever there is
+a connection request. An application can subscribe to these events
+and, for example, add an unknown device to the device tree with the
+information provided, or invoke actions on the device if it is known.
+
+The NCS_NOTIF_CALL_HOME_INFO event is generated for a NETCONF Call
+Home connection. The application receives a
+struct ncs_call_home_notification structure. The received structure
+is described in confd_events.h include file:
+
+/* When we receive ncs_call_home_notification structs, */
+/* the type field is either */
+/* of these values - indicating what happened */
+enum ncs_call_home_info_type {
+    CALL_HOME_DEVICE_CONNECTED = 1,
+    CALL_HOME_UNKNOWN_DEVICE   = 2
+};
+
+/* event delivered from the NCS_NOTIF_CALL_HOME_INFO flag */
+struct ncs_call_home_notification {
+    enum ncs_call_home_info_type type; /* type of call home event          */
+    char* device;                      /* the name of the device that      */
+                                       /* connected, NULL if the device is */
+                                       /* unknown                          */
+    struct confd_ip ip;                /* IP address of device             */
+    u_int16_t port;                    /* port of device                   */
+    char* ssh_host_key;                /* host key of device               */
+    char* ssh_key_alg;                 /* SSH key algorithm of device      */
+}
+
+The notif.py file  demonstrates an event listener listening for these
+events. Start it in another shell:
+
+$ python notif.py -C </dev/null
+Connected
+
+If an SSH connection is established, any outstanding configuration in
+the commit queue for the device will be pushed. Any NETCONF
+notification stream for the device will also be reconnected.
+
+Tail the netconf.log in another shell for log print-outs:
+
+tail -f logs/netconf.log
+
+Configure a device and commit through the commit queue:
+
+admin@ncs(config-device-ex0)# config r:sys syslog server 1.2.3.4
+admin@ncs(config-server-1.2.3.4)# commit commit-queue sync | details verbose
+...
+2019-03-25T12:33:38.824 ncs: commit-queue-id 1553513618718: waiting
+2019-03-25T12:33:38.836 ncs: commit-queue-id 1553513618718: executing
+2019-03-25T12:33:38.837 ncs: commit-queue-id 1553513618718: device ex0: calculating southbound diff...
+2019-03-25T12:33:38.849 ncs: commit-queue-id 1553513618718: device ex0: calculating southbound diff ok [0.012 sec]
+2019-03-25T12:33:38.850 ncs: commit-queue-id 1553513618718: device ex0 transient
+...
+
+Let the device call home:
+(cd netsim/ex/ex0; env CONFD_IPC_PORT=5010 confd_cmd -c "netconf_ssh_call_home 127.0.0.1 4334")
+
+...
+2019-03-25T12:33:38.850 ncs: commit-queue-id 1553513618718: executing
+2019-03-25T12:33:38.907 ncs: commit-queue-id 1553513618718: device ex0: calculating southbound diff...
+2019-03-25T12:33:38.914 ncs: commit-queue-id 1553513618718: device ex0: calculating southbound diff ok [0.007 sec]
+2019-03-25T12:33:38.914 ncs: commit-queue-id 1553513618718: device ex0: connect: device connect...
+2019-03-25T12:33:39.016 ncs: commit-queue-id 1553513618718: device ex0: connect: device connect ok [0.101 sec]
+...
+commit-queue {
+    id 1553513618718
+    status completed
+}
+Commit complete
+
+Let an unknown device call home:
+(cd netsim/ex/ex1; env CONFD_IPC_PORT=5011 confd_cmd -c "netconf_ssh_call_home 127.0.0.1 4334")
+
+The netconf.log should have these print-outs:
+
+<INFO> ... netconf new connection 127.0.0.1:46712 in the call home client
+<INFO> ... netconf device ex0 connected through the call home client
+<INFO> ... netconf new connection 127.0.0.1:55822 in the call home client
+<INFO> ... netconf unknown device 127.0.0.1:55822 tried to connect through the call home client
+
+The event listener should have printed these lines:
+
+Device connected: device=ex0 ip=127.0.0.1 port=46712 ssh_key_alg=ssh-rsa
+ssh_host_key=...
+Unknown device: ip=127.0.0.1 port=55822 ssh_key_alg=ssh-rsa
+ssh_host_key=...
+
+- To start the emulated network, do ncs-netsim start | help
+- To start NCS, do ncs  [--verbose --foreground]
+- To stop NCS, do ncs --stop
+- To get a Juniper CLI into NCS, do ncs_cli -u admin
+
+- To restart NCS from scratch, ncs-setup --reset
+    this will ensure NCS is reinitialized from the ncs-cdb/*.xml files
+    when restarted
+
+- To restart the netsim network from scratch, do
+    ncs-netsim stop
+    ncs-netsim reset
+    ncs-netsim start
+       or in one swoop
+    ncs-netsim restart

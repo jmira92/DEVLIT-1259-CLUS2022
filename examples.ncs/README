@@ -1,0 +1,35 @@
+This is the NCS example collection. Most (all) examples here require
+a working NCS installation and also a working ConfD installation.
+ConfD 3.1 or later is required. The reason ConfD is needed is that we're
+using ConfD to emulate managed devices.
+
+All Makefiles below will check for $NCS_DIR and also $CONFD_DIR, thus
+to run the examples the 'confdrc' and 'ncsrc' files in ConfD and NCS
+must be sourced prior to running the examples.
+
+Thus, we need to source the rc files:
+
+# . /path/to/confd-<confd-vsn>/confdrc
+# . /path/to/ncs-<ncs-vsn>/ncsrc
+
+ConfD is used in these examples to emulate managed devices
+that can speak NETCONF, speak Cisco CLI or speak SNMP northbound.
+The order of sourcing is important, we must source confdrc before we source ncsrc
+
+A working java installation is required with a properly
+installed ant environment. Ant is used to build all
+service logic applications. On Ubuntu, do:
+
+# sudo aptitude install sun-java6-jdk ant
+
+or
+
+# sudo apt-get install sun-java6-jdk ant
+
+
+
+
+
+
+
+ 

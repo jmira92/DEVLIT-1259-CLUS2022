@@ -1,0 +1,7 @@
+<ncs-package xmlns="http://tail-f.com/ns/ncs-packages">
+  <name>actions</name>
+  <package-version>1.0</package-version>
+  <description>How to use scripts to implement CLI commands and post-commit callbacks
+  </description>
+  <ncs-min-version>3.0</ncs-min-version>
+</ncs-package>

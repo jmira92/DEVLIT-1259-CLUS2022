@@ -1,0 +1,43 @@
+
+This is the getting started for developers example collection.
+
+Most of the examples in this example collection make use of an example
+network consisting of three fictious routers that run in an ncs-netsim
+emulated network.
+
+See manpage ncs-netsim(1) for more information on that.
+
+The simulated network consists of 3 fictious routers. The package
+that describes the router in the emulated network resides in
+./package/router. The examples that need the simulated network
+will have a link to the router package in their ./package directory.
+
+For example,
+
+$ file 1-cdb/packages/router
+1-cdb/packages/router: symbolic link to `../../packages/router'
+
+If we take a look at the Makefile in one of the examples, for example
+./1-cdb/Makefile, we can see that the ncs-netsim tool is used to
+create  an emulated network inside the example by invoking
+
+$ ncs-netsim create-network ./packages/router 3 ex --dir ./netsim
+
+
+---------------------------------------------------------------
+    |                        |                       |
+    |                        |                       |
+  ------                    ------                 -----
+  | ex0|                    | ex1|                 | ex2|
+  ------                    ------                 ------
+
+The first example called 0-router-network contains a README which
+guides you through this example network, running the device manager
+towards the network. Thus the example 0-router-network and in particular
+0-router-network/README is a prerequisite for running all the
+examples in this collection
+
+The remainder of the examples in this directory are
+all targeted towards Java developers. Different aspects on how to write
+Java code for NCS are shown. Each directory contains a standalone
+example with a README describing the example.

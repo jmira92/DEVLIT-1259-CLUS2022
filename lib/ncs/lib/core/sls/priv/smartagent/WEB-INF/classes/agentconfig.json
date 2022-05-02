@@ -1,0 +1,24 @@
+{
+  "_comment": "agentID must not be empty and must not contain space. It will be used as part of the REST URL.",
+  "agentID": "sa1",
+  
+  "commPlugin":
+  {
+    "className": "com.cisco.nesla.plugin.DefaultCommunication"
+  },
+  
+  "cryptoPlugin": 
+  {
+    "className": "com.cisco.nesla.plugin.DefaultCrypto"
+  },
+  
+  "pdPlugin":
+  {
+    "className": "com.cisco.nesla.plugin.DefaultPlatformDependent"
+  },
+  
+  "piPlugin":
+  {
+    "className": "com.cisco.nesla.plugin.DefaultPlatformIndependent"
+  }
+}

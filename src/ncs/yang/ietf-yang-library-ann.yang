@@ -1,0 +1,32 @@
+module ietf-yang-library-ann {
+  namespace "urn:dummy";
+  prefix dummy;
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-library {
+    prefix yanglib;
+  }
+
+  organization "Tail-f Systems";
+
+  description
+    "Annotation module for ietf-yang-library.
+
+     Copyright 2019 Cisco Systems, Inc.
+     All rights reserved.
+     Permission is hereby granted to redistribute this file without
+     modification.";
+
+  tailf:annotate "/yanglib:yang-library" {
+    tailf:callpoint "yanglib" {
+      tailf:internal;
+    }
+  }
+  tailf:annotate "/yanglib:modules-state" {
+    tailf:callpoint "yanglib" {
+      tailf:internal;
+    }
+  }
+}

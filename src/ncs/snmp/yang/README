@@ -1,0 +1,24 @@
+ConfD SNMP Agent - YANG files for built-in MIBs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The YANG models in compiled form (.fxs) are needed by 
+the ConfD SNMP Agent in order to work.
+Tampering with these models is NOT advised, and
+may result in a non-working system.
+
+A Makefile and source code for the YANG files
+is provided so that the .fxs files may be 
+rebuilt using optional compiler flags only, 
+for example to limit access to the SNMP Agent configuration data 
+from other protocols besides SNMP. 
+
+Modify the Makefile and insert the compiler flag "--export snmp"
+for .yang files that should only be accessible for the SNMP Agent.
+See manual page for confdc(1) for more information.
+
+The generated .h files are necessary when we wish to e.g. write
+transformation code that transforms from the MIBs onto a high level
+data model.
+
+
+

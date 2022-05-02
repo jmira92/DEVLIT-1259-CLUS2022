@@ -1,0 +1,130 @@
+This example illustrates how to submit alarms to NCS using the
+AlarmSinkCentral. The AlarmSinkCentral is started within the NCS Java
+VM.
+
+The example consists of two NCS packages.The router package introduced
+in ../0-router-network and a package called 'alarms' which illustrates
+the usage in Java.
+
+$ ls ./packages
+alarms    router
+
+To build the two packages, do
+
+$ make all
+
+To run the example and generate alarms some devices are needed. Use ncs-netsim
+to start the simulated network.
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+
+Now the simulated network consisting of three routers is started. When done
+with this example the simulated network can be stopped by: 'ncs-netsim stop'
+
+Start ncs:
+$ ncs
+
+Open a new shell and start a cli to ncs:
+$ ncs_cli -u admin
+admin connected from 127.0.0.1 using console on zork
+
+admin@zork> request devices sync-from
+
+Enter configuration
+admin@zork> configure
+admin@zork%
+
+Create a second interface on all routers, this is just to be able
+to generate alarms on to different interfaces on the same device, exit
+configuration afterwards:
+admin@zork% set devices device ex0..2 config r:sys interfaces interface eth1
+admin@zork% commit
+admin@zork% exit
+
+Create a minor alarm on device ex0 on interface eth0:
+admin@zork> request example generate alarm { device ex0 object eth0 alarm-type link-down perceived-severity minor specific-problem AIS alarm-text "Interface has sync problems" }
+
+View the alarm list by:
+admin@zork> show alarms alarm-list
+
+Issue a major alarm of the same type and on the same device/object:
+admin@zork> request example generate alarm { device ex0 object eth0 alarm-type link-down perceived-severity major specific-problem AIS alarm-text "Interface has sync problems" }
+
+View the alarm list by:
+admin@zork> show alarms alarm-list
+
+We still have only have one alarm as just the same event happened again but
+note how last-perceived-severity has been raised to major.
+
+Create a clear event:
+admin@zork> request example generate alarm { device ex0 object eth0 alarm-type link-down perceived-severity cleared  specific-problem AIS alarm-text "Interface has sync problems" }
+
+View the alarm list:
+admin@zork> show alarms alarm-list
+
+Note the alarm state is still there even though the managed object has flagged
+the alarm as cleared.
+
+Take the time to experiment in the cli creating alarms with different
+combinations of device, object, alarm-type and  perceived-severity.
+
+The software:
+------------
+Start by looking at the YANG models. One YANG model models the action and
+it's parameters. The other YANG model shows how to extend the build in
+alarm types in a hierarchical manner.
+
+To study this example, first take a look at the file meta data in the file
+packages/alarms/package-meta-data.xml
+
+Note the package consists of two components, one component is of type
+'application' and the other is of type 'callback'.  If a component is
+of type application this implies we can run any code we want inside
+that component. The NCS classloader will load the jar files from the
+package and then for each component instantiate according to the type
+of the component. A component of type 'application' must implement the
+Java interface called com.tailf.ncs.ApplicationComponent
+
+The other component is of type 'callback' this component annotates a
+simple java class, AlarmActionSubmitter, with
+com.tailf.dp.annotations.ActionCallback which means the class register
+it self to a action point defined in submit-alarm.yang and it will
+answer to action request located in /submit-al:example/generate-alarm.
+
+The two components are
+
+- An alarm producer with a simple action that submits alarm through an
+  AlarmSink.
+  The AlarmSink attaches to the AlarmSinkCentral which executes within
+  the NCS Java VM. Both the AlarmSink and AlarmSinkCentral is part
+  of the NCS Alarm API.
+
+- An alarm consumer which uses AlarmSource for reading alarms on the other
+  end.
+
+See the comments in the corresponding Java source file for
+further instructions on how to run the three different 'components'
+The files are:
+
+./packages/cdb/src/java/src/com/example/alarm/producer/AlarmActionSubmitter
+./packages/cdb/src/java/src/com/example/alarm/consumer/AlarmConsumer
+
+
+- To start the emulated network, do ncs-netsim start | help
+- To start NCS, do ncs  [--verbose --foreground]
+- To stop NCS, do ncs --stop
+- To get a Juniper CLI into NCS, do ncs_cli -u admin
+
+- To restart NCS from scratch, ncs-setup --reset
+    this will ensure NCS is reinitialized from the ncs-cdb/*.xml files
+    when restarted
+
+- To restart the netsim network from scratch, do
+    ncs-netsim stop
+    ncs-netsim reset
+    ncs-netsim start
+       or in one swoop
+    ncs-netsim restart

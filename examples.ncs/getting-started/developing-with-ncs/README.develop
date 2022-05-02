@@ -1,0 +1,535 @@
+
+Running NCS and developing NCS Java code. Debugging with eclipse.
+------------------------------------------------------------------
+
+
+This README describes various ways to develop Java code with NCS. It shows
+several ways to run and restart the Java code while NCS is running.
+In principle, this description applies to all the examples in this
+example collection. This README however, will be using  are from the
+3-aggregated-stats example.
+
+When developing Java code with NCS, usually we have a test network which is
+used to simulate the real devices we ultimately want to control with NCS.
+The tool here is ncs-netsim.
+ncs-netsim is used to create and manipulate a network of managed devices.
+Each simulated device runs ConfD to mimic the device. If the device is a
+
+netconf device - ConfD NETCONF agent is used to mimic an actual device
+snmp device    - ConfD SNMP agent is used to mimic an actual device
+cli device     - ConfD Cisco CLI engine is used to render the device CLI
+
+If the device is none of the above, and a generic NED is used to communicate
+with the device, ncs-netsim cannot help. In this case you must write your
+own simulation environment. The example called 0-router-network provides
+an introduction to running ncs-netsim on the hypothetical test devices
+we have in this example collection.
+
+So, to get started, first we build everything.
+
+$ make all
+
+This built the packages we have in ./packages, and it also created the
+netsim network.
+Then we start the network. Typically this only
+has to be done once, and then we're done with it.
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+
+Next thing we do is to start ncs. It's a daemon and invoking
+
+$ ncs
+
+
+
+
+How does NCS run the Java code
+-------------------------------------------------------------
+
+NCS will att first start take the packages found in the load path
+and copy these into a directory under supervision of NCS located at
+./state/package-in-use. Later starts of NCS will not take any new copies
+from the packages load-path so changes will not take effect by default.
+The reason for this is that in normal operation changing packages 
+definition as a side-effect of a restart is an unwanted behavior.
+Instead these type of changes are part of an NCS installation upgrade.
+
+Under package development as opposed to operations it is desired that all
+changes to package definitions in the package load-path takes effect
+immediately. There are two ways of making this happen.
+
+Either start ncs with the --with-reload-packages directive:
+$ ncs --with-reload-packages
+or set the environment variable NCS_RELOAD_PACKAGES=true
+$ export NCS_RELOAD_PACKAGES=true
+
+It is a strong recommendation to use the NCS_RELOAD_PACKAGE env variable
+approach since it guarantees that the packages are updated in all
+situations.
+
+It is also possible to request a running NCS to reload all its packages.
+
+admin@iron> request packages reload
+
+This request can only be performed in operational mode, and the effect is
+that all packages will be updated, and any change in YANG models or
+code will effectuated.
+
+If the change in a package only affect the java code and the NCS java-vm
+should be updated with these changes, there is another command
+
+admin@iron> request packages package mypack redeploy
+
+Which will redeploy the code in the java-vm. However this command will
+not be sensitive to changes in the YANG models.
+
+
+Ncs Java VM startup
+-------------------
+By default, ncs will start the Java VM invoking the command
+
+$NCS_DIR/bin/ncs-start-java-vm
+
+That script will invoke
+
+$ java com.tailf.ncs.NcsJVMLauncher
+
+The class NcsJVMLauncher contains the main() method. The started java vm will
+automatically retrieve and deploy all java code for the  packages defined
+in the load-path of the ncs.conf file. No other specification than the
+package-meta-data.xml for each package is needed.
+
+In the NCS CLI, there exist a number of settings and actions for the
+JVM, if we do:
+
+$ ncs_cli -u admin
+
+admin connected from 127.0.0.1 using console on iron.local
+admin@iron> show configuration java-vm | details
+auto-start                     true;
+auto-restart                   true;
+run-in-terminal {
+    disabled;
+    terminal-command "xterm -title ncs-java-vm -e";
+}
+stdout-capture {
+    enabled;
+    file    ./logs/ncs-java-vm.log;
+}
+connect-time                   30;
+initialization-time            20;
+synchronization-timeout-action log-stop;
+java-thread-pool {
+    pool-config {
+        cfg-core-pool-size    5;
+        cfg-keep-alive-time   60;
+        cfg-maximum-pool-size 256;
+    }
+}
+jmx {
+    jndi-address 127.0.0.1;
+    jndi-port    9902;
+    jmx-address  127.0.0.1;
+    jmx-port     9901;
+}
+[ok][2012-07-12 10:45:59]
+
+
+We see all the settings that used to control how the JVM run. In particular
+here we're interested in /java-vm/auto-start and and
+/java-vm/stdout-capture/file
+
+
+
+
+Controlling level of information in error messages from Java
+_________________________________________________________________
+
+When processing in the java-vm fails the exception error message is reported
+back to Ncs. This can be more or less informative depending on how elaborate
+the message is in the thrown exception. Also the exception can be wrapped one
+or several times with the original exception indicated as root cause of the
+wrapped exception.
+
+In debugging and error reporting these root cause messages
+can be valuable to understand what actually happens in the java code. On the
+other hand, in normal operations, just a top level message message without to
+much details are preferred.
+The exceptions are also always logged in the java-vm log but if this log is
+large it can be troublesome to correlate a certain exception to a specific
+action in Ncs.
+For this reason it is possible to configure the level of details shown by ncs
+for an java-vm exception.
+The leaf /ncs:ncs/java-vm/exception-error-message/verbosity takes one of three
+values:
+standard - Show the message from the top exception. This is the default.
+verbose  - Show all messages for the chain of cause exceptions, if any.
+trace    - Show messages for the chain of cause exceptions with exception
+           class and the trace for the bottom root cause.
+
+
+Here is an example in how this can be used. In the web-site-service example
+we try to create a service without the necessary preparations:
+
+admin@ncs% set services web-site s1 ip 1.2.3.4 port 1111 url x.se
+[ok][2013-03-25 10:46:46]
+
+[edit]
+admin@ncs% commit
+Aborted: Service create failed
+[error][2013-03-25 10:46:48]
+
+This is a very generic error message with does not describe what really happens
+in the java code. Here the java-vm log has to be analyzed to find the problem.
+However, with this cli session open we can from another cli set the error
+reporting level to trace:
+$ ncs_cli -u admin
+admin@ncs> configure
+admin@ncs% set java-vm exception-error-message verbosity trace
+admin@ncs% commit
+
+If we now in the original cli session issue the commit again we get the
+following error message that pinpoint the problem in the code:
+
+admin@ncs% commit
+Aborted: [com.tailf.dp.DpCallbackException] Service create failed
+Trace : [java.lang.NullPointerException]
+        com.tailf.conf.ConfKey.hashCode(ConfKey.java:145)
+        java.util.HashMap.getEntry(HashMap.java:361)
+        java.util.HashMap.containsKey(HashMap.java:352)
+        com.tailf.navu.NavuList.refreshElem(NavuList.java:1007)
+        com.tailf.navu.NavuList.elem(NavuList.java:831)
+        com.example.websiteservice.websiteservice.WebSiteServiceRFS.create(W...
+        com.tailf.nsmux.NcsRfsDispatcher.applyStandardChange(NcsRfsDispatche...
+        com.tailf.nsmux.NcsRfsDispatcher.dispatch(NcsRfsDispatcher.java:213)
+        sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+        sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl...
+        sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAcce...
+        java.lang.reflect.Method.invoke(Method.java:616)
+        com.tailf.dp.annotations.DataCallbackProxy.writeAll(DataCallbackProx...
+        com.tailf.dp.DpTrans.protoCallback(DpTrans.java:1357)
+        com.tailf.dp.DpTrans.read(DpTrans.java:571)
+        com.tailf.dp.DpTrans.run(DpTrans.java:369)
+        java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor...
+        java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecuto...
+        java.lang.Thread.run(Thread.java:679)
+        com.tailf.dp.DpThread.run(DpThread.java:44)
+[error][2013-03-25 10:47:09]
+
+
+
+
+Developing with System.out.println and tailing the log
+_________________________________________________________________
+
+The NCS daemon will, when it starts, also start the Java VM, and it will
+capture the stdout output from the JVM and send it to the file
+./logs/ncs-java-vm.log
+
+Thus if we tail -f that file, we get all the output from the Java code.
+That leads us to the first and most simple way of developing the Java code.
+If we now
+
+1. edit our Java code, which in the 3-aggregated-stats example resides
+   under ./packages/stats/src/java/src/com/example/stats/Stats.java
+
+2. Recompile that code in the package.
+
+  $ cd packages/stats/src; make
+
+  or
+
+  $ cd packages/stats/src/java; ant all
+
+3. Restart the Java code, either through telling NCS to restart the
+   entire JVM from the NCS CLI
+
+   admin@iron% request java-vm restart
+   result Started
+   [ok][2012-07-12 10:57:08]
+
+   or instructing NCS to just redeploy the package we're currently
+   working on.
+
+   admin@iron% request packages package stats redeploy
+   result true
+   [ok][2012-07-12 10:59:01]
+
+   The restart request requires that the environment variable
+   NCS_RELOAD_PACKAGES=true while the redeploy request always work.
+
+   We can then do
+
+   $ tail -f logs/ncs-java-vm.log
+
+   in order to check for printouts and log messages. Typically there is quite
+   a lot of data in the JVM log. It can sometime be hard to find our own
+   printouts and log messages. Therefore it can be convenient to use the command
+
+   admin@iron% set java-vm exception-error-message verbosity trace
+
+   which will make the relevant exception stack traces visible in the CLI.
+
+   It's is also possible to dynamically, from the CLI
+   control the level of logging as well as which Java packages that shall
+   log. Say that we're interested in Maapi calls, but don't want the log
+   cluttered with what is really NCS Java library internal calls.
+   We can then do:
+
+   admin@iron% set java-vm java-logging logger com.tailf.ncs level level-error
+   [ok][2012-07-12 11:10:50]
+   admin@iron% set java-vm java-logging logger com.tailf.conf level level-error
+   [ok][2012-07-12 11:11:15]
+   admin@iron% commit
+   Commit complete.
+
+   Now considerably less log data will come. If we want these settings to
+   always be there, even if we restart NCS from scratch with an empty
+   database (no .cdb file in ./ncs-cdb) we can save these settings as
+   XML, and put that XML inside the ncs-cdb directory, that way ncs will
+   use this data as initialization data on fresh restart. We do:
+
+   $ ncs_load -F p -p /ncs:java-vm/java-logging > ./ncs-cdb/loglevels.xml
+   $ ncs-setup --reset
+   $ ncs
+
+
+Running the JVM standalone
+-------------------------------------------------------------------
+
+
+It's possible to tell NCS to not start the JVM at all. This is interesting
+in two different scenarios.
+
+1. We want to run the NCS Java code embedded in a larger application, such
+   as a Java Application Server (JBoss)
+
+2. Debugging.
+
+First we configure NCS to not start the JVM at all.
+
+admin@iron> configure 
+Entering configuration mode private
+[ok][2012-07-12 11:23:25]
+
+[edit]
+admin@iron% set java-vm auto-start false
+[ok][2012-07-12 11:23:32]
+
+[edit]
+admin@iron% commit 
+Commit complete.
+[ok][2012-07-12 11:23:33]
+
+[edit]
+
+System message at 2012-07-12 11:23:33...
+    Subsystem stopped: ncs_servmgr_java
+admin@iron% admin@iron% 
+System message at 2012-07-12 11:23:33...
+    Subsystem stopped: NcsDpMux-3
+
+
+If we want this setting to be default on a fresh restart
+
+$ ncs_load -F p -p /ncs:java-vm > ./ncs-cdb/my-init-defaults.xml
+
+Now, no Java code is running, if we do:
+
+admin@iron> show status packages 
+package router {
+    package-version 1.0;
+    description     "Package generated from /home/klacke/tailf-src/branches/confd-4.0/examples.ncs/intro-developer/test-network/router";
+    ncs-min-version 2.0;
+    component router {
+        ned {
+            netconf;
+            device {
+                vendor "Acme Inc.";
+            }
+        }
+    }
+    oper-status {
+        java-uninitialized;
+    }
+}
+package stats {
+    package-version 1.0;
+    description     "Aggregating statistics from the network";
+    ncs-min-version 2.0;
+    required-package router;
+    component stats {
+        callback {
+            java-class-name [ com.example.stats.Stats ];
+        }
+    }
+    oper-status {
+        java-uninitialized;
+    }
+}
+[ok][2012-07-12 11:26:36]
+
+
+
+We see that the packages are in bad oper-state. We can also do
+
+admin@iron> show status java-vm 
+start-status auto-start-not-enabled;
+status       not-connected;
+[ok][2012-07-12 11:27:28]
+
+
+And this is expected, since we've told NCS to not start the JVM. Now, we
+can do that manually, at the UNIX shell prompt.
+
+$ ncs-start-java-vm
+.....
+.. all stdout from JVM
+
+
+So, now we're in position where we can manually stop the JVM, recompile
+the Java code, restart the JVM. This development cycle works fine.
+However, even though we're running the JVM standalone, we can still 
+redeploy packages from the NCS CLI as 
+
+
+   admin@iron% request packages package stats redeploy
+   result true
+   [ok][2012-07-12 10:59:01]
+
+to reload and restart just our Java code, no need to restart the JVM.
+
+
+
+
+Using Eclipse to debug the package Java code
+--------------------------------------------------- 
+
+Since we can run the NCS JVM standalone in a UNIX Shell, we can also
+run it inside eclipse. If we stand in a NCS project directory, like
+3-aggregated-stats, we can issue the command
+
+$ ncs-setup --eclipse-setup
+
+This will generate two files, .classpath and .project. If we add this 
+directory to eclipse as a "File->New->Java Project", uncheck the "Use the 
+default location" and enter the directory where the .classpath and .project
+have been generated. We're immediately ready to run this code in eclipse.
+All we need to do is to choose the main() routine in the NcsJVMLauncher class.
+
+The eclipse debugger works now as usual, and we can at will start and stop
+the Java code.
+
+One caveat here which is worth mentioning is that there are a few
+timeouts between NCS and the Java code that will trigger when we sit in
+the debugger. While developing with the eclipse debugger and breakpoints
+we typically want to disable all these timeouts. 
+
+First we have 3 timeouts in ncs.conf that matter. Copy the system
+ncs.conf and set the three values of
+ 
+/ncs-config/japi/new-session-timeout
+/ncs-config/japi/query-timeout
+/ncs-config/japi/connect-timeout
+
+to a large value. See man page ncs.conf(5) for a detailed description
+on what those values are. If these timeouts are triggered, NCS will
+close all sockets to the Java VM and all bets are off.
+
+$ cp $NCS_DIR/etc/ncs/ncs.conf .
+
+Edit the file and enter the following XML entry just after the Webui entry.
+
+
+  <japi>
+    <new-session-timeout>PT1000S</new-session-timeout>
+    <query-timeout>PT1000S</query-timeout>
+    <connect-timeout>PT1000S</connect-timeout>
+  </japi>
+
+
+Now restart ncs, and from now on start it as 
+
+$ ncs -c ./ncs.conf
+
+We also have a few timeouts that are dynamically reconfigurable
+from the CLI. We do:
+
+$ ncs_cli -u admin
+
+admin connected from 127.0.0.1 using console on iron.local
+admin@iron> configure 
+Entering configuration mode private
+[ok][2012-07-12 12:54:13]
+admin@iron% set devices global-settings connect-timeout 1000
+[ok][2012-07-12 12:54:31]
+
+[edit]
+admin@iron% set devices global-settings read-timeout 1000   
+[ok][2012-07-12 12:54:39]
+
+[edit]
+admin@iron% set devices global-settings write-timeout 1000
+[ok][2012-07-12 12:54:44]
+
+[edit]
+admin@iron% commit
+Commit complete.
+
+
+and then to save these settings so that ncs will have them 
+again on a clean restart (no cdb files)
+
+$ ncs_load -F p -p /ncs:devices/global-settings > ./ncs-cdb/global-settings.xml
+
+
+
+
+Remote connecting with eclipse to the NCS JVM
+----------------------------------------------------------------
+
+
+The eclipse Java debugger can connect remotely to a JVM and debug that VM
+This requires that the NCS Java VM has been started with some additional
+flags. By default the script in $NCS_DIR/bin/ncs-start-java-vm is used
+to start the JVM. If we provide the -d flag, we will launch the JVM with
+
+"-Xdebug -Xrunjdwp:transport=dt_socket,address=9000,server=y,suspend=n"
+
+This is what is needed to be able to remote connect to the JVM, In The NCS CLI
+
+admin@iron% set java-vm start-command "ncs-start-java-vm -d"
+[ok][2012-07-12 13:06:31]
+
+[edit]
+admin@iron% commit 
+Commit complete.
+
+
+Now if we in Eclipse, add a "Debug Configuration" and connect to port 9000
+on localhost, we can attach the Eclipse debugger to an already running
+system and debug it remotely.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

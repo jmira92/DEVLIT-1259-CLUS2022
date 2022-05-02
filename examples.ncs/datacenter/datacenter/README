@@ -1,0 +1,148 @@
+
+
+1. Introduction
+
+   This example illustrates how to create connectivity between a number of
+   access switches in the same or different data centers.
+   If the connectivity service spans over more than one data center it will
+   configure the corresponding Aggregation and Core equipment to create
+   the interconnection.
+
+   Each connection is defined by a VLAN and a IP Network. Any number of
+   access switches may participate in the connection.
+
+   The network is configured in a mesh setup, where all access switches
+   have connection to all aggregation switches in the same data center. The same
+   goes for all aggregation switches which are connected to all core routers
+   in the same data center. This is described in a topology model (/topology)
+   where all equipment present in each data center is described.
+
+   This guide uses the following annotations for command lines:
+   $ - the linux prompt
+   > - the NCS cli operational mode
+   % - the NCS cli configurational mode
+   # - comments
+
+2. Starting the example
+
+   Make sure you start clean, ie. no old configuration data is present.
+   If you have been running this or some other example before, make sure to
+   stop any NCS or simulated network nodes (netsim) that you may have running.
+   Output like 'connection refused (stop)' means no previous NCS was running and
+   'DEVICE c0 connection refused (stop)...' no simulated network was running.
+
+   $ ncs --stop
+   $ ncs-netsim stop
+   $ make clean
+
+   Running towards an emulated network consisting of Cisco XR, Cisco XE and
+   Force 10 devices.
+
+   1) Run make all to setup the emulated network and build the service package
+
+   $ make all
+
+   This creates the emulated network in ./netsim
+
+   2) Start the simulated network
+
+   $ ncs-netsim start
+
+   3) Start NCS
+
+   $ ncs
+
+   4) Connect to the NCS CLI
+
+   $ ncs_cli -u admin
+
+3. Configuring a new service
+
+   Before creating any services, we must sync the config from all devices.
+   This we only need to do when we start with a clean system. NCS database
+   is still empty.
+
+   > request devices sync-from
+
+   Now the NCS database has a complete replication of the network in it's
+   memory. With this we can create the first service.
+
+   1) Create the service instance
+
+   > configure
+
+   # All commands are now entered in config mode
+
+   set datacenter connectivity connection1 vlan 777 ip-network 10.1.1.0/24
+   edit datacenter connectivity connection1
+   set connectivity-settings preserve-vlan-tags
+
+   2) Add endpoints (access switches)
+
+   set endpoint catalyst0 GigabitEthernet0/5
+   set endpoint dell0 GigabitEthernet0/2
+   set endpoint catalyst2 GigabitEthernet0/7
+   top
+
+   3) Now check what is about to be committed
+
+   compare running brief
+
+   This shows what will happen from an input/service perspective, so in order
+   to see what NCS FASTMAP will create on the devices we need to dry-run the
+   service. This is the same thing as a test run with no communication to any
+   device.
+
+   commit dry-run outformat native
+
+   The output shown is what will happen once this service is committed.
+
+4. Updating a service from the web user interface
+
+   Start a browser and point the address to http://localhost:8080 and login
+   with admin admin as user name and password.
+
+   The data centers are visualized as tabs, and in each data center a grid of
+   devices are drawn. The service created in step 3. is listed in the services
+   section in the bottom.
+
+   1) Click on the table entry of the service created in step 3.
+
+   The devices participating in the service are highlighted on the map. Also
+   the interconnects are shown.
+
+   2) Add another device to the service by dragging device catalyst3 to the
+   list of Access Switches to the right.
+   Select interface: GigabitEthernet0/7
+
+   The save button turned green indicating a new transaction has been prepared.
+
+   3) Click Save to save the changes
+
+   Now the new device has been commisioned.
+
+5.  Update the VLAN of an existing service.
+
+    Deplpoying new services is easy, but what about some deep changes. Updating
+    the VLAN parameter of the service will of course have a severe impact on
+    all device participating. Let's see what happens.
+
+    1) Click on the service in the service list, so it appears on the map
+
+    2) Click on the VLAN number in the Access Switches window.
+
+    3) Change the value from 777 to 234
+
+    4) Click outside the window, and the Save button once again appears.
+
+    5) Click the Down Arrow by the save button and select:
+
+    "Native Commit Dry-run"
+
+    The output is what NCS will send to the devices (exact CLI commands) when
+    the Save button is pressed. As you can see, all devices are affected by
+    this change. But as you later will see when investigating the Java code is
+    that there is no code written to handle this. NCS FASTMAP logic manages all
+    changes to a service and calculates the diff that is needed on the network.
+
+    6) Click Save  to commit the service.

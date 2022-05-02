@@ -1,0 +1,62 @@
+.E7vB7VWBCkYvE_YgWmQ8 {
+    color: #049FD9;
+    cursor: pointer;
+    display: block;
+    padding: 0.2rem 1rem;
+    text-decoration: none;
+}
+
+.E7vB7VWBCkYvE_YgWmQ8:hover {
+    background-color: #049FD9;
+    color: #FFFFFF;
+}
+
+.MkY1vDAkMhseSwR4D_Aw {
+    position: relative;
+    top: 1.3rem;
+    color: #049FD9;
+    cursor: pointer;
+    display: block;
+    padding: 0.2rem 0.2rem 0.2rem 2rem;
+    text-decoration: none;
+}
+
+.MkY1vDAkMhseSwR4D_Aw:hover {
+    background-color: #049FD9;
+    color: #FFFFFF;
+}
+.pv71NiicKX8AFLNjnGd_ {
+    --color1: #049FD9;
+    --color7: #E8EBF1;
+    --height: 6px;
+    --small2: 0.625rem;
+    
+    appearance: none;
+    border: 1px solid white;
+    border-radius: 15px;
+    width: 100%;
+    height: var(--height);
+    margin-bottom: var(--small2);
+}
+
+.pv71NiicKX8AFLNjnGd_[value] {
+    background: var(--color7);
+    border-radius: var(--height);
+}
+
+.pv71NiicKX8AFLNjnGd_::-webkit-progress-bar {
+	border-radius: var(--height);
+    background-color: var(--color7);
+}
+
+.pv71NiicKX8AFLNjnGd_::-webkit-progress-value {
+  background: var(--color1);
+  border-radius: var(--height);
+}
+
+.pv71NiicKX8AFLNjnGd_[value]::-moz-progress-bar {
+    margin: 0 auto;
+	border-radius: var(--height);
+    background-color: var(--color1);
+}
+

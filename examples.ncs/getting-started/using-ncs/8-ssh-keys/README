@@ -1,0 +1,498 @@
+
+SSH Keys
+--------
+
+How NCS uses SSH host keys has already been touched upon in the
+1-simulated-cisco-ios, 2-real-device-cisco-ios, and
+3-real-device-juniper examples. Here we go into some more details about
+the options for managing and using SSH host keys, and also describe how
+to set up authentication using a private SSH key instead of a password
+("publickey" authentication in SSH terminology). See also the "SSH Key
+Management" chapter in the NCS User Guide.
+
+The example uses two simulated devices, one emulated Cisco cisco-ios
+router (same as in example 1-simulated-cisco-ios) accessed via a CLI
+NED, and one NETCONF device (same as in example 4-netconf-device).
+
+Preparations
+------------
+
+1) Make sure you have sourced the ncsrc file in $NCS_DIR. This sets up
+   paths and environment variables in order to run NCS.
+
+First create a package called 'host' from the YANG file we have, for the
+NETCONF device:
+
+  $ ncs-make-package --netconf-ned . host
+
+We now need to build the YANG file in the package:
+
+  $ make -C host/src
+
+Then we create a simulated network with one instance of this device:
+
+  $ ncs-netsim create-network host 1 h
+
+And add one instance of the cisco-ios device to the simulated network:
+
+  $ ncs-netsim add-to-network $NCS_DIR/packages/neds/cisco-ios 1 c
+
+Finally we create a NCS setup to use this simulated network:
+
+  $ ncs-setup --netsim-dir ./netsim --dest .
+
+And start everything:
+
+  $ ncs-netsim start
+  $ ncs
+  $ ncs_cli -u admin
+
+
+SSH Host Keys
+-------------
+
+The SSH protocol uses public key technology to allow a client to
+authenticate the server, i.e. verify that it is really talking to the
+intended server and not some man-in-the-middle intruder. This requires
+that the client has a priori knowledge of the server's public keys, and
+the server proves its possession of the corresponding private key by
+using it to sign some data. These keys are normally called "host keys".
+
+
+Host Keys for Devices
+---------------------
+
+In the case of NCS connecting to managed devices, NCS is the SSH client
+and the device is the SSH server. Thus NCS needs to have the public SSH
+host keys for the devices in order to do this verification. We saw
+already in the 1-simulated-cisco-ios example that ncs-setup picked up
+the host keys from the simulated network created by ncs-netsim -
+specifically, it uses 'ncs-netsim ncs-xml-init' to create a CDB init
+file with all the meta-data about the devices, including the SSH host
+keys.
+
+Thus we can already display these keys, which are stored under
+/devices/device{name}/ssh:
+
+  admin@ncs> set paginate false
+  admin@ncs> show configuration devices device * ssh
+  device c0 {
+      ssh {
+          host-key ssh-rsa {
+              key-data "AAAAB3...";
+          }
+          host-key ssh-ed25519 {
+              key-data "AAAAC3...";
+          }
+      }
+  }
+  device h0 {
+      ssh {
+          host-key ssh-rsa {
+              key-data "AAAAB3...";
+          }
+          host-key ssh-ed25519 {
+              key-data "AAAAC3...";
+          }
+      }
+  }
+
+(The keys are truncated in the transcript above, since they are shown as
+a single long line of base64-encoded binary data.) Since we have the
+host keys, we can also connect to the devices without issues:
+
+  admin@ncs> request devices connect
+  connect-result {
+      device c0
+      result true
+      info (admin) Connected to c0 - 127.0.0.1:10023
+  }
+  connect-result {
+      device h0
+      result true
+      info (admin) Connected to h0 - 127.0.0.1:12022
+  }
+
+This is all well and fine for simulated devices, but in a real network
+we don't have this luxury, of course. So let's simulate that situation
+by disconnecting from the devices, and deleting the keys:
+
+  admin@ncs> request devices disconnect
+  admin@ncs> configure
+  admin@ncs% delete devices device * ssh host-key
+  admin@ncs% commit
+  admin@ncs% request devices connect
+  connect-result {
+      device c0
+      result false
+      info Failed to authenticate towards device c0: Unknown SSH host key
+  }
+  connect-result {
+      device h0
+      result false
+      info Failed to authenticate towards device h0: Unknown SSH host key
+  }
+
+To resolve this situation, it is possible to disable the host key
+verification (see below), but of course it is better from a security
+point of view to make sure the keys are known to NCS. The keys can be
+input directly in the CLI just as any other configuration data - for
+each device, NCS can have several keys configured, one each for the
+"ssh-dss" (DSA key), "ssh-rsa" (RSA key) and "ssh-ed25519" (ED25519 key)
+algorithms, respectively. Here is how we could configure a RSA key for
+device c0, using the RFC 4716 format produced by 'ssh-keygen -e' from
+the OpenSSH implementation - other SSH implementations are usually also
+able to provide this format:
+
+  admin@ncs% set devices device c0 ssh host-key ssh-rsa
+  Value for 'key-data' (<SSH public host key>):
+  [Multiline mode, exit with ctrl-D.]
+  > ---- BEGIN SSH2 PUBLIC KEY ----
+  > Comment: "2048-bit RSA, converted by per@mars.tail-f.com from OpenSSH"
+  > AAAAB3NzaC1yc2EAAAADAQABAAABAQC90Cuh7kF8/ZL6009hn/SreCyyMvYytgZfdCnwKv
+  > xP3axWEO1aJIMhdJTWEnBGD2mCveU3rzmgke+QaT6t8K6NIQrR0ouiBaCyVlLqlhym8MSw
+  > 40Us0FpIn4NqBUb9B+3IoHfUdy5F3k0VThJr2Z+YN3/YJfvyG+7/2LeRm4cv4D10e3VvIs
+  > CN7aBcsVtxf63opLp1Te5FHbZgqKOvn/2NI6sY5Z0h6+hTUPsMfc+tzdpz9b5/gSC3m5d/
+  > 8NRrG9tBc3Oxkk1QfuHa20Atmw0RePStvurArh8sI0q/QEpDcGkQWeHfc+SlHczRmtz28y
+  > FZT7FY7IUbBE/zzwI6lu8T
+  > ---- END SSH2 PUBLIC KEY ----
+  > ^D
+
+  admin@ncs% commit
+  admin@ncs% request devices device c0 connect
+  result false
+  info Failed to authenticate towards device c0: SSH host key mismatch
+
+Here the connection still fails, but with a different error - since this
+wasn't actually the correct key (the netsim host key is generated at NCS
+install time).
+
+NCS will also accept "native OpenSSH" public key format (a single line
+looking like "ssh-dss <base64> <comment>"), as well as the plain
+base64-encoded data.
+
+Fetching Host Keys from Devices
+-------------------------------
+
+Obviously this method is quite unwieldy if we need to do this for many
+devices, and thus NCS provides an action to fetch the host keys for one
+or more devices. This invocation will fetch the keys for all devices (in
+our case there are only two):
+
+  admin@ncs% request devices device * ssh fetch-host-keys
+  devices device c0 ssh fetch-host-keys
+      result updated
+      fingerprint {
+          algorithm ssh-ed25519
+          value 19:0b:40:91:3b:f2:0c:b2:ba:7f:af:8a:15:ea:a0:e5
+      }
+      fingerprint {
+          algorithm ssh-rsa
+          value 03:64:fc:b7:87:bd:34:5e:3b:6e:d8:71:4d:3f:46:76
+      }
+  devices device h0 ssh fetch-host-keys
+      result updated
+      fingerprint {
+          algorithm ssh-ed25519
+          value 19:0b:40:91:3b:f2:0c:b2:ba:7f:af:8a:15:ea:a0:e5
+      }
+
+As we can see, the action reports that the result is "updated" for both
+devices - the key we configured for device c0 has been replaced with the
+correct one, and for device h0 we now have a key where none was
+configured before the action invocation. The new keys were committed by
+the action (it will do this when possible, i.e. when the device entry is
+already committed) and thus we can immediately verify that successful
+connections can be made:
+
+  admin@ncs% request devices connect
+  connect-result {
+      device c0
+      result true
+      info (admin) Connected to c0 - 127.0.0.1:10023
+  }
+  connect-result {
+      device h0
+      result true
+      info (admin) Connected to h0 - 127.0.0.1:12022
+  }
+
+The fetch-host-keys invocation can of course take all the usual
+wildcard/range expressions for the device name, i.e. we can use
+invocations like
+
+   request devices device c* ssh fetch-host-keys
+
+or
+
+   request devices device c0..10 ssh fetch-host-keys
+
+Additionally the action can be invoked for a device group, with some
+additional input parameters:
+
+  admin@ncs% set devices device-group netconf device-name h0
+  admin@ncs% commit
+  admin@ncs% request devices device-group netconf fetch-ssh-host-keys ?
+  Description: Retrieve SSH host keys from all devices
+  Possible completions:
+    suppress-fingerprints     - Do not return key fingerprints
+    suppress-positive-result  - Only return result if key retrieval failed
+    suppress-unchanged-result - Do not return result if keys are unchanged
+
+Finally it can be invoked on the "devices level":
+
+  admin@ncs% request devices fetch-ssh-host-keys ?
+  Possible completions:
+    device                    - Only fetch host keys from these devices.
+    suppress-fingerprints     - Do not return key fingerprints
+    suppress-positive-result  - Only return result if key retrieval failed
+    suppress-unchanged-result - Do not return result if keys are unchanged
+
+There is also an action to request that the fingerprints of already
+configured keys are shown:
+
+  admin@ncs% request devices device * ssh host-key * show-fingerprint
+  devices device c0 ssh host-key ssh-rsa show-fingerprint
+      value 03:64:fc:b7:87:bd:34:5e:3b:6e:d8:71:4d:3f:46:76
+  devices device c0 ssh host-key ssh-ed25519 show-fingerprint
+      value 19:0b:40:91:3b:f2:0c:b2:ba:7f:af:8a:15:ea:a0:e5
+  devices device h0 ssh host-key ssh-rsa show-fingerprint
+      value 03:64:fc:b7:87:bd:34:5e:3b:6e:d8:71:4d:3f:46:76
+  devices device h0 ssh host-key ssh-ed25519 show-fingerprint
+      value 19:0b:40:91:3b:f2:0c:b2:ba:7f:af:8a:15:ea:a0:e5
+
+In case we have configured but not yet committed keys, this action
+reports the fingerprint of those not yet committed keys when run in
+"configure mode". If we want to check the fingerprints of the keys that
+are already committed when we have uncommitted keys, we must run it from
+"operational mode" - i.e. in configure mode, we would invoke it as 'run
+request devices device ...'.
+
+Modifying the Host Key Verification Level
+-----------------------------------------
+
+If we don't want to deal with the issues of host key verification, we
+can disable it completely by setting /ssh/host-key-verification to
+"none":
+
+  admin@ncs% set ssh host-key-verification ?
+  Description: Level of host key verification
+  Possible completions:
+    [reject-unknown]
+    none            - Accept any host key
+    reject-mismatch - Reject host keys that do not match the stored key
+    reject-unknown  - Reject unknown host keys
+  admin@ncs% set ssh host-key-verification none
+  admin@ncs% commit
+
+This is of course not good for security, but can be a reasonable choice
+during development. The examples in the
+getting-started/developing-with-ncs collection set the value to "none"
+where relevant, by means of an XML init file for CDB. The
+"reject-mismatch" setting offers a "middle ground", where the device
+host keys will be verified against the keys that we actually have
+configured, but connections will succeed even if we don't have any keys
+configured. The verification level can also be set per device,
+overriding the above global setting:
+
+  admin@ncs% set devices device h0 ssh host-key-verification reject-mismatch
+
+Host Keys for NCS Cluster Nodes
+-------------------------------
+
+When NCS is set up in a cluster configuration, the nodes in the cluster
+communicate via NETCONF over SSH. The management of SSH host keys in
+this case is outside the scope of this example, but it is very similar
+to the management for devices - there is however no method equivalent to
+ncs-netsim's auto-configuration of SSH keys, thus this will always
+require some configuration.
+
+Samples of relevant commands:
+
+  admin@ncs% set cluster remote-node ncs2 ssh host-key ssh-rsa
+  admin@ncs% request cluster remote-node * ssh fetch-host-keys
+  admin@ncs% request cluster remote-node * ssh host-key * show-fingerprint
+  admin@ncs% set cluster remote-node * ssh host-key-verification reject-unknown
+
+Note that the global setting of /ssh/host-key-verification applies to
+both devices and NCS cluster nodes. Thus the last command above
+overrides the global "none" setting that we did earlier with the most
+restrictive "reject-unknown" setting for the cluster nodes configured at
+the time the command is given.
+
+
+SSH Publickey Authentication
+-----------------------------
+
+In SSH publickey authentication, the server is configured with one or
+more public keys which are authorized for authentication of a user. The
+client proves possession of one of the corresponding private keys by
+using it to sign some data - i.e. the exact reverse of the server
+authentication provided by host keys.
+
+Publickey Authentication for Devices
+------------------------------------
+
+In this case NCS is the SSH client, and thus needs to have a private SSH
+key to use for the authentication. Of course the device also needs to be
+configured with the corresponding public key as authorized for
+authentication.
+
+The netsim devices that we have set up in this example will look for an
+"authorized_keys" file in the user's "ssh_keydir" directory. The
+toplevel directory of the example contains a DSA private/public key pair
+in the files "id_dsa" and "id_dsa.pub", respectively. Here we need to
+change the default "ssh_keydir" directory to one that actually exists
+inside the example directory tree, and create the "authorized_keys" file
+there. Real devices may of course have some completely different
+procedures for this setup.
+
+First we use ncs-netsim from the Linux shell prompt to connect to the
+CLI of the "h0" device and configure the ssh_keydir:
+
+  $ ncs-netsim cli h0
+  admin@h0>configure
+  admin@h0%set aaa authentication users user admin ssh_keydir home/admin/.ssh
+  admin@h0%commit
+  admin@h0%exit
+  admin@h0>exit
+
+Using a relative path for this directory is of course not a good idea in
+practice, but it is convenient in the context of this example. So let's
+create and populate the directory:
+
+  $ mkdir -p netsim/h/h0/home/admin/.ssh
+  $ cp id_dsa.pub netsim/h/h0/home/admin/.ssh/authorized_keys
+
+Now we can configure NCS to use the corresponding private key. As with
+all authentication towards devices, this uses the 'authgroup'
+indirection and the 'umap' selection mechanisms. These were already
+setup for password authentication by ncs-setup, we will only change the
+settings for user "admin" in the default authgroup:
+
+  $ ncs_cli -u admin
+  admin@ncs> configure
+  admin@ncs% edit devices authgroups group default
+  admin@ncs% set umap admin public-key
+  admin@ncs% commit
+
+This chooses publickey authentication with the default parameters, which
+is to use a file called "id_dsa" in the local user's "ssh_keydir"
+directory. To actually see these defaults, we need to use the 'details'
+pipe command:
+
+  admin@ncs% show umap admin public-key | details
+  private-key {
+      file {
+          name id_dsa;
+      }
+  }
+
+Having the private key in the file system may be convenient in some
+cases, but generally it is probably preferable to have it configured in
+the NCS CDB data store. Thus we will not cover this case further here,
+other than noting that this default assumes an unencrypted private key,
+i.e. a file without a passphrase, which of course is a very bad practice
+from a security point of view. It is possible to configure a passphrase
+for a private key in the file system either explicitly via
+
+  admin@ncs% set umap admin public-key private-key file passphrase
+  (<AES encrypted string>):
+
+- or tell NCS to use the password of the local user as the passphrase
+(of course this only works if we have logged in to NCS using password
+authentication) via
+
+  admin@ncs% set umap admin public-key private-key file use-password
+
+To configure a private key in CDB, we create an entry in the
+/ssh/private-key list:
+
+  admin@ncs% top
+  admin@ncs% run file show id_dsa
+  -----BEGIN DSA PRIVATE KEY-----
+  Proc-Type: 4,ENCRYPTED
+  DEK-Info: AES-128-CBC,F9E5C500E4542207383BB6A783FEAA14
+
+  mJPUoKWut420mPBhE4NX3vXepc2w8MBS1orQhQRV7gQzZTdSbYFjp8Em3Cyj9Ibl
+  hKG1KW8UGQXmNx4/CUqFLH46yec7U6VKGjh9fgu9U/bQsOXSsB7QiTSY1Bsnkm+R
+  cqCvS46hMO4vyH7TlZUV6YIWzarjcJrF6t1UsqzwBXnmOLRpj/7+9CKQBZHhochB
+  gVLFnw8WiK71DqSYu5AAhGNwefskt6LqS90q7xOqGgr8NCJezJq/V7/y/nmzU9rB
+  GXWBmVzCzaX/20LraaNiCyeV/wwP6SBlBOZXplP+ycryBjkvumKUtWmCI3gmTAQ7
+  8a2XvJyFHIhD7sxWI1aBmihkYRGpZ3ocO/PxKdcss2mp7bvLF1XclOiBIpryvJPl
+  a5hCBVHrgayk8RIzC6KriBse84E5mPjyqcDn7guJ8oQIgKhtosoMhw7Z4eVzngBO
+  UPC+sm/TBL/bO1gbnutkqf5VEzTGl7zbDC7SYpCaQ0e86gK2bGX58zrniC33fqob
+  NUiCdJl3rAwddcBywPZo1QDS9/RtAgIzFqrc5WAOIaGOlNQ3v8Zy5/JIJd7t65Ka
+  /FlOfxIVs7nPr4B9MY6j6Q==
+  -----END DSA PRIVATE KEY-----
+  admin@ncs% set ssh private-key admin
+  Value for 'key-data' (<SSH private user key>):
+  [Multiline mode, exit with ctrl-D.]
+  > -----BEGIN DSA PRIVATE KEY-----
+  > Proc-Type: 4,ENCRYPTED
+  > DEK-Info: AES-128-CBC,F9E5C500E4542207383BB6A783FEAA14
+  >
+  > mJPUoKWut420mPBhE4NX3vXepc2w8MBS1orQhQRV7gQzZTdSbYFjp8Em3Cyj9Ibl
+  > hKG1KW8UGQXmNx4/CUqFLH46yec7U6VKGjh9fgu9U/bQsOXSsB7QiTSY1Bsnkm+R
+  > cqCvS46hMO4vyH7TlZUV6YIWzarjcJrF6t1UsqzwBXnmOLRpj/7+9CKQBZHhochB
+  > gVLFnw8WiK71DqSYu5AAhGNwefskt6LqS90q7xOqGgr8NCJezJq/V7/y/nmzU9rB
+  > GXWBmVzCzaX/20LraaNiCyeV/wwP6SBlBOZXplP+ycryBjkvumKUtWmCI3gmTAQ7
+  > 8a2XvJyFHIhD7sxWI1aBmihkYRGpZ3ocO/PxKdcss2mp7bvLF1XclOiBIpryvJPl
+  > a5hCBVHrgayk8RIzC6KriBse84E5mPjyqcDn7guJ8oQIgKhtosoMhw7Z4eVzngBO
+  > UPC+sm/TBL/bO1gbnutkqf5VEzTGl7zbDC7SYpCaQ0e86gK2bGX58zrniC33fqob
+  > NUiCdJl3rAwddcBywPZo1QDS9/RtAgIzFqrc5WAOIaGOlNQ3v8Zy5/JIJd7t65Ka
+  > /FlOfxIVs7nPr4B9MY6j6Q==
+  > -----END DSA PRIVATE KEY-----
+  > ^D
+  admin@ncs% set ssh private-key admin passphrase
+  (<AES encrypted string>): ******
+  admin@ncs% show ssh private-key
+  private-key admin {
+      key-data   "$8$...";
+      passphrase "$8$...";
+  }
+
+Here we displayed the file with the 'file show' operational-mode
+command, and then just cut&pasted it into the prompt from 'set ssh
+private-key admin'. Since the key is encrypted with a passphrase, we also
+need to set the passphrase (which in this case is "secret", without the
+quotes). NCS will always store the key in an encrypted form, so it can
+be OK to use a key without passphrase here - but the really security-
+conscious user will prefer to not have the cleartext key available at
+any point.
+
+We chose "admin" as the key in the list, but it is really a completely
+arbitrary name. The selection of a specific key is made by name in the
+'umap' list:
+
+  admin@ncs% edit devices authgroups group default
+  admin@ncs% set umap admin public-key private-key name admin
+  admin@ncs% commit
+  admin@ncs% top
+
+Now we're all done, and can verify that we are able to authenticate with
+this private key:
+
+admin@ncs% request devices disconnect
+admin@ncs% request devices device h0 connect
+result true
+info (admin) Connected to h0 - 127.0.0.1:12022
+
+We can of course do the same exercise for the c0 device, but the device
+setup is a bit more complex, since the Cisco emulation hides the
+tailf-aaa module that is used to set the ssh_keydir. Thus it is not
+covered here.
+
+Publickey Authentication for NCS Cluster Nodes
+----------------------------------------------
+
+As for host keys, the setup of publickey authentication for NCS cluster
+nodes is outside the scope of this example, but the client side
+configuration is essentially identical to that for devices, only in a
+different location. The authgroups for cluster node authentication are
+found in the /cluster/authgroup list instead of in
+/devices/authgroups/group - everything else is the same.
+
+However for cluster nodes, the server side must also be configured -
+this requires the creation of an "authorized_keys" file along the lines
+of what we did for the "h0" device above.

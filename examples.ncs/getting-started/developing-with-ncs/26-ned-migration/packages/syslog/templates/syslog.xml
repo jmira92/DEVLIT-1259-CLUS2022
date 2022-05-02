@@ -1,0 +1,51 @@
+<config-template xmlns="http://tail-f.com/ns/config/1.0"
+                 servicepoint="syslog-servicepoint">
+  <devices xmlns="http://tail-f.com/ns/ncs" foreach="{devices}">
+    <device when="{deref(current())">
+      <name>{string(current())}</name>
+      <config>
+        <?if-ned-id
+          router-nc-1.0:router-nc-1.0?>
+          <sys xmlns="http://example.com/router">
+            <syslog>
+              <server foreach="{/server}">
+                <name>{name}</name>
+                <enabled>{enabled}</enabled>
+                <selector foreach="{selector}">
+                  <name>{name}</name>
+                  <negate>{negate}</negate>
+                  <comparison>same</comparison>
+                  <level>{level}</level>
+                  <option>
+                    <pid/>
+                  </option>
+                  <facility>{facility}</facility>
+                </selector>
+              </server>
+            </syslog>
+          </sys>
+        <?elif-ned-id
+          router-nc-1.1:router-nc-1.1?>
+        <!-- Yes this is the same as above but we do this
+        so we can add and remove others -->
+          <sys xmlns="http://example.com/router">
+            <syslog>
+              <server foreach="{/server}">
+                <name>{name}</name>
+                <enabled>{enabled}</enabled>
+                <selector foreach="{selector}">
+                  <name>{name}</name>
+                  <negate>{negate}</negate>
+                  <comparison>same</comparison>
+                  <level>{level}</level>
+                  <option>pid</option>
+                  <facility>{facility}</facility>
+                </selector>
+              </server>
+            </syslog>
+          </sys>
+        <?end?>
+      </config>
+    </device>
+  </devices>
+</config-template>

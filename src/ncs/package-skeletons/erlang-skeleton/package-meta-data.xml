@@ -1,0 +1,6 @@
+<ncs-package xmlns="http://tail-f.com/ns/ncs-packages">
+  <name>%NAME%</name>
+  <package-version>1.0</package-version>
+  <description>Generated Erlang package</description>
+  <ncs-min-version>%NCSVER%</ncs-min-version>
+</ncs-package>

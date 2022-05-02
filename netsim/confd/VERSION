@@ -1,0 +1,8 @@
+ConfD version 7.7.1 for darwin on x86_64.
+Revision: 0c048c0da8bb129184d766dbbc63567506b43d52 (GIT)
+Date: Wed Jan 26 09:37:11 CET 2022
+DOCUMENTATION_PACKAGE=confd-7.7.1.doc.tar.gz
+JAVA_PACKAGE=confd-7.7.1.java.tar.gz
+EXAMPLE_PACKAGE=confd-7.7.1.examples.tar.gz
+Erlang/OTP version: 22.3.4.17
+Java version: 1.8.0_282

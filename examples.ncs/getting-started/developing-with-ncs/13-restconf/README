@@ -1,0 +1,265 @@
+Example: Using the NCS RESTCONF API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  This example shows how to work with the RESTCONF API and
+  it uses the examples.ncs/web-server-farm/web-site-service example to
+  do this.
+
+  The API is demonstrated by walking through some queries. In this
+  example, we use the command line tool 'curl' to communicate with NCS.
+
+Starting the Example
+~~~~~~~~~~~~~~~~~~~~
+
+  Follow the README file in examples.ncs/web-server-farm/web-site-service
+  to start the example.
+
+Sending RESTCONF requests
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  In this example, we will authenticate as the user 'admin' with
+  password 'admin'.
+
+  Note that RESTCONF requires module name prefix to resources when they first
+  are used.
+
+1.  Top-level GET
+
+  Send the first RESTCONF query to get a representation of the top-level
+  resource, which is accessible through the well-known path '/restconf':
+
+  $ curl -v -u admin:admin http://localhost:8080/restconf
+  * Hostname was NOT found in DNS cache
+  *   Trying 127.0.0.1...
+  * Connected to localhost (127.0.0.1) port 8080 (#0)
+  * Server auth using Basic with user 'admin'
+  > GET /restconf HTTP/1.1
+  > Authorization: Basic YWRtaW46YWRtaW4=
+  > User-Agent: curl/7.35.0
+  > Host: localhost:8080
+  > Accept: */*
+  >
+  < HTTP/1.1 200 OK
+  * Server  is not blacklisted
+  < Server:
+  < Date: Tue, 01 Nov 2016 13:29:52 GMT
+  < Cache-Control: private, no-cache, must-revalidate, proxy-revalidate
+  < Content-Length: 157
+  < Content-Type: application/yang-data+xml
+  < Vary: Accept-Encoding
+  < Pragma: no-cache
+  <
+  <restconf xmlns="urn:ietf:params:xml:ns:yang:ietf-restconf">
+    <data/>
+    <operations/>
+    <yang-library-version>2016-06-21</yang-library-version>
+  </restconf>
+
+  As can be seen from the result, the server in this example exposes
+  two additional resources: operations and yang-library-version.
+
+  Note:
+
+    o  See the Content-Type header; contains the media-type for the
+       resource.
+
+  If you prefer JSON format just add an Accept header, e.g.
+
+  $ curl -u admin:admin -H "Accept: application/yang-data+json" \
+  http://localhost:8080/restconf/data
+  {"restconf":{"data":{},"operations":{},"yang-library-version":"2016-06-21"}}
+
+
+2.  GET of datastore
+
+  We can get the datastore by following the link below:
+
+  $ curl -s -u admin:admin http://localhost:8080/restconf/data
+
+  The RESTCONF api follows the data-model structure. First the device
+  configuration is to synced via the CLI
+
+  admin@ncs> request devices sync-from
+
+  To show the config of the lb0 device in the CLI:
+
+  admin@ncs> show configuration devices device lb0 config lb:lbConfig
+
+  Show device configuration over RESTCONF:
+
+  $ curl -s -u admin:admin http://localhost:8080/restconf/data/\
+tailf-ncs:devices/device=lb0/config/lb:lbConfig
+
+  <lbConfig xmlns="http://pound/lb"  xmlns:lb="http://pound/lb"
+    xmlns:ncs="http://tail-f.com/ns/ncs">
+  <system>
+    <ntp-server>18.4.5.6</ntp-server>
+    <resolver>
+      <search>acme.com</search>
+      <nameserver>18.4.5.6</nameserver>
+    </resolver>
+  </system>
+  </lbConfig>
+
+
+3.  GET with selector
+
+  We can also get more or less of the data tree:
+
+  $ curl -s -u admin:admin http://localhost:8080/\
+restconf/data/tailf-ncs:devices/device=lb0/config/lb:lbConfig?depth=2
+
+  <lbConfig xmlns="http://pound/lb" xmlns:lb="http://pound/lb"
+    xmlns:ncs="http://tail-f.com/ns/ncs">
+  <system>
+    <ntp-server>18.4.5.6</ntp-server>
+    <resolver/>
+  </system>
+  </lbConfig>
+
+
+4.  Delete parts of the config
+
+  First we find a resource to delete. For example, the ntp-server:
+
+  $ curl -s -u admin:admin http://localhost:8080/\
+restconf/data/tailf-ncs:devices/device=lb0/config/lb:lbConfig/system/ntp-server
+
+  Then save the resource we want to delete to a local file, in this
+  case the subnet resource:
+
+  $ curl -s -u admin:admin http://localhost:8080/restconf/data/\
+tailf-ncs:devices/device=lb0/config/lb:lbConfig/system/ntp-server \
+    > saved-ntp-server
+
+  Now we can delete the resource:
+
+  $ curl -v -X DELETE -u admin:admin http://localhost:8080/restconf/data/\
+tailf-ncs:devices/device=lb0/config/lb:lbConfig/system/ntp-server
+
+  < HTTP/1.1 204 No Content
+
+  Make sure it is gone from the CLI:
+
+  admin@ncs> show configuration devices device lb0 config lb:lbConfig
+  system {
+      ntp-server 18.4.5.6;
+      resolver {
+          search     acme.com;
+          nameserver 18.4.5.6;
+      }
+  }
+
+  and using RESTCONF:
+
+  $ curl -u admin:admin http://localhost:8080/\
+restconf/data/tailf-ncs:devices/device=lb0/config/lb:lbConfig/system/
+
+  <system xmlns="http://pound/lb"  xmlns:lb="http://pound/lb"
+    xmlns:ncs="http://tail-f.com/ns/ncs">
+  <resolver>
+    <search>acme.com</search>
+    <nameserver>18.4.5.6</nameserver>
+  </resolver>
+  </system>
+
+
+5.  Create a new resource
+
+  Let's re-create the subnet resource we just deleted.
+
+  In order to create a resource, we POST the resource to its parent.
+  Remember, the saved-ntp-server is the file saved above.
+
+  $ curl -v -X POST -T saved-ntp-server -u admin:admin http://localhost:8080/\
+restconf/data/tailf-ncs:devices/device=lb0/config/lb:lbConfig/system
+
+  < HTTP/1.1 204 No Content
+
+
+  Verify that the ntp server is back:
+  CLI:
+  > show configuration devices device lb0 config lb:lbConfig
+  system {
+      ntp-server 18.4.5.6;
+      resolver {
+          search     acme.com;
+          nameserver 18.4.5.6;
+      }
+  }
+
+  RESTCONF:
+  $ curl -u admin:admin http://localhost:8080/\
+restconf/data/tailf-ncs:devices/device=lb0/config/lb:lbConfig/system/
+
+  <lbConfig xmlns="http://pound/lb"  xmlns:lb="http://pound/lb"
+    xmlns:ncs="http://tail-f.com/ns/ncs">
+  <system>
+    <ntp-server>18.4.5.6</ntp-server>
+    <resolver>
+      <search>acme.com</search>
+      <nameserver>18.4.5.6</nameserver>
+    </resolver>
+  </system>
+  </lbConfig>
+
+
+6.   Modify an existing resource
+
+  The PATCH method is used to modify an existing resource.
+  Imagine you would like to modify the search attribute of the resolver.
+  Change it from acme.com to foo.com.
+
+  Prepare a file "patch-search" with the following content:
+
+  <search>
+     foo.com
+  </search>
+
+  Modify the search leaf
+
+  $ curl -v -X PATCH -T patch-search -u admin:admin \
+  http://localhost:8080/restconf/data/tailf-ncs:devices/device=lb0/\
+config/lb:lbConfig/system/resolver/search
+
+  < HTTP/1.1 204 No Content
+
+  Verify the change in the CLI:
+
+  > show configuration devices device lb0 config lb:lbConfig system resolver
+  search     acme.com;
+  nameserver 18.4.5.6;
+
+  Verify the change in RESTCONF, note the use of ``?fields=search'' to
+  select one leaf, like below:
+
+  $ curl -u admin:admin  http://localhost:8080/restconf/data/tailf-ncs:devices/\
+device=lb0/config/lb:lbConfig/system/resolver\?fields=search
+
+  <resolver xmlns="http://pound/lb"  xmlns:lb="http://pound/lb"
+    xmlns:ncs="http://tail-f.com/ns/ncs">
+    <search>acme.com</search>
+  </resolver>
+
+
+7.  Replace an existing resource
+
+  PUT is used to completely replace an existing resource.
+  For example save the resolver settings to a file:
+
+  $ curl -u admin:admin http://localhost:8080/restconf/data/tailf-ncs:devices/\
+device=lb0/config/lb:lbConfig/system/resolver > saved-resolver
+
+  Modify the values in the file saved-resolver.
+
+  Apply the modifications by using PUT:
+
+  $ curl -vs -X PUT -T saved-resolver -u admin:admin http://localhost:8080/\
+restconf/data/tailf-ncs:devices/device=lb0/config/lb:lbConfig/system/resolver
+
+  < HTTP/1.1 204 No Content
+
+  Verify the changes
+
+  $ curl -u admin:admin http://localhost:8080/\
+restconf/data/tailf-ncs:devices/device=lb0/config/lb:lbConfig/system/resolver

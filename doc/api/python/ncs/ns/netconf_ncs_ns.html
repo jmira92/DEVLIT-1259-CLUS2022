@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.1" />
+<title>ncs.ns.netconf_ncs_ns API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<style>
+#pubhub-container .pubhub-doc-container article#content,
+#pubhub-container .pubhub-doc-container nav#sidebar {
+width: inherit;
+height: inherit;
+}
+</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>ncs.ns.netconf_ncs_ns</code></h1>
+</header>
+<section id="section-intro">
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="ncs.ns.netconf_ncs_ns.ns"><code class="flex name class">
+<span>class <span class="ident">ns</span></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<h3>Class variables</h3>
+<dl>
+<dt id="ncs.ns.netconf_ncs_ns.ns.hash"><code class="name">var <span class="ident">hash</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.id"><code class="name">var <span class="ident">id</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_async"><code class="name">var <span class="ident">ncsnc_async</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_async_"><code class="name">var <span class="ident">ncsnc_async_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_atomic"><code class="name">var <span class="ident">ncsnc_atomic</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_atomic_"><code class="name">var <span class="ident">ncsnc_atomic_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_block_others"><code class="name">var <span class="ident">ncsnc_block_others</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_block_others_"><code class="name">var <span class="ident">ncsnc_block_others_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_bypass"><code class="name">var <span class="ident">ncsnc_bypass</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_bypass_"><code class="name">var <span class="ident">ncsnc_bypass_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_c_non_service_config"><code class="name">var <span class="ident">ncsnc_c_non_service_config</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_c_non_service_config_"><code class="name">var <span class="ident">ncsnc_c_non_service_config_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_case_cli"><code class="name">var <span class="ident">ncsnc_case_cli</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_case_cli_"><code class="name">var <span class="ident">ncsnc_case_cli_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_case_native"><code class="name">var <span class="ident">ncsnc_case_native</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_case_native_"><code class="name">var <span class="ident">ncsnc_case_native_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_case_xml"><code class="name">var <span class="ident">ncsnc_case_xml</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_case_xml_"><code class="name">var <span class="ident">ncsnc_case_xml_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_lsa"><code class="name">var <span class="ident">ncsnc_choice_lsa</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_lsa_"><code class="name">var <span class="ident">ncsnc_choice_lsa_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_sync_check"><code class="name">var <span class="ident">ncsnc_choice_sync_check</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_sync_check_"><code class="name">var <span class="ident">ncsnc_choice_sync_check_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_unlock_id"><code class="name">var <span class="ident">ncsnc_choice_unlock_id</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_unlock_id_"><code class="name">var <span class="ident">ncsnc_choice_unlock_id_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_cli"><code class="name">var <span class="ident">ncsnc_cli</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_cli_"><code class="name">var <span class="ident">ncsnc_cli_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_async"><code class="name">var <span class="ident">ncsnc_commit_cq_async</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_async_"><code class="name">var <span class="ident">ncsnc_commit_cq_async_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_completed"><code class="name">var <span class="ident">ncsnc_commit_cq_completed</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_completed_"><code class="name">var <span class="ident">ncsnc_commit_cq_completed_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_deleted"><code class="name">var <span class="ident">ncsnc_commit_cq_deleted</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_deleted_"><code class="name">var <span class="ident">ncsnc_commit_cq_deleted_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_failed"><code class="name">var <span class="ident">ncsnc_commit_cq_failed</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_failed_"><code class="name">var <span class="ident">ncsnc_commit_cq_failed_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_timeout"><code class="name">var <span class="ident">ncsnc_commit_cq_timeout</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_timeout_"><code class="name">var <span class="ident">ncsnc_commit_cq_timeout_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_queue"><code class="name">var <span class="ident">ncsnc_commit_queue</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_queue_"><code class="name">var <span class="ident">ncsnc_commit_queue_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_continue_on_error"><code class="name">var <span class="ident">ncsnc_continue_on_error</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_continue_on_error_"><code class="name">var <span class="ident">ncsnc_continue_on_error_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_data"><code class="name">var <span class="ident">ncsnc_data</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_data_"><code class="name">var <span class="ident">ncsnc_data_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_device"><code class="name">var <span class="ident">ncsnc_device</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_device_"><code class="name">var <span class="ident">ncsnc_device_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_discard_non_service_config"><code class="name">var <span class="ident">ncsnc_discard_non_service_config</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_discard_non_service_config_"><code class="name">var <span class="ident">ncsnc_discard_non_service_config_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_dry_run"><code class="name">var <span class="ident">ncsnc_dry_run</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_dry_run_"><code class="name">var <span class="ident">ncsnc_dry_run_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_dry_run_result"><code class="name">var <span class="ident">ncsnc_dry_run_result</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_dry_run_result_"><code class="name">var <span class="ident">ncsnc_dry_run_result_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_dryrun"><code class="name">var <span class="ident">ncsnc_dryrun</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_dryrun_"><code class="name">var <span class="ident">ncsnc_dryrun_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_error_option"><code class="name">var <span class="ident">ncsnc_error_option</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_error_option_"><code class="name">var <span class="ident">ncsnc_error_option_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_failed_device"><code class="name">var <span class="ident">ncsnc_failed_device</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_failed_device_"><code class="name">var <span class="ident">ncsnc_failed_device_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_id"><code class="name">var <span class="ident">ncsnc_id</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_id_"><code class="name">var <span class="ident">ncsnc_id_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_infinity"><code class="name">var <span class="ident">ncsnc_infinity</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_infinity_"><code class="name">var <span class="ident">ncsnc_infinity_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_keep_non_service_config"><code class="name">var <span class="ident">ncsnc_keep_non_service_config</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_keep_non_service_config_"><code class="name">var <span class="ident">ncsnc_keep_non_service_config_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_local_node"><code class="name">var <span class="ident">ncsnc_local_node</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_local_node_"><code class="name">var <span class="ident">ncsnc_local_node_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_lock"><code class="name">var <span class="ident">ncsnc_lock</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_lock_"><code class="name">var <span class="ident">ncsnc_lock_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_lsa_node"><code class="name">var <span class="ident">ncsnc_lsa_node</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_lsa_node_"><code class="name">var <span class="ident">ncsnc_lsa_node_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_name"><code class="name">var <span class="ident">ncsnc_name</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_name_"><code class="name">var <span class="ident">ncsnc_name_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_native"><code class="name">var <span class="ident">ncsnc_native</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_native_"><code class="name">var <span class="ident">ncsnc_native_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_deploy"><code class="name">var <span class="ident">ncsnc_no_deploy</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_deploy_"><code class="name">var <span class="ident">ncsnc_no_deploy_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_lsa"><code class="name">var <span class="ident">ncsnc_no_lsa</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_lsa_"><code class="name">var <span class="ident">ncsnc_no_lsa_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_networking"><code class="name">var <span class="ident">ncsnc_no_networking</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_networking_"><code class="name">var <span class="ident">ncsnc_no_networking_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_out_of_sync_check"><code class="name">var <span class="ident">ncsnc_no_out_of_sync_check</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_out_of_sync_check_"><code class="name">var <span class="ident">ncsnc_no_out_of_sync_check_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_overwrite"><code class="name">var <span class="ident">ncsnc_no_overwrite</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_overwrite_"><code class="name">var <span class="ident">ncsnc_no_overwrite_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_revision_drop"><code class="name">var <span class="ident">ncsnc_no_revision_drop</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_revision_drop_"><code class="name">var <span class="ident">ncsnc_no_revision_drop_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_operation_mode"><code class="name">var <span class="ident">ncsnc_operation_mode</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_operation_mode_"><code class="name">var <span class="ident">ncsnc_operation_mode_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_outformat"><code class="name">var <span class="ident">ncsnc_outformat</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_outformat_"><code class="name">var <span class="ident">ncsnc_outformat_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_reason"><code class="name">var <span class="ident">ncsnc_reason</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_reason_"><code class="name">var <span class="ident">ncsnc_reason_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_reconcile"><code class="name">var <span class="ident">ncsnc_reconcile</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_reconcile_"><code class="name">var <span class="ident">ncsnc_reconcile_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_result_xml"><code class="name">var <span class="ident">ncsnc_result_xml</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_result_xml_"><code class="name">var <span class="ident">ncsnc_result_xml_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_reverse"><code class="name">var <span class="ident">ncsnc_reverse</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_reverse_"><code class="name">var <span class="ident">ncsnc_reverse_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_rollback_on_error"><code class="name">var <span class="ident">ncsnc_rollback_on_error</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_rollback_on_error_"><code class="name">var <span class="ident">ncsnc_rollback_on_error_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_status"><code class="name">var <span class="ident">ncsnc_status</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_status_"><code class="name">var <span class="ident">ncsnc_status_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_stop_on_error"><code class="name">var <span class="ident">ncsnc_stop_on_error</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_stop_on_error_"><code class="name">var <span class="ident">ncsnc_stop_on_error_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_sync"><code class="name">var <span class="ident">ncsnc_sync</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_sync_"><code class="name">var <span class="ident">ncsnc_sync_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_tag"><code class="name">var <span class="ident">ncsnc_tag</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_tag_"><code class="name">var <span class="ident">ncsnc_tag_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_timeout"><code class="name">var <span class="ident">ncsnc_timeout</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_timeout_"><code class="name">var <span class="ident">ncsnc_timeout_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_timeout_choice"><code class="name">var <span class="ident">ncsnc_timeout_choice</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_timeout_choice_"><code class="name">var <span class="ident">ncsnc_timeout_choice_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_trace_id"><code class="name">var <span class="ident">ncsnc_trace_id</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_trace_id_"><code class="name">var <span class="ident">ncsnc_trace_id_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_unlock"><code class="name">var <span class="ident">ncsnc_unlock</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_unlock_"><code class="name">var <span class="ident">ncsnc_unlock_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_use_lsa"><code class="name">var <span class="ident">ncsnc_use_lsa</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_use_lsa_"><code class="name">var <span class="ident">ncsnc_use_lsa_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_wait_device"><code class="name">var <span class="ident">ncsnc_wait_device</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_wait_device_"><code class="name">var <span class="ident">ncsnc_wait_device_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_with_service_meta_data"><code class="name">var <span class="ident">ncsnc_with_service_meta_data</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.ncsnc_with_service_meta_data_"><code class="name">var <span class="ident">ncsnc_with_service_meta_data_</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.prefix"><code class="name">var <span class="ident">prefix</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="ncs.ns.netconf_ncs_ns.ns.uri"><code class="name">var <span class="ident">uri</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="ncs.ns" href="index.html">ncs.ns</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="ncs.ns.netconf_ncs_ns.ns" href="#ncs.ns.netconf_ncs_ns.ns">ns</a></code></h4>
+<ul class="">
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.hash" href="#ncs.ns.netconf_ncs_ns.ns.hash">hash</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.id" href="#ncs.ns.netconf_ncs_ns.ns.id">id</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_async" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_async">ncsnc_async</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_async_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_async_">ncsnc_async_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_atomic" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_atomic">ncsnc_atomic</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_atomic_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_atomic_">ncsnc_atomic_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_block_others" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_block_others">ncsnc_block_others</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_block_others_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_block_others_">ncsnc_block_others_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_bypass" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_bypass">ncsnc_bypass</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_bypass_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_bypass_">ncsnc_bypass_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_c_non_service_config" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_c_non_service_config">ncsnc_c_non_service_config</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_c_non_service_config_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_c_non_service_config_">ncsnc_c_non_service_config_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_case_cli" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_case_cli">ncsnc_case_cli</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_case_cli_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_case_cli_">ncsnc_case_cli_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_case_native" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_case_native">ncsnc_case_native</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_case_native_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_case_native_">ncsnc_case_native_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_case_xml" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_case_xml">ncsnc_case_xml</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_case_xml_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_case_xml_">ncsnc_case_xml_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_lsa" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_lsa">ncsnc_choice_lsa</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_lsa_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_lsa_">ncsnc_choice_lsa_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_sync_check" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_sync_check">ncsnc_choice_sync_check</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_sync_check_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_sync_check_">ncsnc_choice_sync_check_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_unlock_id" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_unlock_id">ncsnc_choice_unlock_id</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_unlock_id_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_choice_unlock_id_">ncsnc_choice_unlock_id_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_cli" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_cli">ncsnc_cli</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_cli_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_cli_">ncsnc_cli_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_async" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_async">ncsnc_commit_cq_async</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_async_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_async_">ncsnc_commit_cq_async_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_completed" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_completed">ncsnc_commit_cq_completed</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_completed_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_completed_">ncsnc_commit_cq_completed_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_deleted" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_deleted">ncsnc_commit_cq_deleted</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_deleted_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_deleted_">ncsnc_commit_cq_deleted_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_failed" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_failed">ncsnc_commit_cq_failed</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_failed_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_failed_">ncsnc_commit_cq_failed_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_timeout" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_timeout">ncsnc_commit_cq_timeout</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_timeout_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_cq_timeout_">ncsnc_commit_cq_timeout_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_queue" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_queue">ncsnc_commit_queue</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_queue_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_commit_queue_">ncsnc_commit_queue_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_continue_on_error" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_continue_on_error">ncsnc_continue_on_error</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_continue_on_error_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_continue_on_error_">ncsnc_continue_on_error_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_data" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_data">ncsnc_data</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_data_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_data_">ncsnc_data_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_device" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_device">ncsnc_device</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_device_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_device_">ncsnc_device_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_discard_non_service_config" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_discard_non_service_config">ncsnc_discard_non_service_config</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_discard_non_service_config_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_discard_non_service_config_">ncsnc_discard_non_service_config_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_dry_run" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_dry_run">ncsnc_dry_run</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_dry_run_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_dry_run_">ncsnc_dry_run_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_dry_run_result" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_dry_run_result">ncsnc_dry_run_result</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_dry_run_result_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_dry_run_result_">ncsnc_dry_run_result_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_dryrun" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_dryrun">ncsnc_dryrun</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_dryrun_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_dryrun_">ncsnc_dryrun_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_error_option" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_error_option">ncsnc_error_option</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_error_option_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_error_option_">ncsnc_error_option_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_failed_device" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_failed_device">ncsnc_failed_device</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_failed_device_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_failed_device_">ncsnc_failed_device_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_id" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_id">ncsnc_id</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_id_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_id_">ncsnc_id_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_infinity" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_infinity">ncsnc_infinity</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_infinity_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_infinity_">ncsnc_infinity_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_keep_non_service_config" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_keep_non_service_config">ncsnc_keep_non_service_config</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_keep_non_service_config_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_keep_non_service_config_">ncsnc_keep_non_service_config_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_local_node" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_local_node">ncsnc_local_node</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_local_node_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_local_node_">ncsnc_local_node_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_lock" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_lock">ncsnc_lock</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_lock_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_lock_">ncsnc_lock_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_lsa_node" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_lsa_node">ncsnc_lsa_node</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_lsa_node_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_lsa_node_">ncsnc_lsa_node_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_name" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_name">ncsnc_name</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_name_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_name_">ncsnc_name_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_native" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_native">ncsnc_native</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_native_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_native_">ncsnc_native_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_deploy" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_no_deploy">ncsnc_no_deploy</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_deploy_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_no_deploy_">ncsnc_no_deploy_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_lsa" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_no_lsa">ncsnc_no_lsa</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_lsa_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_no_lsa_">ncsnc_no_lsa_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_networking" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_no_networking">ncsnc_no_networking</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_networking_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_no_networking_">ncsnc_no_networking_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_out_of_sync_check" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_no_out_of_sync_check">ncsnc_no_out_of_sync_check</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_out_of_sync_check_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_no_out_of_sync_check_">ncsnc_no_out_of_sync_check_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_overwrite" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_no_overwrite">ncsnc_no_overwrite</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_overwrite_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_no_overwrite_">ncsnc_no_overwrite_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_revision_drop" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_no_revision_drop">ncsnc_no_revision_drop</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_no_revision_drop_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_no_revision_drop_">ncsnc_no_revision_drop_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_operation_mode" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_operation_mode">ncsnc_operation_mode</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_operation_mode_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_operation_mode_">ncsnc_operation_mode_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_outformat" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_outformat">ncsnc_outformat</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_outformat_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_outformat_">ncsnc_outformat_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_reason" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_reason">ncsnc_reason</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_reason_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_reason_">ncsnc_reason_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_reconcile" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_reconcile">ncsnc_reconcile</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_reconcile_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_reconcile_">ncsnc_reconcile_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_result_xml" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_result_xml">ncsnc_result_xml</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_result_xml_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_result_xml_">ncsnc_result_xml_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_reverse" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_reverse">ncsnc_reverse</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_reverse_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_reverse_">ncsnc_reverse_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_rollback_on_error" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_rollback_on_error">ncsnc_rollback_on_error</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_rollback_on_error_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_rollback_on_error_">ncsnc_rollback_on_error_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_status" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_status">ncsnc_status</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_status_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_status_">ncsnc_status_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_stop_on_error" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_stop_on_error">ncsnc_stop_on_error</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_stop_on_error_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_stop_on_error_">ncsnc_stop_on_error_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_sync" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_sync">ncsnc_sync</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_sync_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_sync_">ncsnc_sync_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_tag" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_tag">ncsnc_tag</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_tag_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_tag_">ncsnc_tag_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_timeout" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_timeout">ncsnc_timeout</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_timeout_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_timeout_">ncsnc_timeout_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_timeout_choice" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_timeout_choice">ncsnc_timeout_choice</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_timeout_choice_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_timeout_choice_">ncsnc_timeout_choice_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_trace_id" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_trace_id">ncsnc_trace_id</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_trace_id_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_trace_id_">ncsnc_trace_id_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_unlock" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_unlock">ncsnc_unlock</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_unlock_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_unlock_">ncsnc_unlock_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_use_lsa" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_use_lsa">ncsnc_use_lsa</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_use_lsa_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_use_lsa_">ncsnc_use_lsa_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_wait_device" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_wait_device">ncsnc_wait_device</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_wait_device_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_wait_device_">ncsnc_wait_device_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_with_service_meta_data" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_with_service_meta_data">ncsnc_with_service_meta_data</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.ncsnc_with_service_meta_data_" href="#ncs.ns.netconf_ncs_ns.ns.ncsnc_with_service_meta_data_">ncsnc_with_service_meta_data_</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.prefix" href="#ncs.ns.netconf_ncs_ns.ns.prefix">prefix</a></code></li>
+<li><code><a title="ncs.ns.netconf_ncs_ns.ns.uri" href="#ncs.ns.netconf_ncs_ns.ns.uri">uri</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+</footer>
+</body>
+</html>

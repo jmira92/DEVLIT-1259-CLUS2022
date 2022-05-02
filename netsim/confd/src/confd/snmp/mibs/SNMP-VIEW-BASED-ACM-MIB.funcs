@@ -1,0 +1,2 @@
+{vacmContextTable, {snmp_view_based_acm_mib, vacmContextTable, []}}.
+{vacmViewSpinLock, {snmp_view_based_acm_mib, vacmViewSpinLock, []}}.

@@ -1,0 +1,70 @@
+module tailf-ncs-devices-yang-library {
+  yang-version 1.1;
+  namespace "http://tail-f.com/ns/ncs/devices-yang-library";
+  prefix ncsyanglib;
+
+  import tailf-ncs {
+    prefix ncs;
+  }
+  import tailf-common {
+    prefix tailf;
+  }
+  import ietf-yang-library {
+    prefix yanglib;
+  }
+
+  description
+    "This module adds the YANG library data structure to
+     the device's state.
+
+     Copyright 2019 Cisco Systems, Inc.
+     All rights reserved.
+     Permission is hereby granted to redistribute this file without
+     modification.";
+
+  revision 2019-11-28 {
+    description
+      "Released as part of NCS-5.3.
+
+       Added leaf content-id";
+  }
+
+  revision 2019-04-09 {
+    description
+      "Released as part of NCS-5.1.
+
+       Added leaf module-set-id";
+  }
+
+  augment /ncs:devices/ncs:device/ncs:state/ncs:last-modules-state {
+    uses yanglib:yang-library-parameters;
+    uses yanglib:module-list;
+  }
+
+  augment /ncs:devices/ncs:device/ncs:state/ncs:last-modules-state {
+    leaf content-id {
+      type string;
+      config false;
+      description
+        "If the device supports revision 2019-01-04 of the
+         ietf-yang-library module, NCS keeps track of this string when
+         connecting to a device, to avoid reading the module list at
+         every connect.";
+      tailf:cdb-oper {
+        tailf:persistent true;
+      }
+    }
+    leaf module-set-id {
+      type string;
+      config false;
+      description
+        "If the device supports revision 2016-04-09 of the
+         ietf-yang-library module, NCS keeps track of this string when
+         connecting to a device, to avoid reading the module list at
+         every connect.";
+      tailf:cdb-oper {
+        tailf:persistent true;
+      }
+    }
+  }
+}

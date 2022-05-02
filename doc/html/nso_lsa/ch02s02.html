@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+   <head>
+      
+      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+      
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+      
+      <title>Greenfield LSA application designed for easy scaling -  - NSO Layered Service Architecture</title>
+      <meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+      <link rel="home" href="index.html" title="NSO Layered Service Architecture" />
+      <link rel="up" href="ncs_lsa.lsa.html" title="LSA examples" />
+      <link rel="prev" href="ch02s01.html" title="Greenfield LSA application" />
+      <link rel="next" href="ch02s03.html" title="Rearchitecting an existing monolithic application into LSA" />
+      <meta xmlns="" name="Section-title" content="Greenfield LSA application designed for easy scaling" /><script xmlns="" type="text/javascript">
+      //The id for tree cookie
+      var treeCookieId = "treeview-1266";
+      var language = "en";
+      var w = new Object();
+      //Localization
+      txt_filesfound = 'Results';
+      txt_enter_at_least_1_char = "You must enter at least one character.";
+      txt_browser_not_supported = "JavaScript is disabled on your browser. Please enable JavaScript to enjoy all the features of this site.";
+      txt_please_wait = "Please wait. Search in progress...";
+      txt_results_for = "Results for: ";
+    </script><link xmlns="" rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+      <link xmlns="" rel="stylesheet" type="text/css" href="common/css/positioning.css" />
+      <link xmlns="" rel="stylesheet" type="text/css" href="common/jquery/theme-redmond/jquery-ui-1.8.2.custom.css" />
+      <link xmlns="" rel="stylesheet" type="text/css" href="common/jquery/treeview/jquery.treeview.css" /><style xmlns="" type="text/css">
+      
+      #noscript{
+      font-weight:bold;
+      background-color: #55AA55;
+      font-weight: bold;
+      height: 25spx;
+      z-index: 3000;
+      top:0px;
+      width:100%;
+      position: relative;
+      border-bottom: solid 5px black;
+      text-align:center;
+      color: white;
+      }
+      
+      input {
+      margin-bottom: 5px;
+      margin-top: 2px;
+      }
+      .folder {
+      display: block;
+      height: 22px;
+      padding-left: 20px;
+      background: transparent url(common/jquery/treeview/images/folder.gif) 0 0px no-repeat;
+      }
+      span.contentsTab {
+      padding-left: 20px;
+      background: url(common/images/toc-icon.png) no-repeat 0 center;
+      }
+      span.searchTab {
+      padding-left: 20px;
+      background: url(common/images/search-icon.png) no-repeat 0 center;
+      }
+      
+      /* Overide jquery treeview's defaults for ul. */
+      .treeview ul {
+      background-color: transparent;
+      margin-top: 4px;
+      }		
+      #webhelp-currentid {
+      /* background-color: #D8D8D8 !important; */
+      background-color: #D8D8D8;
+      }
+      .treeview .hover { color: black; }
+      .filetree li span a { text-decoration: none; font-size: 12px; color: #517291; }
+      
+      /* Override jquery-ui's default css customizations. These are supposed to take precedence over those.*/
+      .ui-widget-content {
+      border: 0px; 
+      background: none; 
+      color: none;     
+      }
+      .ui-widget-header {
+      color: #e9e8e9;
+      border-left: 1px solid #e5e5e5;
+      border-right: 1px solid #e5e5e5;
+      border-bottom: 1px solid #bbc4c5;
+      border-top: 4px solid #e5e5e5;
+      border: medium none;
+      background: #F4F4F4; /* old browsers */
+      background: -moz-linear-gradient(top, #F4F4F4 0%, #E6E4E5 100%); /* firefox */
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#F4F4F4), color-stop(100%,#E6E4E5)); /* webkit */    
+      font-weight: none;
+      }
+      .ui-widget-header a { color: none; }
+      .ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default { 
+      border: none; background: none; font-weight: none; color: none; }
+      .ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited { color: black; text-decoration: none; }
+      .ui-state-hover, .ui-widget-content .ui-state-hover, .ui-widget-header .ui-state-hover, .ui-state-focus, .ui-widget-content .ui-state-focus, .ui-widget-header .ui-state-focus { border: none; background: none; font-weight: none; color: none; }
+      
+      .ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active { border: none; background: none; font-weight: none; color: none; }
+      .ui-state-active a, .ui-state-active a:link, .ui-state-active a:visited { 
+      color: black; text-decoration: none; 	
+      background: #C6C6C6; /* old browsers */
+      background: -moz-linear-gradient(top, #C6C6C6 0%, #D8D8D8 100%); /* firefox */
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#C6C6C6), color-stop(100%,#D8D8D8)); /* webkit */
+      -webkit-border-radius:15px; -moz-border-radius:10px;
+      border: 1px solid #f1f1f1;
+      }    
+      .ui-corner-all { border-radius: 0 0 0 0; }
+      
+      .ui-tabs { padding: .2em;}
+      .ui-tabs .ui-tabs-nav li { top: 0px; margin: -2px 0 1px; text-transform: uppercase; font-size: 10.5px;}
+      .ui-tabs .ui-tabs-nav li a { padding: .25em 2em .25em 1em; margin: .5em; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+      /**
+      *	Basic Layout Theme
+      * 
+      *	This theme uses the default layout class-names for all classes
+      *	Add any 'custom class-names', from options: paneClass, resizerClass, togglerClass
+      */
+      
+      .ui-layout-pane { /* all 'panes' */ 
+      background: #FFF; 
+      border: 1px solid #BBB; 
+      padding: 05x; 
+      overflow: auto;
+      } 
+      
+      .ui-layout-resizer { /* all 'resizer-bars' */ 
+      background: #DDD; 
+      top:100px
+      } 
+      
+      .ui-layout-toggler { /* all 'toggler-buttons' */ 
+      background: #AAA; 
+      } 
+      
+    </style>
+      <!--[if IE]>
+	<link rel="stylesheet" type="text/css" href="../common/css/ie.css"/>
+	<![endif]--><script xmlns="" type="text/javascript" src="common/browserDetect.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/jquery-1.7.2.min.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/jquery.ui.all.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/jquery.cookie.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/treeview/jquery.treeview.min.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/layout/jquery.layout.js">
+         <!----></script><style type="text/css">
+      
+      #header {
+      /* background: url("../images/header-bg.png") scroll top left repeat-x #4d8c83; */
+      background: transparent;
+      }
+      #leftnavigation {
+      /* background-color: #ededed!important; */
+      background-color: transparent;
+      }
+      #navheader {
+      visibility: hidden;
+      }
+      #webhelp-currentid {
+      /* background-color: #D8D8D8 !important; */
+      background-color: #FFFFFF; /*but must be changed in main.js as well*/
+      }
+      .filetree span.file {
+      /* background: url(images/file.gif) 0 0 no-repeat; */
+      background: initial;
+      }
+      .filetree span.folder, .filetree span.file {
+      padding: 1px 0 1px 7px;
+      display: block;
+      }
+
+      /* borrowed from cisco: clientlib.css */
+      .footer {
+      margin: 28px 30px 0 15px;
+      font-size: 80%;
+      line-height: 120%;
+      border-top: 1px solid #ccc;
+      padding-top: 7px;
+      color: #999;
+      }
+      .footer #footer-legal{display:inline;padding-bottom:18px}
+      #framework-footer{margin:0;padding:0 0 15px 0;min-width:900px;width:100%}
+      .footer a,.footer a:visited{color:#999}
+
+      /* from ccimr.css */
+      a:active  { color: #3366CC}
+      a:hover   { color: #3366CC}
+      a:link    { color: #3366CC}
+      a:visited { color: #3366CC}
+
+      #header img {
+      float: left;
+      margin-left: 20px;
+      margin-top: 0px;
+      }
+
+      #header h1 {
+      color: #336666;
+      margin-top: 4px;
+      }
+      #content h1, #content h2 {
+      color: #336666;
+      }
+      .title {
+      color: #336666;
+      }
+      p, pre {
+      margin-left: 0.1in;
+      }
+      p, ul, ol, li {
+        font-size: 95%;
+        font-family: Arial, Helvetica, sans-serif;
+        margin-top: 1px;
+      }
+      body {
+        font: 80.5% Arial, Helvetica, sans-serif;
+      }
+      ol {
+      display: block;
+      list-style-type: decimal;
+      -webkit-margin-before: 1em;
+      -webkit-margin-after: 1em;
+      -webkit-margin-start: 0px;
+      -webkit-margin-end: 0px;
+      -webkit-padding-start: 40px;
+      border: 1;
+      }
+    </style></head>
+   <body>
+      <noscript>
+         <div id="noscript">JavaScript is disabled on your browser. Please enable JavaScript to enjoy all the features of this site.</div>
+      </noscript>
+      <div id="header"><a href="index.html"><img style="margin-right: 2px; width: 110; height: 73; padding-right: 25px; padding-top: 8px" align="right" src="common/images/logo.gif" alt="Cisco Systems, Inc." /></a><h1>NSO Layered Service Architecture<br />LSA examples
+         </h1>
+         <div id="navheader">
+            <!---->
+            <table class="navLinks">
+               <tr>
+                  <td><a id="showHideButton" href="#" onclick="myLayout.toggle('west')" class="pointLeft" tabindex="5" title="Hide TOC tree">Sidebar
+                                                    </a></td>
+                  <td><a accesskey="p" class="navLinkPrevious" tabindex="5" href="ch02s01.html">Prev</a>
+                                                             |
+                                                             <a accesskey="u" class="navLinkUp" tabindex="5" href="ncs_lsa.lsa.html">Up</a>
+                                                         |
+                                                         <a accesskey="n" class="navLinkNext" tabindex="5" href="ch02s03.html">Next</a></td>
+               </tr>
+            </table>
+         </div>
+      </div>
+      <div id="content">
+         <div class="sect1">
+            <div xmlns="" class="titlepage">
+               <div>
+                  <div>
+                     <h2 xmlns="http://www.w3.org/1999/xhtml" class="title" style="clear: both"><a id="d0e346"></a>Greenfield LSA application designed for easy scaling
+                     </h2>
+                  </div>
+               </div>
+            </div>
+            <p>
+                     In this section we'll describe a lightly modified version of the
+                     example in the previous section.  The application we describe
+                     here exists as a running example under:
+                     <code class="filename">examples.ncs/getting-started/developing-with-ncs/24-layered-service-architecture-scaling</code>
+                   
+            </p>
+            <p>
+                     Sometimes it is desirable to be able to easily move devices from
+                     one lower LSA node to another. This makes it possible to easily
+                     expand or shrink the number of lower LSA nodes. Additionally,
+                     it is sometimes desirable to avoid HA-pairs for replication but
+                     instead use a common store for all lower LSA devices, such as
+                     a distributed data base, or a common file system.
+                   
+            </p>
+            <p>
+                     The above is possible provided the LSA application is
+                     structured in certain ways.
+                   
+            </p>
+            <div class="itemizedlist">
+               <ul class="itemizedlist" style="list-style-type: disc; ">
+                  <li class="listitem">
+                     <p>
+                                  The lower LSA nodes only expose services that manipulate the
+                                  configuration of a single device. We call these device RFSs,
+                                  or dRFS for short.
+                                
+                     </p>
+                  </li>
+                  <li class="listitem">
+                     <p>
+                                  All services are located in a way that makes it easy to
+                                  extract them, for example in /drfs:dRFS/device
+                                  
+                     </p>
+                     <div class="informalexample"><pre class="screen">container dRFS {
+  list device {
+    key name;
+    leaf name {
+      type string;
+    }
+  }
+}</pre></div>
+                     <p>
+                                
+                     </p>
+                  </li>
+                  <li class="listitem">
+                     <p>
+                                  No RFS takes place on the lower LSA nodes. This avoids the
+                                  complication with locking and distributed event handling.
+                                
+                     </p>
+                  </li>
+                  <li class="listitem">
+                     <p>
+                                  The LSA nodes need to be set up with the proper NEDs,
+                                  and with auth groups such that a device can be moved without
+                                  having to install new NEDs or update auth groups.
+                                
+                     </p>
+                  </li>
+               </ul>
+            </div>
+            <p>
+                     Provided that the above requirements are met it is possible
+                     to move a device from one lower LSA node by extracting the
+                     configuration from the source node, and installing it on the
+                     target node. This, of course, requires that the source node
+                     is still alive, which is normally the case when HA-pairs are
+                     used.
+                   
+            </p>
+            <p>
+                     An alternative to using HA-pairs for the lower LSA nodes is
+                     to extract the device configuration after each modification to
+                     the device, and store it in some central storage. This would
+                     not be recommended when high throughput is required but may
+                     make sense in certain cases.
+                   
+            </p>
+            <p>
+                     In the example application there are two packages on the lower
+                     LSA nodes that provides this functionality. The package
+                     <code class="filename">inventory-updater</code> installs a database
+                     subscriber that is invoked every time any device configuration
+                     is modified, both in the prepare phase and in the commit phase
+                     of any such transaction. It extracts the device and dRFS
+                     configuration, including service meta data, during the prepare
+                     phase. If the transaction proceeds to a full commit, the
+                     package is again invoked and the extracted configuration
+                     is stored in a file in the directory
+                     <code class="filename">db_store</code>.
+                   
+            </p>
+            <p>
+                     The other package is called <code class="filename">device-actions</code>.
+                     It provides three actions: <code class="code">extract-device</code>,
+                     <code class="code">install-device</code>, and
+                     <code class="code">delete-device</code>. They are intended to be used by the
+                     upper LSA node when moving a device either from a lower LSA
+                     node, or from <code class="filename">db_store</code>.
+                   
+            </p>
+            <p>
+                     In the upper LSA node there is one package for coordinating the
+                     movement, called <code class="filename">move-device</code>. It provides
+                     an action for moving a device from one lower LSA node to
+                     another. For example when invoked to move device ex0 from
+                     <code class="code">lower-1</code> to <code class="code">lower-2</code> using the action
+               
+                     
+            </p>
+            <div class="informalexample"><pre class="screen">request move-device move src-nso lower-1 dest-nso lower-2 device-name ex0</pre></div>
+            <p>
+               
+                     it goes through the following steps:
+                   
+            </p>
+            <div class="itemizedlist">
+               <ul class="itemizedlist" style="list-style-type: disc; ">
+                  <li class="listitem">
+                     <p>
+                                  A partial lock is acquired on the upper-nso for the path
+                                  <code class="code">/devices/device[name=lower-1]/config/dRFS/device[name=ex0]</code>
+                                  to avoid any changes to the device while the device is
+                                  in the process of being moved.
+                                
+                     </p>
+                  </li>
+                  <li class="listitem">
+                     <p>
+                                  The device and dRFS configuration is extracted in one of two
+                                  ways:
+                                
+                     </p>
+                     <div class="itemizedlist">
+                        <ul class="itemizedlist" style="list-style-type: circle; ">
+                           <li class="listitem">
+                              <p>
+                                               Read the configuration from <code class="code">lower-1</code> using the action
+                                               
+                              </p>
+                              <div class="informalexample"><pre class="screen">request device-action extract-device name ex0</pre></div>
+                              <p>
+                                             
+                              </p>
+                           </li>
+                           <li class="listitem">
+                              <p>
+                                               Read the configuration from some central store, in our
+                                               case the file system in the directory.
+                                               <code class="filename">db_store</code>.
+                                             
+                              </p>
+                           </li>
+                        </ul>
+                     </div>
+                     <p>
+                                  The configuration will look something like this
+                            
+                     </p>
+                     <div class="informalexample"><pre class="screen">devices {
+    device ex0 {
+        address   127.0.0.1;
+        port      12022;
+        ssh {
+        ...
+           /* Refcount: 1 */
+            /* Backpointer: [ /drfs:dRFS/drfs:device[drfs:name='ex0']/rfs-vlan:vlan[rfs-vlan:name='v1'] ] */
+            interface eth3 {
+            ...
+            }
+        ...
+    }
+}
+dRFS {
+    device ex0 {
+        vlan v1 {
+            private {
+            ...
+            }
+        }
+    }
+}</pre></div>
+                     <p>
+                                
+                     </p>
+                  </li>
+                  <li class="listitem">
+                     <p>
+                                  Install the configuration on the lower-2 node. This can be
+                                  done by running the action:
+                                  
+                     </p>
+                     <div class="informalexample"><pre class="screen">request device-action install-device name ex0 config &lt;cfg&gt;</pre></div>
+                     <p>
+                                  This will load the configuration and commit using the flags
+                                  <code class="code">no-deploy</code> and <code class="code">no-networking</code>.
+                                
+                     </p>
+                  </li>
+                  <li class="listitem">
+                     <p>
+                                  Delete the device from <code class="code">lower-1</code> by running the action
+                                  
+                     </p>
+                     <div class="informalexample"><pre class="screen">request device-action delete-device name ex0</pre></div>
+                     <p>
+                                
+                     </p>
+                  </li>
+                  <li class="listitem">
+                     <p>
+                                  Update mapping table
+                              
+                     </p>
+                     <div class="informalexample"><pre class="screen">dispatch-map ex0 {
+    rfs-node lower-nso-2;
+}</pre></div>
+                     <p>
+                                
+                     </p>
+                  </li>
+                  <li class="listitem">
+                     <p>
+                                  Release partial lock for <code class="code">/devices/device[name=lower-1]/config/dRFS/device[name=ex0]</code>.
+                                
+                     </p>
+                  </li>
+                  <li class="listitem">
+                     <p>
+                                  Re-deploy all services that have touched the device. The
+                                  services all have back pointers from
+                                  <code class="code">/devices/device{lower-1}/config/dRFS/device{ex0}</code>.
+                                  They are <code class="code">re-deployed</code> using the flags
+                                  <code class="code">no-lsa</code> and <code class="code">no-networking</code>.
+                                
+                     </p>
+                  </li>
+                  <li class="listitem">
+                     <p>
+                                  Finally the action runs <code class="code">compare-config</code> on
+                                  <code class="code">lower-1</code> and <code class="code">lower-2</code>.
+                                
+                     </p>
+                  </li>
+               </ul>
+            </div>
+            <p>
+                     With this infrastructure in place it is fairly straightforward
+                     to implement actions for re-balancing devices among lower LSA
+                     nodes, as well as evacuating all devices from a given lower
+                     LSA node. The example contains implementations of those
+                     actions as well.
+                   
+            </p>
+         </div><script type="text/javascript" src="common/main.js">
+            <!----></script><script type="text/javascript" src="common/splitterInit.js">
+            <!----></script><div class="footer" id="footer-legal">
+            <div class="footer-legal framework-footer-cq">
+               <div id="framework-footer">
+                  <div id="footer-legal"><a href="http://www.cisco.com/web/siteassets/legal/terms_condition.html">Terms &amp; Conditions</a> |
+                                 <a href="http://www.cisco.com/web/siteassets/legal/privacy.html">Privacy Statement</a> |
+                                 <a href="http://www.cisco.com/web/siteassets/legal/privacy.html#cookies">Cookie Policy</a> |
+                                 <a href="http://www.cisco.com/web/siteassets/legal/trademark.html">Trademarks</a></div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div id="sidebar">
+         <div id="leftnavigation" style="padding-top:3px;">
+            <div id="tabs">
+               <ul style="visibility: hidden;"></ul>
+               <div id="treeDiv"><img src="common/images/loading.gif" alt="loading table of contents..." id="tocLoading" style="display:block;" /><div id="ulTreeDiv" style="display:none">
+                     <ul id="tree" class="filetree">
+                        <li><span class="file"><a href="ncs_lsa.intro.html" tabindex="1">Going big - Layered service architecture</a></span><ul>
+                              <li><span class="file"><a href="ch01s01.html" tabindex="1">Introduction to the layered service architecture</a></span></li>
+                              <li><span class="file"><a href="ch01s02.html" tabindex="1">Separating the service into CFS and RFS</a></span><ul>
+                                    <li><span class="file"><a href="ch01s02s01.html" tabindex="1">New design - green field</a></span></li>
+                                    <li><span class="file"><a href="ch01s02s02.html" tabindex="1">Existing monolithic application</a></span></li>
+                                    <li><span class="file"><a href="ch01s02s03.html" tabindex="1">Existing monolithic application with stacked services</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ch01s03.html" tabindex="1">Dispatching</a></span></li>
+                              <li><span class="file"><a href="ch01s04.html" tabindex="1">Scalability and performance aspects</a></span></li>
+                              <li><span class="file"><a href="ch01s05.html" tabindex="1">Multiple CFS nodes</a></span></li>
+                              <li><span class="file"><a href="ch01s06.html" tabindex="1">Pros and cons of layered service architecture</a></span><ul>
+                                    <li><span class="file"><a href="ch01s06s01.html" tabindex="1">Pros</a></span></li>
+                                    <li><span class="file"><a href="ch01s06s02.html" tabindex="1">Cons</a></span></li>
+                                 </ul>
+                              </li>
+                           </ul>
+                        </li>
+                        <li><span class="file"><a href="ncs_lsa.lsa.html" tabindex="1">LSA examples</a></span><ul>
+                              <li><span class="file"><a href="ch02s01.html" tabindex="1">Greenfield LSA application</a></span></li>
+                              <li id="webhelp-currentid"><span class="file"><a href="ch02s02.html" tabindex="1">Greenfield LSA application designed for easy scaling</a></span></li>
+                              <li><span class="file"><a href="ch02s03.html" tabindex="1">Rearchitecting an existing monolithic application into LSA</a></span></li>
+                           </ul>
+                        </li>
+                        <li><span class="file"><a href="ncs_lsa.lsa_setup.html" tabindex="1">Setting up LSA deployments</a></span><ul>
+                              <li><span class="file"><a href="ch03s01.html" tabindex="1">LSA setup</a></span></li>
+                              <li><span class="file"><a href="ch03s02.html" tabindex="1">RFS node prerequisites</a></span><ul>
+                                    <li><span class="file"><a href="ch03s02s01.html" tabindex="1">Changes to ncs.conf</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ch03s03.html" tabindex="1">Single Version Deployment</a></span><ul>
+                                    <li><span class="file"><a href="ch03s03s01.html" tabindex="1">The lower RFS nodes as devices</a></span></li>
+                                    <li><span class="file"><a href="ch03s03s02.html" tabindex="1">Device compiled RFS services</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ncs_lsa.lsa_setup.multi_version.html" tabindex="1">Multi Version Deployment</a></span><ul>
+                                    <li><span class="file"><a href="ch03s04s01.html" tabindex="1">The lower RFS nodes as devices</a></span></li>
+                                    <li><span class="file"><a href="ch03s04s02.html" tabindex="1">Device compiled RFS services</a></span></li>
+                                    <li><span class="file"><a href="ch03s04s03.html" tabindex="1">The standard cisco-nso NED LSA package</a></span></li>
+                                    <li><span class="file"><a href="ch03s04s04.html" tabindex="1">Example 28-lsa-multi-version-deployment</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ch03s05.html" tabindex="1">Migration and Upgrades</a></span></li>
+                           </ul>
+                        </li>
+                     </ul>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </body>
+</html>

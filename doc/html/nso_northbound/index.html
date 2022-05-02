@@ -1,0 +1,707 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+   <head>
+      
+      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+      
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+      
+      <title>NSO 5.7 Northbound APIs - </title>
+      <meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+      <link rel="home" href="index.html" title="NSO 5.7 Northbound APIs" />
+      <link rel="next" href="ncs.nb.intro.html" title="Introduction" />
+      <meta xmlns="" name="Section-title" content="NSO 5.7 Northbound APIs" /><script xmlns="" type="text/javascript">
+      //The id for tree cookie
+      var treeCookieId = "treeview-7966";
+      var language = "en";
+      var w = new Object();
+      //Localization
+      txt_filesfound = 'Results';
+      txt_enter_at_least_1_char = "You must enter at least one character.";
+      txt_browser_not_supported = "JavaScript is disabled on your browser. Please enable JavaScript to enjoy all the features of this site.";
+      txt_please_wait = "Please wait. Search in progress...";
+      txt_results_for = "Results for: ";
+    </script><link xmlns="" rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+      <link xmlns="" rel="stylesheet" type="text/css" href="common/css/positioning.css" />
+      <link xmlns="" rel="stylesheet" type="text/css" href="common/jquery/theme-redmond/jquery-ui-1.8.2.custom.css" />
+      <link xmlns="" rel="stylesheet" type="text/css" href="common/jquery/treeview/jquery.treeview.css" /><style xmlns="" type="text/css">
+      
+      #noscript{
+      font-weight:bold;
+      background-color: #55AA55;
+      font-weight: bold;
+      height: 25spx;
+      z-index: 3000;
+      top:0px;
+      width:100%;
+      position: relative;
+      border-bottom: solid 5px black;
+      text-align:center;
+      color: white;
+      }
+      
+      input {
+      margin-bottom: 5px;
+      margin-top: 2px;
+      }
+      .folder {
+      display: block;
+      height: 22px;
+      padding-left: 20px;
+      background: transparent url(common/jquery/treeview/images/folder.gif) 0 0px no-repeat;
+      }
+      span.contentsTab {
+      padding-left: 20px;
+      background: url(common/images/toc-icon.png) no-repeat 0 center;
+      }
+      span.searchTab {
+      padding-left: 20px;
+      background: url(common/images/search-icon.png) no-repeat 0 center;
+      }
+      
+      /* Overide jquery treeview's defaults for ul. */
+      .treeview ul {
+      background-color: transparent;
+      margin-top: 4px;
+      }		
+      #webhelp-currentid {
+      /* background-color: #D8D8D8 !important; */
+      background-color: #D8D8D8;
+      }
+      .treeview .hover { color: black; }
+      .filetree li span a { text-decoration: none; font-size: 12px; color: #517291; }
+      
+      /* Override jquery-ui's default css customizations. These are supposed to take precedence over those.*/
+      .ui-widget-content {
+      border: 0px; 
+      background: none; 
+      color: none;     
+      }
+      .ui-widget-header {
+      color: #e9e8e9;
+      border-left: 1px solid #e5e5e5;
+      border-right: 1px solid #e5e5e5;
+      border-bottom: 1px solid #bbc4c5;
+      border-top: 4px solid #e5e5e5;
+      border: medium none;
+      background: #F4F4F4; /* old browsers */
+      background: -moz-linear-gradient(top, #F4F4F4 0%, #E6E4E5 100%); /* firefox */
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#F4F4F4), color-stop(100%,#E6E4E5)); /* webkit */    
+      font-weight: none;
+      }
+      .ui-widget-header a { color: none; }
+      .ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default { 
+      border: none; background: none; font-weight: none; color: none; }
+      .ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited { color: black; text-decoration: none; }
+      .ui-state-hover, .ui-widget-content .ui-state-hover, .ui-widget-header .ui-state-hover, .ui-state-focus, .ui-widget-content .ui-state-focus, .ui-widget-header .ui-state-focus { border: none; background: none; font-weight: none; color: none; }
+      
+      .ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active { border: none; background: none; font-weight: none; color: none; }
+      .ui-state-active a, .ui-state-active a:link, .ui-state-active a:visited { 
+      color: black; text-decoration: none; 	
+      background: #C6C6C6; /* old browsers */
+      background: -moz-linear-gradient(top, #C6C6C6 0%, #D8D8D8 100%); /* firefox */
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#C6C6C6), color-stop(100%,#D8D8D8)); /* webkit */
+      -webkit-border-radius:15px; -moz-border-radius:10px;
+      border: 1px solid #f1f1f1;
+      }    
+      .ui-corner-all { border-radius: 0 0 0 0; }
+      
+      .ui-tabs { padding: .2em;}
+      .ui-tabs .ui-tabs-nav li { top: 0px; margin: -2px 0 1px; text-transform: uppercase; font-size: 10.5px;}
+      .ui-tabs .ui-tabs-nav li a { padding: .25em 2em .25em 1em; margin: .5em; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+      /**
+      *	Basic Layout Theme
+      * 
+      *	This theme uses the default layout class-names for all classes
+      *	Add any 'custom class-names', from options: paneClass, resizerClass, togglerClass
+      */
+      
+      .ui-layout-pane { /* all 'panes' */ 
+      background: #FFF; 
+      border: 1px solid #BBB; 
+      padding: 05x; 
+      overflow: auto;
+      } 
+      
+      .ui-layout-resizer { /* all 'resizer-bars' */ 
+      background: #DDD; 
+      top:100px
+      } 
+      
+      .ui-layout-toggler { /* all 'toggler-buttons' */ 
+      background: #AAA; 
+      } 
+      
+    </style>
+      <!--[if IE]>
+	<link rel="stylesheet" type="text/css" href="../common/css/ie.css"/>
+	<![endif]--><script xmlns="" type="text/javascript" src="common/browserDetect.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/jquery-1.7.2.min.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/jquery.ui.all.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/jquery.cookie.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/treeview/jquery.treeview.min.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/layout/jquery.layout.js">
+         <!----></script><style type="text/css">
+      
+      #header {
+      /* background: url("../images/header-bg.png") scroll top left repeat-x #4d8c83; */
+      background: transparent;
+      }
+      #leftnavigation {
+      /* background-color: #ededed!important; */
+      background-color: transparent;
+      }
+      #navheader {
+      visibility: hidden;
+      }
+      #webhelp-currentid {
+      /* background-color: #D8D8D8 !important; */
+      background-color: #FFFFFF; /*but must be changed in main.js as well*/
+      }
+      .filetree span.file {
+      /* background: url(images/file.gif) 0 0 no-repeat; */
+      background: initial;
+      }
+      .filetree span.folder, .filetree span.file {
+      padding: 1px 0 1px 7px;
+      display: block;
+      }
+
+      /* borrowed from cisco: clientlib.css */
+      .footer {
+      margin: 28px 30px 0 15px;
+      font-size: 80%;
+      line-height: 120%;
+      border-top: 1px solid #ccc;
+      padding-top: 7px;
+      color: #999;
+      }
+      .footer #footer-legal{display:inline;padding-bottom:18px}
+      #framework-footer{margin:0;padding:0 0 15px 0;min-width:900px;width:100%}
+      .footer a,.footer a:visited{color:#999}
+
+      /* from ccimr.css */
+      a:active  { color: #3366CC}
+      a:hover   { color: #3366CC}
+      a:link    { color: #3366CC}
+      a:visited { color: #3366CC}
+
+      #header img {
+      float: left;
+      margin-left: 20px;
+      margin-top: 0px;
+      }
+
+      #header h1 {
+      color: #336666;
+      margin-top: 4px;
+      }
+      #content h1, #content h2 {
+      color: #336666;
+      }
+      .title {
+      color: #336666;
+      }
+      p, pre {
+      margin-left: 0.1in;
+      }
+      p, ul, ol, li {
+        font-size: 95%;
+        font-family: Arial, Helvetica, sans-serif;
+        margin-top: 1px;
+      }
+      body {
+        font: 80.5% Arial, Helvetica, sans-serif;
+      }
+      ol {
+      display: block;
+      list-style-type: decimal;
+      -webkit-margin-before: 1em;
+      -webkit-margin-after: 1em;
+      -webkit-margin-start: 0px;
+      -webkit-margin-end: 0px;
+      -webkit-padding-start: 40px;
+      border: 1;
+      }
+    </style></head>
+   <body>
+      <noscript>
+         <div id="noscript">JavaScript is disabled on your browser. Please enable JavaScript to enjoy all the features of this site.</div>
+      </noscript>
+      <div id="header"><a href="index.html"><img style="margin-right: 2px; width: 110; height: 73; padding-right: 25px; padding-top: 8px" align="right" src="common/images/logo.gif" alt="Cisco Systems, Inc." /></a><h1>NSO 5.7 Northbound APIs
+                <br /> 
+         </h1>
+         <div id="navheader">
+            <!---->
+            <table class="navLinks">
+               <tr>
+                  <td><a id="showHideButton" href="#" onclick="myLayout.toggle('west')" class="pointLeft" tabindex="5" title="Hide TOC tree">Sidebar
+                                                    </a></td>
+                  <td> 
+                                                         |
+                                                         <a accesskey="n" class="navLinkNext" tabindex="5" href="ncs.nb.intro.html">Next</a></td>
+               </tr>
+            </table>
+         </div>
+      </div>
+      <div id="content">
+         <div class="book">
+            <div xmlns="" class="titlepage">
+               <div>
+                  <div>
+                     <h1 xmlns="http://www.w3.org/1999/xhtml" class="title"><a id="ncs_northbound"></a>NSO 5.7 Northbound APIs
+                            
+                     </h1>
+                  </div>
+                  <div>
+                     <p xmlns="http://www.w3.org/1999/xhtml" class="releaseinfo">NSO 5.7.1</p>
+                  </div>
+                  <div>
+                     <p xmlns="http://www.w3.org/1999/xhtml" class="copyright">Copyright © 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Cisco Systems, Inc. All rights reserved.</p>
+                  </div>
+                  <div>
+                     <div xmlns="http://www.w3.org/1999/xhtml" class="legalnotice"><a id="d0e5"></a><p>THE SPECIFICATIONS AND INFORMATION REGARDING THE PRODUCTS IN
+                             THIS MANUAL ARE SUBJECT TO CHANGE WITHOUT NOTICE. ALL STATEMENTS,
+                             INFORMATION, AND RECOMMENDATIONS IN THIS MANUAL ARE BELIEVED TO BE
+                             ACCURATE BUT ARE PRESENTED WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+                             IMPLIED. USERS MUST TAKE FULL RESPONSIBILITY FOR THEIR APPLICATION
+                             OF ANY PRODUCTS.
+                        </p>
+                        <p>THE SOFTWARE LICENSE AND LIMITED WARRANTY FOR THE ACCOMPANYING
+                             PRODUCT ARE SET FORTH IN THE INFORMATION PACKET THAT SHIPPED WITH
+                             THE PRODUCT AND ARE INCORPORATED HEREIN BY THIS REFERENCE. IF YOU
+                             ARE UNABLE TO LOCATE THE SOFTWARE LICENSE OR LIMITED WARRANTY,
+                             CONTACT YOUR CISCO REPRESENTATIVE FOR A COPY.
+                        </p>
+                        <p>The Cisco implementation of TCP header compression is an
+                             adaptation of a program developed by the University of California,
+                             Berkeley (UCB) as part of UCB's public domain version of the UNIX
+                             operating system. All rights reserved. Copyright © 1981, Regents of
+                             the University of California.
+                        </p>
+                        <p>NOTWITHSTANDING ANY OTHER WARRANTY HEREIN, ALL DOCUMENT FILES
+                             AND SOFTWARE OF THESE SUPPLIERS ARE PROVIDED “AS IS" WITH ALL
+                             FAULTS. CISCO AND THE ABOVE-NAMED SUPPLIERS DISCLAIM ALL WARRANTIES,
+                             EXPRESSED OR IMPLIED, INCLUDING, WITHOUT LIMITATION, THOSE OF
+                             MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+                             NONINFRINGEMENT OR ARISING FROM A COURSE OF DEALING, USAGE, OR TRADE
+                             PRACTICE.
+                        </p>
+                        <p>IN NO EVENT SHALL CISCO OR ITS SUPPLIERS BE LIABLE FOR ANY
+                             INDIRECT, SPECIAL, CONSEQUENTIAL, OR INCIDENTAL DAMAGES, INCLUDING,
+                             WITHOUT LIMITATION, LOST PROFITS OR LOSS OR DAMAGE TO DATA ARISING
+                             OUT OF THE USE OR INABILITY TO USE THIS MANUAL, EVEN IF CISCO OR ITS
+                             SUPPLIERS HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH
+                             DAMAGES.
+                        </p>
+                        <p>Any Internet Protocol (IP) addresses and phone numbers used in
+                             this document are not intended to be actual addresses and phone
+                             numbers. Any examples, command display output, network topology
+                             diagrams, and other figures included in the document are shown for
+                             illustrative purposes only. Any use of actual IP addresses or phone
+                             numbers in illustrative content is unintentional and
+                             coincidental.
+                        </p>
+                        <p>Cisco and the Cisco logo are trademarks or registered
+                             trademarks of Cisco and/or its affiliates in the U.S. and other
+                             countries. To view a list of Cisco trademarks, go to this URL: <a class="link" href="https://www.cisco.com/go/trademarks" target="_top">https://www.cisco.com/go/trademarks</a>. Third-party
+                             trademarks mentioned are the property of their respective
+                             owners. The use of the word partner does not imply a partnership
+                             relationship between Cisco and any other company. (1110R)
+                        </p>
+                        <p>This product includes software developed by the NetBSD
+                             Foundation, Inc. and its contributors.
+                        </p>
+                        <p>This product includes cryptographic software written by Eric
+                             Young (eay@cryptsoft.com).
+                        </p>
+                        <p>This product includes software developed by the OpenSSL
+                             Project for use in the OpenSSL
+                             Toolkit <a class="link" href="https://www.openssl.org/" target="_top">http://www.openssl.org/</a>.
+                        </p>
+                        <p>This product includes software written by Tim Hudson
+                             (tjh@cryptsoft.com).
+                        </p>
+                        <p>U.S. Pat. No. 8,533,303 and 8,913,519</p>
+                     </div>
+                  </div>
+                  <div>
+                     <p xmlns="http://www.w3.org/1999/xhtml" class="pubdate">May 17, 2010</p>
+                  </div>
+               </div>
+               <hr />
+            </div>
+            <div class="list-of-figures">
+               <p><strong>List of Figures</strong></p>
+               <dl>
+                  <dt>1. <a href="ch04s03.html#ncs.ug.alarmmgr.fig.snmp">The NSO Alarm MIB</a></dt>
+               </dl>
+            </div>
+            <div class="list-of-tables">
+               <p><strong>List of Tables</strong></p>
+               <dl>
+                  <dt>1. <a href="ch03s04s02.html#d0e4040"><span class="emphasis"><em>basic-mode</em></span> values</a></dt>
+                  <dt>2. <a href="ch03s04s02.html#d0e4078">Additional <span class="emphasis"><em>with-defaults</em></span> value</a></dt>
+                  <dt>3. <a href="ch03s04s03.html#d0e4118">Query parameter capabilities</a></dt>
+                  <dt>4. <a href="ncs.northbound.restconf.query_params.html#d0e4165">Query parameters</a></dt>
+                  <dt>5. <a href="ch03s05s01.html#d0e4269">The <span class="emphasis"><em>content</em></span> query parameter values</a></dt>
+                  <dt>6. <a href="ch03s05s05.html#d0e4379">The <span class="emphasis"><em>content</em></span> query parameter values</a></dt>
+                  <dt>7. <a href="ch03s05s07.html#d0e4511">Additional Query Parameters</a></dt>
+                  <dt>8. <a href="ch05s03.html#d0e6455">Alarm type descriptions (alphabetically)</a></dt>
+               </dl>
+            </div>
+            <div class="list-of-examples">
+               <p><strong>List of Examples</strong></p>
+               <dl>
+                  <dt>1. <a href="ch02s08s01.html#d0e1446">Example math rpc</a></dt>
+                  <dt>2. <a href="ncs.northbound.restconf.getting_started.html#d0e3664"><span class="phrase">NSO</span> configuration for RESTCONF</a></dt>
+                  <dt>3. <a href="ncs.northbound.restconf.getting_started.html#d0e3676">NSO separate transport configuration for RESTCONF</a></dt>
+                  <dt>4. <a href="ncs.northbound.restconf.getting_started.html#d0e3692">A RESTCONF request using 'curl'</a></dt>
+                  <dt>5. <a href="ncs.northbound.restconf.getting_started.html#d0e3702">A RESTCONF request, simplified</a></dt>
+                  <dt>6. <a href="ch03s02s01.html#d0e3720">A top-level RESTCONF request</a></dt>
+                  <dt>7. <a href="ch03s02s02.html#d0e3766">Get the top most resources under the <span class="emphasis"><em>data</em></span></a></dt>
+                  <dt>8. <a href="ch03s02s03.html#ncs.northbound.restconf.example.yang.dhcp">The <span class="emphasis"><em>dhcp.yang</em></span> resource</a></dt>
+                  <dt>9. <a href="ch03s02s03.html#d0e3811">Get the <span class="emphasis"><em>dhcp/subnet</em></span> resource</a></dt>
+                  <dt>10. <a href="ch03s02s03.html#d0e3839">Create a new <span class="emphasis"><em>dhcp/subnet</em></span> resource</a></dt>
+                  <dt>11. <a href="ch03s02s03.html#d0e3877">Modify a part of the <span class="emphasis"><em>dhcp/subnet</em></span> resource</a></dt>
+                  <dt>12. <a href="ch03s02s03.html#d0e3896">Replace a <span class="emphasis"><em>dhcp/subnet</em></span> resource</a></dt>
+                  <dt>13. <a href="ch03s02s03.html#d0e3915">Delete a <span class="emphasis"><em>dhcp/subnet</em></span> resource</a></dt>
+                  <dt>14. <a href="ch03s03.html#d0e3945"><span class="phrase">NSO</span> configuration for RESTCONF</a></dt>
+                  <dt>15. <a href="ch03s03.html#d0e3967">Example returning <span class="emphasis"><em>/restconf</em></span></a></dt>
+                  <dt>16. <a href="ncs.northbound.restconf.capabilities.html#ncs.northbound.restconf.example.capabilities"><span class="phrase">NSO</span> RESTCONF capabilities</a></dt>
+                  <dt>17. <a href="ch03s04s02.html#d0e4029">The default capability URI</a></dt>
+                  <dt>18. <a href="ch03s05s03.html#d0e4340">Example of how to use the <span class="emphasis"><em>fields</em></span> query parameter</a></dt>
+                  <dt>19. <a href="ch03s05s05.html#d0e4443">Insert <span class="emphasis"><em>first</em></span> into a <span class="emphasis"><em>ordered-by user</em></span> leaf-list</a></dt>
+                  <dt>20. <a href="ch03s05s06.html#d0e4490">Insert <span class="emphasis"><em>first</em></span> into a <span class="emphasis"><em>ordered-by user</em></span> leaf-list</a></dt>
+                  <dt>21. <a href="ch03s07s01.html#d0e4974">Create a new <span class="emphasis"><em>dhcp/subnet</em></span> resource</a></dt>
+                  <dt>22. <a href="ch03s07s01.html#d0e4986"></a></dt>
+                  <dt>23. <a href="ch03s08s02.html#d0e5050">Configure an example notification</a></dt>
+                  <dt>24. <a href="ch03s08s02.html#d0e5063">View the example RESTCONF stream</a></dt>
+                  <dt>25. <a href="ch03s08s03.html#d0e5101">View the example RESTCONF stream</a></dt>
+                  <dt>26. <a href="ch03s08s03.html#d0e5111">View the example RESTCONF stream</a></dt>
+                  <dt>27. <a href="ch03s08s04.html#d0e5127"><span class="phrase">NSO</span> RESTCONF errors during streaming</a></dt>
+                  <dt>28. <a href="ncs.northbound.restconf.schema.resource.html#d0e5155">List the available Yang modules</a></dt>
+                  <dt>29. <a href="ch03s10s01.html#d0e5220">Create a two new <span class="emphasis"><em>dhcp/subnet</em></span> resources</a></dt>
+                  <dt>30. <a href="ch03s10s02.html#d0e5236">Modify and Delete in the same Yang-Patch request</a></dt>
+                  <dt>31. <a href="ch03s10s02.html#d0e5246">Verify the modified max-release-time value</a></dt>
+                  <dt>32. <a href="ch03s10s02.html#d0e5254">Verify the default values after delete of the
+                                  max-release-time value</a></dt>
+                  <dt>33. <a href="ch03s11.html#d0e5280">Check if the RESTCONF server support NMDA</a></dt>
+                  <dt>34. <a href="ch03s11.html#d0e5292">Check what datastores the RESTCONF server support</a></dt>
+                  <dt>35. <a href="ncs.northbound.restconf.extensions.collections.html#d0e5347">Use of collections</a></dt>
+                  <dt>36. <a href="ch03s14s01.html#d0e5436"><span class="emphasis"><em>example.yang</em></span> : model for the
+                                  Query API example</a></dt>
+                  <dt>37. <a href="ch03s14s01.html#d0e5451">Example of a <span class="emphasis"><em>start-query</em></span> request</a></dt>
+                  <dt>38. <a href="ch03s14s01.html#d0e5464">JSON example of a <span class="emphasis"><em>start-query</em></span> request</a></dt>
+                  <dt>39. <a href="ncs.northbound.partial_response.html#d0e5670">Partial Response</a></dt>
+                  <dt>40. <a href="ch03s17.html#d0e5730">XML representation of meta-data</a></dt>
+                  <dt>41. <a href="ch03s17.html#d0e5735">JSON representation of meta-data</a></dt>
+                  <dt>42. <a href="ch03s18.html#d0e5781"><span class="phrase">NSO</span> configuration of the
+                                authentication cache TTL</a></dt>
+                  <dt>43. <a href="ch03s19.html#d0e5815"><span class="phrase">NSO</span> configuration of Client IP via Proxy</a></dt>
+                  <dt>44. <a href="ch03s20.html#d0e5879">Configure RESTCONF external token authentication/validation</a></dt>
+                  <dt>45. <a href="ch03s20.html#d0e5901">Configure the RESTCONF token cookie</a></dt>
+                  <dt>46. <a href="ch03s21.html#d0e5926">NSO RESTCONF custom header configuration</a></dt>
+                  <dt>47. <a href="ch03s21.html#d0e5934">NSO RESTCONF custom header configuration</a></dt>
+                  <dt>48. <a href="ch03s22s01.html#d0e6095">Comprehensive Swagger generation example</a></dt>
+                  <dt>49. <a href="ch04s03s01.html#d0e6389">Object Identifiers</a></dt>
+                  <dt>50. <a href="ch04s03s02.html#d0e6400">Subscribing to SNMP Alarms</a></dt>
+               </dl>
+            </div>
+         </div><script type="text/javascript" src="common/main.js">
+            <!----></script><script type="text/javascript" src="common/splitterInit.js">
+            <!----></script><div class="footer" id="footer-legal">
+            <div class="footer-legal framework-footer-cq">
+               <div id="framework-footer">
+                  <div id="footer-legal"><a href="http://www.cisco.com/web/siteassets/legal/terms_condition.html">Terms &amp; Conditions</a> |
+                                 <a href="http://www.cisco.com/web/siteassets/legal/privacy.html">Privacy Statement</a> |
+                                 <a href="http://www.cisco.com/web/siteassets/legal/privacy.html#cookies">Cookie Policy</a> |
+                                 <a href="http://www.cisco.com/web/siteassets/legal/trademark.html">Trademarks</a></div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div id="sidebar">
+         <div id="leftnavigation" style="padding-top:3px;">
+            <div id="tabs">
+               <ul style="visibility: hidden;"></ul>
+               <div id="treeDiv"><img src="common/images/loading.gif" alt="loading table of contents..." id="tocLoading" style="display:block;" /><div id="ulTreeDiv" style="display:none">
+                     <ul id="tree" class="filetree">
+                        <li><span class="file"><a href="ncs.nb.intro.html" tabindex="1">Introduction</a></span><ul>
+                              <li><span class="file"><a href="ch01s01.html" tabindex="1">Integrating an External System with NSO</a></span></li>
+                           </ul>
+                        </li>
+                        <li><span class="file"><a href="ug.netconf_agent.html" tabindex="1">The NSO NETCONF Server</a></span><ul>
+                              <li><span class="file"><a href="ch02s01.html" tabindex="1">Introduction</a></span></li>
+                              <li><span class="file"><a href="ch02s02.html" tabindex="1">Protocol Capabilities</a></span></li>
+                              <li><span class="file"><a href="ch02s03.html" tabindex="1">Protocol YANG Modules</a></span></li>
+                              <li><span class="file"><a href="ch02s04.html" tabindex="1">Advertising Capabilities and YANG Modules</a></span><ul>
+                                    <li><span class="file"><a href="ch02s04s01.html" tabindex="1">Advertising Device YANG Modules</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.transport.html" tabindex="1">NETCONF Transport Protocols</a></span><ul>
+                                    <li><span class="file"><a href="ch02s05s01.html" tabindex="1">Using OpenSSH</a></span></li>
+                                    <li><span class="file"><a href="ch02s05s02.html" tabindex="1">Internal TCP Transport</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.call_home.html" tabindex="1">NETCONF Call Home</a></span><ul>
+                                    <li><span class="file"><a href="ch02s06s01.html" tabindex="1">Using the native SSH stack</a></span></li>
+                                    <li><span class="file"><a href="ch02s06s02.html" tabindex="1">Using OpenSSH</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ch02s07.html" tabindex="1">Configuration of the NETCONF Server</a></span><ul>
+                                    <li><span class="file"><a href="ch02s07s01.html" tabindex="1">Error Handling</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.extend.html" tabindex="1">Extending the NETCONF Server</a></span><ul>
+                                    <li><span class="file"><a href="ch02s08s01.html" tabindex="1">RPC as an Executable, NSO does not Translate the XML</a></span></li>
+                                    <li><span class="file"><a href="ch02s08s02.html" tabindex="1">RPC as an Executable, NSO Translates the XML</a></span></li>
+                                    <li><span class="file"><a href="ch02s08s03.html" tabindex="1">RPC as a Callback Function</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.netconf_console.html" tabindex="1">Using netconf-console</a></span></li>
+                              <li><span class="file"><a href="ug.netconf_agent.monitoring.html" tabindex="1">Monitoring of the NETCONF Server</a></span></li>
+                              <li><span class="file"><a href="ug.netconf_agent.notif.html" tabindex="1">Notification Capability</a></span><ul>
+                                    <li><span class="file"><a href="ch02s11s01.html" tabindex="1">Notification Streams</a></span></li>
+                                    <li><span class="file"><a href="ch02s11s02.html" tabindex="1">Built-in Notification Streams</a></span></li>
+                                    <li><span class="file"><a href="ch02s11s03.html" tabindex="1">Defining Notification Streams</a></span></li>
+                                    <li><span class="file"><a href="ch02s11s04.html" tabindex="1">Automatic Replay</a></span></li>
+                                    <li><span class="file"><a href="ch02s11s05.html" tabindex="1">Implementing Custom Replay</a></span></li>
+                                    <li><span class="file"><a href="ch02s11s06.html" tabindex="1">Sending Notifications from an Application</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.subscribed_notif.html" tabindex="1">Subscribed Notifications</a></span><ul>
+                                    <li><span class="file"><a href="ch02s12s01.html" tabindex="1">Compatibility with NETCONF notifications</a></span></li>
+                                    <li><span class="file"><a href="ug.netconf_agent.subscribed_notif.monitoring.html" tabindex="1">Monitoring subscriptions</a></span><ul>
+                                          <li><span class="file"><a href="ug.netconf_agent.subscribed_notif.monitoring.html#d0e1931" tabindex="1">Limitations</a></span></li>
+                                       </ul>
+                                    </li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.yang_push.html" tabindex="1">YANG-Push</a></span><ul>
+                                    <li><span class="file"><a href="ch02s13s01.html" tabindex="1">Periodic Subscriptions</a></span></li>
+                                    <li><span class="file"><a href="ch02s13s02.html" tabindex="1">On-Change Subscriptions</a></span></li>
+                                    <li><span class="file"><a href="ch02s13s03.html" tabindex="1">YANG-Push Operations</a></span></li>
+                                    <li><span class="file"><a href="ch02s13s04.html" tabindex="1">Monitoring of YANG-Push Subscriptions</a></span></li>
+                                    <li><span class="file"><a href="ch02s13s05.html" tabindex="1">Limitations</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.actions.html" tabindex="1">Actions Capability</a></span><ul>
+                                    <li><span class="file"><a href="ch02s14s01.html" tabindex="1">Overview</a></span></li>
+                                    <li><span class="file"><a href="ch02s14s02.html" tabindex="1">Capability Identifier</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.actions.html" tabindex="1">Actions Capability</a></span><ul>
+                                    <li><span class="file"><a href="ch02s15s01.html" tabindex="1">Overview</a></span></li>
+                                    <li><span class="file"><a href="ch02s15s02.html" tabindex="1">Motivation</a></span></li>
+                                    <li><span class="file"><a href="ch02s15s03.html" tabindex="1">Dependencies</a></span></li>
+                                    <li><span class="file"><a href="ch02s15s04.html" tabindex="1">Capability Identifier</a></span></li>
+                                    <li><span class="file"><a href="ch02s15s05.html" tabindex="1">New Operation: &lt;action&gt;</a></span><ul>
+                                          <li><span class="file"><a href="ch02s15s05.html#d0e2257" tabindex="1">Description</a></span></li>
+                                          <li><span class="file"><a href="ch02s15s05.html#d0e2262" tabindex="1">Parameters</a></span></li>
+                                          <li><span class="file"><a href="ch02s15s05.html#d0e2275" tabindex="1">Positive Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s15s05.html#d0e2280" tabindex="1">Negative Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s15s05.html#d0e2285" tabindex="1">Example</a></span></li>
+                                       </ul>
+                                    </li>
+                                    <li><span class="file"><a href="ch02s15s06.html" tabindex="1">Modifications to Existing Operations</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.transactions.html" tabindex="1">Transactions Capability</a></span><ul>
+                                    <li><span class="file"><a href="ch02s16s01.html" tabindex="1">Overview</a></span></li>
+                                    <li><span class="file"><a href="ch02s16s02.html" tabindex="1">Dependencies</a></span></li>
+                                    <li><span class="file"><a href="ch02s16s03.html" tabindex="1">Capability Identifier</a></span></li>
+                                    <li><span class="file"><a href="ch02s16s04.html" tabindex="1">New Operation: &lt;start-transaction&gt;</a></span><ul>
+                                          <li><span class="file"><a href="ch02s16s04.html#d0e2334" tabindex="1">Description</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s04.html#d0e2347" tabindex="1">Parameters</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s04.html#d0e2365" tabindex="1">Positive Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s04.html#d0e2370" tabindex="1">Negative Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s04.html#d0e2377" tabindex="1">Example</a></span></li>
+                                       </ul>
+                                    </li>
+                                    <li><span class="file"><a href="ch02s16s05.html" tabindex="1">New Operation: &lt;prepare-transaction&gt;</a></span><ul>
+                                          <li><span class="file"><a href="ch02s16s05.html#d0e2386" tabindex="1">Description</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s05.html#d0e2395" tabindex="1">Parameters</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s05.html#d0e2400" tabindex="1">Positive Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s05.html#d0e2405" tabindex="1">Negative Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s05.html#d0e2412" tabindex="1">Example</a></span></li>
+                                       </ul>
+                                    </li>
+                                    <li><span class="file"><a href="ch02s16s06.html" tabindex="1">New Operation: &lt;commit-transaction&gt;</a></span><ul>
+                                          <li><span class="file"><a href="ch02s16s06.html#d0e2421" tabindex="1">Description</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s06.html#d0e2426" tabindex="1">Parameters</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s06.html#d0e2431" tabindex="1">Positive Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s06.html#d0e2436" tabindex="1">Negative Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s06.html#d0e2443" tabindex="1">Example</a></span></li>
+                                       </ul>
+                                    </li>
+                                    <li><span class="file"><a href="ch02s16s07.html" tabindex="1">New Operation: &lt;abort-transaction&gt;</a></span><ul>
+                                          <li><span class="file"><a href="ch02s16s07.html#d0e2452" tabindex="1">Description</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s07.html#d0e2457" tabindex="1">Parameters</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s07.html#d0e2462" tabindex="1">Positive Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s07.html#d0e2467" tabindex="1">Negative Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s16s07.html#d0e2474" tabindex="1">Example</a></span></li>
+                                       </ul>
+                                    </li>
+                                    <li><span class="file"><a href="ch02s16s08.html" tabindex="1">Modifications to Existing Operations</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.proxy.html" tabindex="1">Proxy Forwarding Capability</a></span><ul>
+                                    <li><span class="file"><a href="ch02s17s01.html" tabindex="1">Overview</a></span><ul>
+                                          <li><span class="file"><a href="ch02s17s01.html#d0e2512" tabindex="1">Client Elements of Procedure</a></span></li>
+                                          <li><span class="file"><a href="ch02s17s01.html#d0e2548" tabindex="1">Server Elements of Procedure</a></span></li>
+                                       </ul>
+                                    </li>
+                                    <li><span class="file"><a href="ch02s17s02.html" tabindex="1">Dependencies</a></span></li>
+                                    <li><span class="file"><a href="ch02s17s03.html" tabindex="1">Capability Identifier</a></span></li>
+                                    <li><span class="file"><a href="ch02s17s04.html" tabindex="1">New Operation: &lt;forward&gt;</a></span><ul>
+                                          <li><span class="file"><a href="ch02s17s04.html#d0e2616" tabindex="1">Description</a></span></li>
+                                          <li><span class="file"><a href="ch02s17s04.html#d0e2623" tabindex="1">Parameters</a></span></li>
+                                          <li><span class="file"><a href="ch02s17s04.html#d0e2650" tabindex="1">Positive Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s17s04.html#d0e2657" tabindex="1">Negative Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s17s04.html#d0e2672" tabindex="1">Example 1.</a></span></li>
+                                          <li><span class="file"><a href="ch02s17s04.html#d0e2680" tabindex="1">Example 2.  Client needs to authenticate to the target:</a></span></li>
+                                          <li><span class="file"><a href="ch02s17s04.html#d0e2691" tabindex="1">Example 3.  Client needs to authenticate to the proxy target, but fails:</a></span></li>
+                                       </ul>
+                                    </li>
+                                    <li><span class="file"><a href="ch02s17s05.html" tabindex="1">New Operation: &lt;challenge-response&gt;</a></span><ul>
+                                          <li><span class="file"><a href="ch02s17s05.html#d0e2705" tabindex="1">Description</a></span></li>
+                                          <li><span class="file"><a href="ch02s17s05.html#d0e2710" tabindex="1">Parameters</a></span></li>
+                                          <li><span class="file"><a href="ch02s17s05.html#d0e2721" tabindex="1">Positive Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s17s05.html#d0e2728" tabindex="1">Negative Response</a></span></li>
+                                          <li><span class="file"><a href="ch02s17s05.html#d0e2737" tabindex="1">Example</a></span></li>
+                                       </ul>
+                                    </li>
+                                    <li><span class="file"><a href="ch02s17s06.html" tabindex="1">Modifications to Existing Operations</a></span></li>
+                                    <li><span class="file"><a href="ch02s17s07.html" tabindex="1">Interactions with Other Capabilities</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.inactive.html" tabindex="1">Inactive Capability</a></span><ul>
+                                    <li><span class="file"><a href="ch02s18s01.html" tabindex="1">Overview</a></span></li>
+                                    <li><span class="file"><a href="ch02s18s02.html" tabindex="1">Dependencies</a></span></li>
+                                    <li><span class="file"><a href="ch02s18s03.html" tabindex="1">Capability Identifier</a></span></li>
+                                    <li><span class="file"><a href="ch02s18s04.html" tabindex="1">New Operations</a></span></li>
+                                    <li><span class="file"><a href="ch02s18s05.html" tabindex="1">Modifications to Existing Operations</a></span><ul>
+                                          <li><span class="file"><a href="ch02s18s05.html#d0e2805" tabindex="1">Example</a></span></li>
+                                       </ul>
+                                    </li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.identification-capability.html" tabindex="1">Tail-f Identification Capability</a></span><ul>
+                                    <li><span class="file"><a href="ch02s19s01.html" tabindex="1">Overview</a></span></li>
+                                    <li><span class="file"><a href="ch02s19s02.html" tabindex="1">Dependencies</a></span></li>
+                                    <li><span class="file"><a href="ch02s19s03.html" tabindex="1">Capability Identifier</a></span></li>
+                                    <li><span class="file"><a href="ch02s19s04.html" tabindex="1">Example</a></span></li>
+                                    <li><span class="file"><a href="ch02s19s05.html" tabindex="1">ConfD</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.netconf_agent.with-rollback-id.html" tabindex="1">Rollback Id Capability</a></span><ul>
+                                    <li><span class="file"><a href="ch02s20s01.html" tabindex="1">Overview</a></span></li>
+                                    <li><span class="file"><a href="ch02s20s02.html" tabindex="1">Dependencies</a></span></li>
+                                    <li><span class="file"><a href="ch02s20s03.html" tabindex="1">Capability Identifier</a></span></li>
+                                    <li><span class="file"><a href="ch02s20s04.html" tabindex="1">Modifications to Existing Operations</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ch02s21.html" tabindex="1">NETCONF extensions in NSO</a></span></li>
+                              <li><span class="file"><a href="ch02s22.html" tabindex="1">The Query API</a></span></li>
+                              <li><span class="file"><a href="ug.netconf_agent.attributes.html" tabindex="1">Meta-data in Attributes</a></span></li>
+                              <li><span class="file"><a href="ch02s24.html" tabindex="1">Namespace for Additional Error Information</a></span></li>
+                              <li><span class="file"><a href="ch02s25.html" tabindex="1">Trace ID</a></span></li>
+                           </ul>
+                        </li>
+                        <li><span class="file"><a href="ncs.northbound.restconf.html" tabindex="1">The RESTCONF API</a></span><ul>
+                              <li><span class="file"><a href="ch03s01.html" tabindex="1">Introduction</a></span></li>
+                              <li><span class="file"><a href="ncs.northbound.restconf.getting_started.html" tabindex="1">Getting started</a></span><ul>
+                                    <li><span class="file"><a href="ch03s02s01.html" tabindex="1">Top-level GET request</a></span></li>
+                                    <li><span class="file"><a href="ch03s02s02.html" tabindex="1">Get resources under the data resource</a></span></li>
+                                    <li><span class="file"><a href="ch03s02s03.html" tabindex="1">Manipulating config data with RESTCONF</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ch03s03.html" tabindex="1">Root resource discovery</a></span></li>
+                              <li><span class="file"><a href="ch03s04.html" tabindex="1">Capabilities</a></span><ul>
+                                    <li><span class="file"><a href="ncs.northbound.restconf.capabilities.html" tabindex="1">How to view the capabilities of the RESTCONF server</a></span></li>
+                                    <li><span class="file"><a href="ch03s04s02.html" tabindex="1">The defaults capability</a></span></li>
+                                    <li><span class="file"><a href="ch03s04s03.html" tabindex="1">Query parameter capabilities</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ncs.northbound.restconf.query_params.html" tabindex="1">Query Parameters</a></span><ul>
+                                    <li><span class="file"><a href="ch03s05s01.html" tabindex="1">The content Query Parameter</a></span></li>
+                                    <li><span class="file"><a href="ch03s05s02.html" tabindex="1">The depth Query Parameter</a></span></li>
+                                    <li><span class="file"><a href="ch03s05s03.html" tabindex="1">The fields Query Parameter</a></span></li>
+                                    <li><span class="file"><a href="ch03s05s04.html" tabindex="1">The filter, start-time
+                                                   and stop-time Query Parameters</a></span></li>
+                                    <li><span class="file"><a href="ch03s05s05.html" tabindex="1">The insert Query Parameter</a></span></li>
+                                    <li><span class="file"><a href="ch03s05s06.html" tabindex="1">The point Query Parameter</a></span></li>
+                                    <li><span class="file"><a href="ch03s05s07.html" tabindex="1">Additional query parameters</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ncs.northbound.restconf.edit_collision.html" tabindex="1">Edit Collision Prevention</a></span><ul>
+                                    <li><span class="file"><a href="ch03s06s01.html" tabindex="1">Response headers</a></span></li>
+                                    <li><span class="file"><a href="ch03s06s02.html" tabindex="1">Request headers</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ug.restconf.using_rollbacks.html" tabindex="1">Using Rollbacks</a></span><ul>
+                                    <li><span class="file"><a href="ch03s07s01.html" tabindex="1">Rolling back configuration changes</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ncs.northbound.restconf.streams.html" tabindex="1">Streams</a></span><ul>
+                                    <li><span class="file"><a href="ch03s08s01.html" tabindex="1">Introduction</a></span></li>
+                                    <li><span class="file"><a href="ch03s08s02.html" tabindex="1">Configuration</a></span></li>
+                                    <li><span class="file"><a href="ch03s08s03.html" tabindex="1">Subscribe to notification events</a></span></li>
+                                    <li><span class="file"><a href="ch03s08s04.html" tabindex="1">Errors</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ncs.northbound.restconf.schema.resource.html" tabindex="1">Schema resource</a></span></li>
+                              <li><span class="file"><a href="ch03s10.html" tabindex="1">YANG Patch Media Type</a></span><ul>
+                                    <li><span class="file"><a href="ch03s10s01.html" tabindex="1">Create two new resources with YANG Patch</a></span></li>
+                                    <li><span class="file"><a href="ch03s10s02.html" tabindex="1">Modify and Delete in the same Yang-Patch request</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ch03s11.html" tabindex="1">NMDA</a></span></li>
+                              <li><span class="file"><a href="ch03s12.html" tabindex="1">Extensions</a></span></li>
+                              <li><span class="file"><a href="ncs.northbound.restconf.extensions.collections.html" tabindex="1">Collections</a></span></li>
+                              <li><span class="file"><a href="ch03s14.html" tabindex="1">The RESTCONF Query API</a></span><ul>
+                                    <li><span class="file"><a href="ch03s14s01.html" tabindex="1">Request and Replies</a></span></li>
+                                    <li><span class="file"><a href="ch03s14s02.html" tabindex="1">Reset a Query</a></span></li>
+                                    <li><span class="file"><a href="ch03s14s03.html" tabindex="1">Immediate Query</a></span></li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ncs.northbound.partial_response.html" tabindex="1">Partial Responses</a></span></li>
+                              <li><span class="file"><a href="ch03s16.html" tabindex="1">Hidden Nodes</a></span></li>
+                              <li><span class="file"><a href="ch03s17.html" tabindex="1">Configuration Meta-Data</a></span></li>
+                              <li><span class="file"><a href="ch03s18.html" tabindex="1">The Authentication Cache</a></span></li>
+                              <li><span class="file"><a href="ch03s19.html" tabindex="1">Client IP via Proxy</a></span></li>
+                              <li><span class="file"><a href="ch03s20.html" tabindex="1">External token authentication/validation</a></span></li>
+                              <li><span class="file"><a href="ch03s21.html" tabindex="1">Custom Response HTTP Headers</a></span></li>
+                              <li><span class="file"><a href="ch03s22.html" tabindex="1">Generating Swagger for RESTCONF</a></span><ul>
+                                    <li><span class="file"><a href="ch03s22s01.html" tabindex="1">Using yanger to generate Swagger</a></span></li>
+                                 </ul>
+                              </li>
+                           </ul>
+                        </li>
+                        <li><span class="file"><a href="ncs.northbound.snmp.html" tabindex="1">The NSO SNMP Agent</a></span><ul>
+                              <li><span class="file"><a href="ch04s01.html" tabindex="1">Introduction</a></span></li>
+                              <li><span class="file"><a href="ch04s02.html" tabindex="1">Configuring the SNMP Agent</a></span></li>
+                              <li><span class="file"><a href="ch04s03.html" tabindex="1">The Alarm MIB</a></span><ul>
+                                    <li><span class="file"><a href="ch04s03s01.html" tabindex="1"> SNMP Object Identifiers </a></span></li>
+                                    <li><span class="file"><a href="ch04s03s02.html" tabindex="1"> Using the SNMP Alarm MIB</a></span></li>
+                                 </ul>
+                              </li>
+                           </ul>
+                        </li>
+                        <li><span class="file"><a href="nb_ncs_alarms.html" tabindex="1">NSO Alarms</a></span><ul>
+                              <li><span class="file"><a href="ug.ncs_sys_mgmt.alarm.html" tabindex="1">Overview</a></span></li>
+                              <li><span class="file"><a href="ch05s02.html" tabindex="1">Alarm type structure</a></span></li>
+                              <li><span class="file"><a href="ch05s03.html" tabindex="1">Alarm type descriptions</a></span></li>
+                           </ul>
+                        </li>
+                     </ul>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </body>
+</html>

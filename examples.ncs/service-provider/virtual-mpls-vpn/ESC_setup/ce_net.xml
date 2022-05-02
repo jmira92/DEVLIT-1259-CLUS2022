@@ -1,0 +1,23 @@
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <devices xmlns="http://tail-f.com/ns/ncs">
+    <device>
+      <name>esc0</name>
+      <config>
+        <esc_datamodel xmlns="http://www.cisco.com/esc/esc">
+          <networks>
+            <network>
+              <name>ce_net</name>
+              <shared>true</shared>
+              <subnet>
+                <name>ce_subnet</name>
+                <address>10.2.2.0</address>
+                <netmask>255.255.255.0</netmask>
+                <gateway>10.2.2.1</gateway>
+              </subnet>
+            </network>
+          </networks>
+        </esc_datamodel>
+      </config>
+    </device>
+  </devices>
+</config>

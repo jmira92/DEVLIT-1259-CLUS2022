@@ -1,0 +1,109 @@
+#!/bin/bash
+
+prgname=`basename $0`
+
+bindir=`dirname $0`
+case $bindir in
+    /*) ncsdir=`dirname $bindir`;;
+    *)  ncsdir=`(cd $bindir/..; pwd)`;;
+esac
+
+if [ -d $ncsdir/ncs_dir ]; then
+    ncsdir=$ncsdir/ncs_dir
+fi
+
+if [ -d $ncsdir/lib/ncs/lib/confdc/ ]; then
+    # release
+    PATH=$ncsdir/lib/ncs/bin:$PATH
+    export PATH
+fi
+
+function error()
+{
+    if [ ! -z "$1" ]; then
+        echo >&2 "${prgname}: error: $1"
+        echo >&2
+    fi
+    echo >&2 "Try ${prgname} --help to get usage text"
+    exit 1
+}
+
+function usage()
+{
+    cat <<EOF
+Usage: ${prgname} <command>
+
+  COMMANDS
+
+  backup        Invoke the ${prgname}-backup script
+
+  check         Invoke the ${prgname}-check script
+
+  cli-cmd       Invoke the ${prgname}-cli-cmd script
+
+  copy          Invoke the ${prgname}-copy script
+
+  ha            Invoke the ${prgname}-ha script
+
+  install       Invoke the ${prgname}-install script
+
+  load-config   Invoke the ${prgname}-load-config script
+
+  move-device   Invoke the ${prgname}-move-device script
+
+  packages      Invoke the ${prgname}-packages script
+
+  patch         Invoke the ${prgname}-patch script
+
+  ssh-cmd       Invoke the ${prgname}-ssh-cmd script
+
+  start         Invoke the ${prgname}-start script
+
+  stop          Invoke the ${prgname}-stop script
+
+  upgrade       Invoke the ${prgname}-upgrade script
+
+  get-logs      Invoke the ${prgname}-get-logs script
+
+  help          Display the man page for <command>
+
+  OPTIONS
+
+  -h, --help    Show this help text.
+
+EOF
+}
+
+while true; do
+    case ${1} in
+        backup|check|cli-cmd|copy|ha|install|load-config| \
+            move-device|packages|patch|ssh-cmd|start|stop|upgrade|get-logs)
+            command="${prgname}-${1}"
+            shift
+            exec "$NCS_DIR/lib/nct/escript/bin/${command}" "$@"
+            ;;
+        help)
+            if [ x"${2}" != x ]; then
+                man nct-${2}
+            else
+                man nct
+            fi
+            exit 0
+            ;;
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        -*)
+            error "no such option ${1}"
+            ;;
+        *)
+            if [ x"${1}" == x ]; then
+                usage
+                exit 0
+            else
+                error "unexpected argument ${1}"
+            fi
+    esac
+    shift
+done

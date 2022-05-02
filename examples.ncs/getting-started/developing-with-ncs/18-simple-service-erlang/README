@@ -1,0 +1,124 @@
+This example uses a NCS package called vlan which illustrates how to
+create structures on the managed devices that are shared between
+multiple service instances.
+
+$ ls ./packages
+router vlan
+
+All the code for this example resides in ./packages/vlan. The router
+package is introduced in ../0-router-network.
+
+To build the packages, do
+
+$ make all
+
+To start the ncs-netsim network, follow the instructions in
+../0-router-network, it's the same network here.
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+
+To run the example we do:
+
+$ ncs
+
+This will start NCS, and NCS will load the package(s), load the data
+models defined by the package(s) and start the Erlang applications
+defined by the packages.
+
+To instantiate the managed interfaces, we do:
+
+$ ncs_cli -u admin
+admin connected from 127.0.0.1 using console on tellus
+admin@ncs> request devices sync-from
+sync-result {
+    device ex0
+    result true
+}
+sync-result {
+    device ex1
+    result true
+}
+sync-result {
+    device ex2
+    result true
+}
+[ok][2015-08-19 14:43:09]
+
+The Erlang code in ./packages/vlan/erlang-lib/vlan/src/vlan_server.erl
+is interesting to study. It uses econfd_maapi:shared_create() instead of
+econfd_maapi:create().
+
+This is because the service creates data in
+
+  /devices/device/config/r:sys/interfaces/interface
+
+that is shared between multiple service instances, for example if we run:
+
+  set services vlan s1 description x iface ethX unit 1 vid 3
+  set services vlan s2 description x iface ethX unit 2 vid 4
+  commit
+
+Both services "share" the interface called "ethX" and the service Java
+code both "creates" the interface called "ethX".
+The way FASTMAP works, is that it deletes the results of a service
+instance and then invokes create() again.
+
+If normal econfd_maapi:create() had been used, if we were to later go back
+and modify one of the services as in:
+
+  set services vlan s1 vid 5
+  commit
+
+That would then automatically also remove all the things done by service s2.
+The solution is to use econfd_maapi:shared_create(),
+whenever we create structures we know are shared between service instances.
+
+If we take a look at the output of:
+
+admin@ncs% show devices device ex0 config r:sys
+interfaces {
+    /* Refcount: 2 */
+    interface ethX {
+        /* Refcount: 1 */
+        unit 1 {
+            enabled;
+            description x;
+            vlan-id     3;
+        }
+        /* Refcount: 1 */
+        unit 2 {
+            enabled;
+            description x;
+            vlan-id     4;
+        }
+    }
+}
+.....
+
+
+We see that there are reference counters (as attributes) on the list
+entries. We have two (2) services using the /interfaces/interface[name="ethX"]
+list entry and then one each for the units.
+Also in NETCONF output, we see the same reference counters
+
+$ netconf-console --get-config -x \
+    /devices/device/config/sys/interfaces/interface
+
+?xml version="1.0" encoding="UTF-8"?>
+<rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="1">
+  <data>
+    <devices xmlns="http://tail-f.com/ns/ncs">
+      <device>
+        <name>ex0</name>
+        <config>
+          <sys xmlns="http://example.com/router">
+            <interfaces>
+              <interface refcounter="2">
+                <name>ethX</name>
+                <unit refcounter="1">
+                  <name>1</name>
+                  <enabled>true</enabled>
+                  .......

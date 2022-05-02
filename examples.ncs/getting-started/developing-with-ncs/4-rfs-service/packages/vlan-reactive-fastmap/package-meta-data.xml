@@ -1,0 +1,22 @@
+<ncs-package xmlns="http://tail-f.com/ns/ncs-packages">
+  <name>vlan-reactive-fastmap</name>
+  <package-version>1.0</package-version>
+  <description>Create a vlan interface on all routers using reactive FM</description>
+  <ncs-min-version>3.0</ncs-min-version>
+  <required-package>
+    <name>router-nc-1.0</name>
+  </required-package>
+  <component>
+    <name>vlan</name>
+    <callback>
+      <java-class-name>com.example.vlan2.AllocVlanServiceRFS</java-class-name>
+    </callback>
+  </component>
+
+  <component>
+    <name>Reactive FM CDB Config Subscriber</name>
+    <application>
+      <java-class-name>com.example.vlan2.ConfigCdbSub</java-class-name>
+    </application>
+  </component>
+</ncs-package>

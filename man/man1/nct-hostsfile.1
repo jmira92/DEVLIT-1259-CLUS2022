@@ -1,0 +1,371 @@
+'\" t
+.\"     Title: nct-hostsfile
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 01/26/2022
+.\"    Manual: NCS Manual
+.\"    Source: Cisco Systems, Inc.
+.\"  Language: English
+.\"
+.TH "NCT\-HOSTSFILE" "1" "01/26/2022" "Cisco Systems, Inc." "NCS Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+nct-hostsfile \- a complete list of all available options
+.SH "INTRODUCTION"
+.sp
+A hostsfile is a plain text file that consists of host\-entries, containing individual options for each entry\&. Each entry \- called a a \fITuple\fR, that begin with a \(oq{\(cq bracket and ends with a \(oq}\&.\(cq \- consists of a \fIHostname/IP\-Address\fR, enclosed in double quotes and a list of options, where the list begin with a \(oq[\(cq bracket and ends with a corresponding \(oq]\(cq bracket:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99", [OPTIONS]}\&.
+{"192\&.168\&.23\&.98", [OPTIONS]}\&.
+\&.\&.\&.etc\&.\&.\&.
+.fi
+.if n \{\
+.RE
+.\}
+.SH "OPTIONS"
+.sp
+The options list is a comma separated list of key/value(s) tuples\&. The available options are:
+.PP
+\fBname\fR
+.RS 4
+A name representation of the host\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{name, "pariss"}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{name, "londons"}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Mandatory for nct\-move\-device\&.
+.RE
+.PP
+\fBgroups\fR
+.RS 4
+A list of groups the host belongs to\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{groups, ["groupA", "groupB"]}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{groups, ["groupB", "groupC"]}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBssh_user\fR
+.RS 4
+SSH User for the host\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{ssh_user, "admin"}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{ssh_user, "oper"}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBssh_pass\fR
+.RS 4
+SSH Password for the host\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{ssh_pass, "secret"}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{ssh_pass, "secret"}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBssh_port\fR
+.RS 4
+SSH PORT for the host\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{ssh_port, 22}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{ssh_port, 24}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBnetconf_user\fR
+.RS 4
+NETCONF User for the host\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{netconf_user, "admin"}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{netconf_user, "oper"}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBnetconf_pass\fR
+.RS 4
+NETCONF Password for the host\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{netconf_pass, "secret"}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{netconf_pass, "secret"}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBnetconf_port\fR
+.RS 4
+NETCONF PORT for the host\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{netconf_port, 2022}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{netconf_port, 2024}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBrest_user\fR
+.RS 4
+REST User for the host\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{rest_user, "admin"}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{rest_user, "oper"}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBrest_pass\fR
+.RS 4
+REST Password for the host\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{rest_pass, "secret"}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{rest_pass, "secret"}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBrest_port\fR
+.RS 4
+REST PORT for the host\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{rest_port, 8080}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{rest_port, 8888}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBrest_ssl\fR
+.RS 4
+REST via ssl\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{rest_ssl, "true"}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.98",[{rest_ssl, "false"}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBinstall_dir\fR
+.RS 4
+This is the directory where static files, primarily the code and libraries for the NCS daemon, are installed\&. The actual directory used for a given invocation of the installation script is
+\fIInstallDir\fR/ncs\-VSN, allowing for coexistence of multiple installed versions\&. The currently active version is identified by a symbolic link
+\fIInstallDir\fR/current
+pointing to one of the
+ncs\-VSN
+directories\&. If the
+\fBinstall_dir\fR
+option is omitted,
+/opt/ncs
+will be used\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{install_dir, "/opt/ncs"}, \&.\&.\&.]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBconfig_dir\fR
+.RS 4
+This directory is used for config files, e\&.g\&.
+ncs\&.conf\&. If the
+\fBconfig_dir\fR
+option is omitted,
+/etc/ncs
+will be used\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{config_dir, "/etc/ncs"}, \&.\&.\&.]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBrun_dir\fR
+.RS 4
+This directory is used for run\-time state files, such as the CDB data base and currently used packages\&. If the
+\fBrun_dir\fR
+option is omitted,
+/var/opt/ncs
+will be used\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{run_dir, "/var/opt/ncs"}, \&.\&.\&.]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBlog_dir\fR
+.RS 4
+This directory is used for the different log files written by NCS\&. If the
+\fBlog_dir\fR
+option is omitted,
+/var/log/ncs
+will be used\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{log_dir, "/var/log/ncs"}, \&.\&.\&.]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBservice_node\fR
+.RS 4
+The name of the node serving as a service node to the host\&. Must correspond with the name option of the service node\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{name, "pariss"}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.11",[{service_node, "pariss"}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Mandatory for nct\-move\-device\&.
+.RE
+.PP
+\fBdevice_nodes\fR
+.RS 4
+A list of names of the nodes serving as a device nodes to the host\&. Must correspond with the name option of the device node\&. Example:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+{"192\&.168\&.23\&.99",[{device_nodes, ["parissd1", "parisd2"]}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.11",[{name, "parisd1"}, \&.\&.\&. ]}\&.
+{"192\&.168\&.23\&.12",[{name, "parisd2"}, \&.\&.\&. ]}\&.
+.fi
+.if n \{\
+.RE
+.\}
+.sp
+Mandatory for nct\-move\-device\&.
+.RE
+.SH "AUTHOR"
+.br
+.RS 4
+Author.
+.RE
+.SH "COPYRIGHT"
+.br
+Copyright \(co 2021, 2022 Cisco Systems, Inc. All rights reserved.
+.br

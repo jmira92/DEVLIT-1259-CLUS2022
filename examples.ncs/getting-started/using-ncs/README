@@ -1,0 +1,15 @@
+
+This is the getting started for NCS users example collection.
+
+All examples contained here show different ways of running NCS towards
+real and/or simulated devices using NETCONF or other NEDs. All
+examples have a README file (indeed most examples only have a README
+file) which will explain what the example tries to demonstrate, and
+will contain commands that can be copied and pasted into a shell to
+try them out.
+
+
+Before running any of the examples, make sure to source the rc file
+(called ncsrc, for bourne type shells and ncsrc.tcsh for csh/tcsh) to
+properly set up your path and other environment variables. The rc file
+can be found at the very top of the NCS installation directory.

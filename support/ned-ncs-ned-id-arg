@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+#
+export script=$(basename $0)
+
+function usage() {
+    cat - <<EOF
+$script: $1"
+Usage: $script <path to package-meta-data.xml>"
+EOF
+}
+
+if [ $# -ne 1 ]; then
+    usage "Wrong number of arguments"
+    exit 1
+fi
+
+# Package Meta Data
+PMD=$1
+
+if [[ ! -f ${PMD} ]]; then
+    echo -n "$script: ERROR, package meta data file does not exist" 1>&2
+    echo " '${PMD}'" 1>&2
+    exit 1
+fi
+
+PKG_NAME=$(xsltproc ${NCS_DIR}/support/ned-pkg-name.xsl ${PMD})
+echo "--ncs-ned-id ${PKG_NAME}:${PKG_NAME}"

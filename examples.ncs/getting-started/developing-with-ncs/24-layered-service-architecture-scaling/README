@@ -1,0 +1,443 @@
+This example illustrates how to write a user defined RFS "Resource
+Facing Service" in an LSA cluster such that the device can be easily
+moved between lower NSO nodes. It also illustrates how a package can
+be used for replicating device configuration to some external store,
+in our case the device and dRFSs config is stored in a file
+system. This allows the lower LSA nodes to be run in non-HA mode.
+
+Background
+==========
+
+There might be situations where it is important to allow easy scaling
+of the device layer in LSA. Moving a device from one lower node to
+another is complicated and usually requires the services that uses the
+device to un-deploy.
+
+In this example we show that given some restrictions on how the
+services are structured on top of LSA it is possible facilitate easy
+movements of devices between device layer NSO nodes.  From that
+follows that it is easy to add a new device NSO node and re-balance
+the lower layer, moving some devices to the new device NSO, and
+conversely to shrink the lower layer by clearing all devices from a
+device NSO.
+
+The idea is to structure LSA such that the lowest NSO nodes only have
+devices and RFSs touching a single device. We call these nodes dNSO
+nodes, and the RFSs exported by these nodes dRFSs.
+
+For example:
+
+                upper-nso             sNSO layer
+                /    |    \
+          lower-1 lower-2 lower-3     dNSO layer
+
+This structure makes it uncomplicated to move a device from one dNSO
+node to another. What needs to happens is the following, assuming we
+are moving device ex0 from lower-1 to lower-2
+
+1. A partial lock is acquired on the upper-nso for the path
+
+   /devices/device{lower-1}/config/dRFS/device{ex0}
+
+   to avoid any changes to the device while the device is
+   being moved.
+
+2. Extract the device and dRFS configuration in one of two ways:
+
+   a) read the configuration from lower-1 using the action
+
+      /device-action/extract_device name=ex0 delete=false
+
+      on lower-1
+
+   b) read the configuration from some central store (could be a DB,
+      or in our case a file system.
+
+   The configuration is essentially the result of exporting
+   the configuration in J-style with unhide all (['*',full])
+
+   The configuration will look something like this
+
+        devices {
+            device ex0 {
+                address   127.0.0.1;
+                port      12022;
+                ssh {
+                ...
+                   /* Refcount: 1 */
+                    /* Backpointer: [ /drfs:d...1'] ] */
+                    interface eth3 {
+                    ...
+                    }
+                ...
+            }
+        }
+        dRFS {
+            device ex0 {
+                vlan v1 {
+                    private {
+                    ...
+                    }
+                }
+            }
+        }
+
+3. Install the configuration on the lower-2 node. This can be done by
+   running the action
+
+     /device-action/install-device name=ex0 config=<from above>
+
+   This will load the configuration file and commit using no-fastmap
+   no-networking. All backpointers etc will be restored
+
+4. Delete device and dRFS for device on lower-1
+
+5. Update mapping table, ie /dispatch-map{ex0}/rfs-node
+
+6. Release partial lock for
+
+     /devices/device{lower-1}/config/dRFS/device{ex0}
+
+7. Read backpointers of the node
+
+   /devices/device{lower-1}/config/dRFS/device{ex0}
+
+   and invoke 're-deploy no-lsa no-networking' on all services
+
+8. Run compare-config for both /devices/device{lower-1} and
+   /devices/device{lower-2} to update the transaction id for lower-1
+   and lower-2.
+
+All of the above is package into an action in the move-device
+package. It can be invoked as
+
+   request move-device move src-nso lower-nso-1 dest-nso \
+   lower-nso-2 device-name ex0
+
+for moving device ex0 from lower-nso-1 to lower-nso-2. Or reading from
+an external DB instead of src-nso
+
+   request move-device move src-nso lower-nso-1 dest-nso \
+   lower-nso-2 device-name ex0 read-from-db
+
+
+Stateless
+=========
+
+Data is replicated to an external store using the package
+inventory-updater. In our case it stores the configurations as files
+in the directory db_store, but the package can easily be modified to
+store the configurations in some external database, for example,
+Cassandra.
+
+
+Requirements
+============
+
+There are some important restrictions. The lower nodes (dNSO) may only
+export device RFS models northbound, ie RFS that apply to a single
+device.  All such RFS should be mounted under the path
+/drfs:dRFS/device to make it easy to extract all service instances for
+a given device while only locking a limited portion of the
+configuration of the dNSO.
+
+Also, there cannot be any RFM on the lower node since event processing
+complicates matter.
+
+Example setup
+=============
+
+The cluster consists of three nodes: upper-nso, lower-nso-1 and
+lower-nso-2.
+
+The node upper-nso runs the customer facing service cfs-vlan. The
+service cfs-vlan dispatches the relevant part of the service to the
+different resource facing nodes, lower-nso-1 and lower-nso-2. The
+lower nodes run the resource facing service rfs-vlan.
+
+To clean and build the environment, do
+
+$ make clean all
+
+To start the simulated network and the three nso nodes do:
+
+$ make start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+DEVICE ex3 OK STARTED
+DEVICE ex4 OK STARTED
+DEVICE ex5 OK STARTED
+cd upper-nso;   NCS_IPC_PORT=4569 sname=upper-nso ncs -c ncs.conf
+cd lower-nso-1; NCS_IPC_PORT=4570 sname=lower-nso-1 ncs -c ncs.conf
+cd lower-nso-2; NCS_IPC_PORT=4571 sname=lower-nso-2 ncs -c ncs.conf
+./init.sh
+
+To run the example we do:
+
+$ make cli-upper-nso
+
+admin connected from 127.0.0.1 using console on zork
+admin@upper-nso> request devices sync-from
+sync-result {
+    device lower-nso-1
+    result true
+}
+sync-result {
+    device lower-nso-2
+    result true
+}
+sync-result {
+    device lower-nso-3
+    result true
+}
+[ok][2017-01-23 15:38:24]
+
+Note the only "devices" which are present are the remote LSA-nodes.
+
+admin@upper-nso> configure
+Entering configuration mode private
+[ok][2017-01-23 15:39:46]
+
+admin@upper-nso% set cfs-vlan v1 a-router ex0 z-router ex5 \
+iface eth3 unit 3 vid 77
+[ok][2017-01-23 15:40:55]
+
+The dispatcher code of cfs-vlan will use the dispatch-map to dispatch
+service instance data to the correct lower-node.
+
+admin@upper-nso% show dispatch-map
+dispatch-map ex0 {
+    rfs-node lower-nso-1;
+}
+dispatch-map ex1 {
+    rfs-node lower-nso-1;
+}
+dispatch-map ex2 {
+    rfs-node lower-nso-1;
+}
+dispatch-map ex3 {
+    rfs-node lower-nso-2;
+}
+dispatch-map ex4 {
+    rfs-node lower-nso-2;
+}
+dispatch-map ex5 {
+    rfs-node lower-nso-2;
+}
+[ok][2017-01-23 15:44:32]
+
+
+Now commit the changes to the lower nodes:
+
+admin@upper-nso% commit
+Commit complete.
+[ok][2017-01-23 15:59:25]
+
+The above service creation first dispatches the service instance data to the
+lower-nodes through the template:
+
+./upper-nso/packages/cfs-vlan/templates/cfs-vlan-template.xml
+
+Moving a device
+===============
+
+Now, to move device ex0 from lower-nso-1 to lower-nso-2 you can use the
+command
+
+admin@upper-nso> request move-device move src-nso lower-nso-1 \
+dest-nso lower-nso-2 device-name ex0
+[ok][2017-12-06 09:25:18]
+admin@upper-nso>
+
+To see what has been modified use the get-modifications action:
+
+admin@upper-nso> request cfs-vlan v1 get-modifications
+cli {
+    local-node {
+        data  devices {
+                   device lower-nso-2 {
+                       config {
+                           drfs:dRFS {
+              +                device ex0 {
+              +                    vlan v1 {
+              +                        router ex0;
+              +                        iface eth3;
+              +                        unit 3;
+              +                        vid 77;
+              +                        description "Interface owned by CFS: v1";
+              +                    }
+              +                }
+              ...
+                           }
+                       }
+                   }
+               }
+    }
+    lsa-service {
+    ...
+    }
+    lsa-service {
+    ...
+    }
+}
+[ok][2017-12-06 09:26:24]
+admin@upper-nso>
+
+The device can also be moved by reading the configuration from a
+common store, for example if the source dNSO isn't available.
+
+admin@upper-nso> request move-device move src-nso lower-nso-2 \
+dest-nso lower-nso-1 device-name ex0 read-from-db
+[ok][2017-12-06 09:29:10]
+admin@upper-nso>
+
+To see what has been modified use the get-modifications action:
+
+admin@upper-nso> request cfs-vlan v1 get-modifications
+cli {
+    local-node {
+        data  devices {
+                   device lower-nso-1 {
+                       config {
+                           drfs:dRFS {
+              +                device ex0 {
+              +                    vlan v1 {
+              +                        router ex0;
+              +                        iface eth3;
+              +                        unit 3;
+              +                        vid 77;
+              +                        description "Interface owned by CFS: v1";
+              +                    }
+              +                }
+                           }
+                       }
+                   }
+                   ...
+               }
+    }
+    lsa-service {
+    ...
+    }
+    lsa-service {
+    ...
+    }
+}
+[ok][2017-12-06 09:29:47]
+admin@upper-nso>
+
+Re-balancing the lower layer
+============================
+
+The move-device package also contains an action for re-balancing
+the lower LSA layer, ie to move devices around such that there
+is an even distribution of devices among the nodes in the lower
+layer. This may, for example, be useful when adding a new lower
+LSA node to a cluster.
+
+admin@upper-nso> request move-device rebalance dry-run
+result move ex5 from lower-nso-2 to lower-nso-3
+move ex2 from lower-nso-1 to lower-nso-3
+[ok][2017-12-06 09:29:47]
+admin@upper-nso>
+
+It is also possible to provide the action with a set of nodes
+to balance, for example lower-nso-2 and lower-nso-3
+
+admin@upper-nso> request move-device rebalance nodes [ lower-nso-2 \
+lower-nso-3 ] dry-run
+result move ex4 from lower-nso-2 to lower-nso-3
+[ok][2017-12-11 16:37:37]
+admin@upper-nso>
+
+If we perform the action
+
+admin@upper-nso> request move-device rebalance
+result move ex5 from lower-nso-2 to lower-nso-3
+move ex2 from lower-nso-1 to lower-nso-3
+[ok][2017-12-11 16:39:24]
+admin@upper-nso>
+
+And then inspect the dispatch-map
+
+admin@upper-nso> show configuration dispatch-map
+dispatch-map ex0 {
+    rfs-node lower-nso-1;
+}
+dispatch-map ex1 {
+    rfs-node lower-nso-1;
+}
+dispatch-map ex2 {
+    rfs-node lower-nso-3;
+}
+dispatch-map ex3 {
+    rfs-node lower-nso-2;
+}
+dispatch-map ex4 {
+    rfs-node lower-nso-2;
+}
+dispatch-map ex5 {
+    rfs-node lower-nso-3;
+}
+[ok][2017-12-11 16:40:01]
+admin@upper-nso>
+
+We can see that the devices are evenly distributed among the devices.
+
+
+Evacuating a lower LSA node
+===========================
+
+Similarly, it may be useful to evacuate all devices from a lower LSA
+node to make it possible to remove the node. For example, if the
+number of devices managed by the cluster is shrinking, or if a lower
+LSA node should be serviced or replaced.
+
+The action <code>evacuate</code> moves all devices on a node to
+the destination nodes, trying to get an even balance of devices
+on the destination nodes. If no destination nodes are given, then
+the devices are distributed among all other lower LSA nodes in
+the cluster.
+
+The following command will move all devices on
+lower-nso-1 to the other lower LSA nodes in the cluster.
+
+admin@upper-nso> request move-device evacuate node lower-nso-1 dry-run
+result move ex1 from lower-nso-1 to lower-nso-2
+move ex0 from lower-nso-1 to lower-nso-3
+[ok][2017-12-11 16:42:26]
+admin@upper-nso>
+
+But it is also possible to move all devices on lower-nso-1
+to lower-nso-3 using the dest-nodes parameter.
+
+
+admin@upper-nso> request move-device evacuate node lower-nso-1\
+dest-nodes [ lower-nso-3 ]
+result move ex1 from lower-nso-1 to lower-nso-3
+move ex0 from lower-nso-1 to lower-nso-3
+[ok][2017-12-11 16:44:26]
+admin@upper-nso>
+
+
+admin@upper-nso> show configuration dispatch-map
+dispatch-map ex0 {
+    rfs-node lower-nso-3;
+}
+dispatch-map ex1 {
+    rfs-node lower-nso-3;
+}
+dispatch-map ex2 {
+    rfs-node lower-nso-3;
+}
+dispatch-map ex3 {
+    rfs-node lower-nso-2;
+}
+dispatch-map ex4 {
+    rfs-node lower-nso-2;
+}
+dispatch-map ex5 {
+    rfs-node lower-nso-3;
+}
+[ok][2017-12-11 16:46:47]
+admin@upper-nso>

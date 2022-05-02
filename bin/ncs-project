@@ -1,0 +1,82 @@
+#!/bin/bash
+
+prgname=`basename $0`
+
+function error()
+{
+    if [ ! -z "$1" ]; then
+        echo >&2 "${prgname}: error: $1"
+        echo >&2
+    fi
+    echo >&2 "Try ${prgname} --help to get usage text"
+    exit 1
+}
+
+function usage()
+{
+    cat <<EOF
+Usage: ${prgname} <command>
+
+  COMMANDS
+
+  create    Create a new ncs-project
+
+  update    Update the project with any changes in the project-meta-data.xml
+
+  git       For each git package repo: execute an arbitrary git command.
+
+  export    Export a project, including init-data and configuration.
+
+  help      Display the man page for <command>
+
+  OPTIONS
+
+  -h, --help                      Show this help text.
+
+  -n, --ncs-min-version           Display the NCS version(s) needed
+                                  to run this project
+
+  --ncs-min-version-non-strict    As -n, but include the non-matching
+                                  NCS version(s)
+
+See manpage for ncs-project(1) for more info.
+EOF
+}
+
+while true; do
+    case ${1} in
+        setup)
+            echo "setup is deprecated, please use update instead!"
+            command="${prgname}-${1}"
+            shift
+            exec "$NCS_DIR/lib/ncs-project/${command}" "$@"
+            ;;
+        create|update|help|git|"export")
+            command="${prgname}-${1}"
+            shift
+            exec "$NCS_DIR/lib/ncs-project/${command}" "$@"
+            ;;
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        -n | --ncs-min-version)
+            exec "$NCS_DIR/lib/ncs-project/ncs-project-setup" \
+                "--ncs-min-version"
+            ;;
+        --ncs-min-version-non-strict)
+            exec "$NCS_DIR/lib/ncs-project/ncs-project-setup" \
+                "--ncs-min-version-non-strict"
+            ;;
+        -*)
+            error "no such option ${1}"
+            ;;
+        *)
+            if [ -z "${1}" ]; then
+                break
+            else
+                error "unexpected argument ${1}"
+            fi
+    esac
+    shift
+done

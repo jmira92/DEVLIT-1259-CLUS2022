@@ -1,0 +1,153 @@
+#!/bin/bash
+#
+# The ncs-project export script
+#
+# Exports the project as an easy to use
+#
+
+prgname="ncs-project export"
+ncscargs=""
+curdir=$(pwd)
+
+function error()
+{
+    if [ ! -z "$1" ]; then
+        echo >&2 "${prgname}: error: $1"
+        echo >&2
+    fi
+    echo >&2 "Try ${prgname} --help to get usage text"
+    exit 1
+}
+
+function usage()
+{
+    cat <<EOF
+Usage: ${prgname} [options]
+
+  Export a NCS project
+
+  OPTIONS
+  -v, --verbose    Display verbose progress information.
+
+  -h, --help       Show this help text.
+
+  --name=<name>    Disregard any configured names, use this
+                   name for the tar file name.
+
+  --pkg-prefix=<pkgprefix>
+                   Use a specific prefix for the compressed
+                   packages used in the bundle instead of
+                   the default "ncs-<vsn>" where the <vsn>
+                   is the NCS version that ${prgname} is
+                   shipped with.
+
+  --prefix=<prefix>
+                   Use the configured bundle name, but add
+                   a prefix to the tar file name. Cannot
+                   be used together with the name option.
+
+  --skip-build     No (re-)build will occur of the packages.
+                   Can be used to export a bundle for a
+                   different NCS version.
+
+  --skip-pkg-update
+                   This option will not try to use the
+                   package versions defined in the "bundle"
+                   part of the projet-meta-data, but instead
+                   use whatever versions are installed in the
+                   "packages" directory.
+
+  --snapshot       Use the configured bundle name, but add
+                   a timestamp to the tar file name. Can be
+                   used together with the name option.
+
+See manpage for ncs-project-export(1) for more info.
+EOF
+}
+
+function project-get-data () {
+    PARAM=$1
+    PMD=$2
+    xsltproc - ${PMD} <<EOF
+<?xml version="1.0"?>
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:ncsproj="http://tail-f.com/ns/ncs-project">
+    <xsl:output method='text'/>
+    <xsl:template match="/ncsproj:project-meta-data">
+      <xsl:for-each select="*[name()='$PARAM']">
+        <xsl:value-of select="."/>
+        <xsl:text>&#10;</xsl:text>
+      </xsl:for-each>
+    </xsl:template>
+</xsl:stylesheet>
+EOF
+}
+
+function debug() {
+        if [ -n "$verbose" ]; then
+            echo "$1"
+        fi
+}
+
+
+while true; do
+    case ${1} in
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        -v | --verbose)
+            ncscargs="${ncscargs} -v"
+            ;;
+        --prefix=*)
+            prefix=$(echo ${1} | sed 's/--prefix=\(.*\)/\1/')
+            ncscargs="${ncscargs} --bundle_prefix ${prefix}"
+            ;;
+        --name=*)
+            name=$(echo ${1} | sed 's/--name=\(.*\)/\1/')
+            ncscargs="${ncscargs} --bundle_name ${name}"
+            ;;
+        --snapshot)
+            ncscargs="${ncscargs} --bundle_snapshot"
+            ;;
+        --skip-build)
+            ncscargs="${ncscargs} --project_skip_build"
+            ;;
+        --skip-pkg-update)
+            ncscargs="${ncscargs} --project_skip_pkg_update"
+            ;;
+        --pkg-prefix=*)
+            pkgprefix=$(echo ${1} | sed 's/--pkg-prefix=\(.*\)/\1/')
+            ncscargs="${ncscargs} --project_pkg_prefix ${pkgprefix}"
+            ;;
+        -*)
+            error "no such option ${1}"
+            ;;
+        *)
+            if [ -z "${1}" ]; then
+                break
+            else
+                error "unexpected argument ${1}"
+            fi
+    esac
+    shift
+done
+
+if [[ -n ${name} ]]; then
+    if [[ -n ${prefix} ]]; then
+        echo "ERROR: --prefix cannot be mixed with --name"
+        exit 1
+    fi
+fi
+
+project_name=$(project-get-data name project-meta-data.xml)
+project_ver=$(project-get-data project-version project-meta-data.xml)
+if [[ -z ${project_name} ]] || [[ -z ${project_ver} ]]; then
+    echo "ERROR: Could not read project name and/or version"
+    exit 1
+fi
+
+debug "Exporting ${project_name} ${project_ver}"
+
+ncsc --project ${curdir} --bundle ${ncscargs}

@@ -1,0 +1,97 @@
+
+
+
+This example shows how to incorporate data into an NCS system where
+that data is not stored in CDB, it's stored in another database, outside
+of NCS.
+
+This example uses two NCS packages.The router package introduced
+in ../0-router-network and a package called just 'extern-db' which
+implements the "data provider" for the external database.
+
+$ ls ./packages
+extern-db    router
+
+To build the two packages, do
+
+$ make all
+
+To start the ncs-netsim network, follow the instructions in
+../0-router-network, it's the same network here.
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+
+
+To study this example, first take a look at the file
+packages/extern-db/package-meta-data.xml
+
+The file says that the package has 1 component
+
+  <component>
+    <name>External DB</name>
+    <callback>
+      <java-class-name>com.example.extdb.App</java-class-name>
+    </callback>
+  </component>
+
+
+The code in com.example.extdb.App implements the transaction
+callbacks and the data callbacks necessary for a data provider.
+
+To run this example we do
+
+$ ncs
+$ ncs_cli -u admin
+
+admin connected from 127.0.0.1 using console on iron.local
+admin@iron> configure
+Entering configuration mode private
+[ok][2012-07-06 16:12:11]
+
+[edit]
+admin@iron% set work item 4 title "some text" responsible klacke comment "do this later"
+[ok][2012-07-06 16:12:43]
+
+[edit]
+admin@iron% commit
+Commit complete.
+[ok][2012-07-06 16:12:48]
+
+
+The yang model resides as usual in a package under
+packages/extern-db/src/yang/work.yang
+
+There are two things interesting with this yang model,
+
+1. It's configuration data
+2. It has a callpoint called tailf:callpoint workPoint;
+
+This means that some external code needs to
+
+a) register under the name of "workPoint"
+b) that code needs to participate in the transactions and the
+   code is responsible for storing the data
+
+Study the callbacks in com.example.extdb.App
+
+
+
+- To start the emulated network, do ncs-netsim start | help
+- To start NCS, do ncs [--verbose --foreground]
+- To stop NCS, do ncs --stop
+- To get a Juniper CLI into NCS, do ncs_cli -u admin
+
+- To restart NCS from scratch, ncs-setup --reset
+    this will ensure NCS is reinitialized from the ncs-cdb/*.xml files
+    when restarted
+
+- To restart the netsim network from scratch, do
+    ncs-netsim stop
+    ncs-netsim reset
+    ncs-netsim start
+       or in one swoop
+    ncs-netsim restart
+

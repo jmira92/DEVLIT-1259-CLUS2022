@@ -1,0 +1,61 @@
+
+In this example an existing device which supports NETCONF will be made
+into an NCS package using only it's YANG file. The assumption is that
+we have somehow gotten the devices YANG file, and saved it in this
+directory (it is called host.yang).
+
+Preparations
+------------
+
+1) Make sure you have sourced the ncsrc file in $NCS_DIR. This sets up paths and
+   environment variables in order to run NCS. So this must be done all times
+   before running NCS, so it is recommended to put that in your profile.
+
+First create a package called 'host' from the YANG file we have
+
+  $ ncs-make-package --netconf-ned . host
+
+
+We now need to build the YANG file in the package
+
+  $ ( cd host/src && make )
+
+
+
+If we want to add simulated devices of this kind we simply:
+
+  $ ncs-netsim create-network host 2 h
+
+And then:
+
+  $ ncs-setup --dest .
+
+If we didn't want simulated devices we still want NCS to find our
+package. Either mv it to the packages directory, or create a symbolic link:
+
+  $ (cd packages && ln -s ../host .)
+
+(Note: the link will already be there if ncs-netsim is used)
+
+
+Start everything
+
+  $ ncs-netsim start
+  $ ncs
+  $ ncs_cli -u admin
+
+  > show packages
+  > request devices sync-from
+
+
+The simulated devices will already be added to the config. For real
+devices add them using the CLI (same method as described in the
+2-real-device-c7200 example)
+
+Do not forget to stop ncs before moving on:
+
+  $ ncs --stop
+
+If you want to restore the example to the initial configuration do:
+  $ ncs-setup --reset
+

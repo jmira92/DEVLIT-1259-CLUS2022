@@ -1,0 +1,8 @@
+logs/
+ncs-cdb/A.cdb
+ncs-cdb/C.cdb
+ncs-cdb/O.cdb
+netsim/
+packages/actions/src/java/build/
+packages/actions/src/java/src/com/example/actions/namespaces/
+state/

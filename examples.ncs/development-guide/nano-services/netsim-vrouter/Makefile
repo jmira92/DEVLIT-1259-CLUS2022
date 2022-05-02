@@ -1,0 +1,39 @@
+######################################################################
+# Example showing use of Nano Services for Staged Provisioning of a
+# Virtual Router
+#
+# (C) 2021 Tail-f Systems
+#
+# See the README file for more information
+######################################################################
+CDB_DIR       := ncs-cdb
+INITS         := $(wildcard *_init.xml)
+CDB_INITS     := $(addprefix $(CDB_DIR)/,$(INITS))
+
+all: $(CDB_INITS)
+	for f in packages/*/src; do \
+		$(MAKE) -C $$f all || exit 1; \
+	done
+
+$(CDB_DIR)/%.xml: %.xml
+	rm -f $@ ; cp $< $@
+
+clean:
+	for f in packages/*/src; do \
+		$(MAKE) -C $$f clean || exit 1; \
+	done
+	-rm -rf ./netsim logs/* state/* ncs-cdb/*
+
+start:
+	ncs -c ncs.conf
+
+stop:
+	-ncs --stop
+	-ncs-netsim stop
+	@echo "##### All NSO and netsim instances stopped"
+
+demo:
+	./demo.sh 3
+
+demo-rc:
+	python3 demo_rc.py 3

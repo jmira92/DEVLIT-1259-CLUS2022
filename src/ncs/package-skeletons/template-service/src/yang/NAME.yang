@@ -1,0 +1,36 @@
+module %NAME% {
+  namespace "http://%DIR%";
+  prefix %NAME%;
+
+  import ietf-inet-types {
+    prefix inet;
+  }
+  import tailf-ncs {
+    prefix ncs;
+  }
+
+  //AUGMENT_BEGIN
+  list %NAME% {
+    key name;
+
+    uses ncs:service-data;
+    ncs:servicepoint "%NAME%";
+
+    leaf name {
+      type string;
+    }
+
+    // may replace this with other ways of refering to the devices.
+    leaf-list device {
+      type leafref {
+        path "/ncs:devices/ncs:device/ncs:name";
+      }
+    }
+
+    // replace with your own stuff here
+    leaf dummy {
+      type inet:ipv4-address;
+    }
+  }
+  //AUGMENT_END
+}

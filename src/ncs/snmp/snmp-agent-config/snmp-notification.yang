@@ -1,0 +1,124 @@
+submodule snmp-notification {
+
+  belongs-to snmp {
+    prefix snmp;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  include snmp-common;
+  include snmp-target;
+  include snmp-usm;
+  include snmp-agent;
+
+  reference "RFC3413: Simple Network Management Protocol (SNMP) Applications
+            SNMP-NOTIFICATION-MIB";
+
+  augment /snmp:snmp/snmp:target {
+    leaf notify-profile {
+      if-feature notification-filter;
+      type leafref {
+        path "/snmp/notify-profile/name";
+      }
+    }
+  }
+
+  augment /snmp:snmp {
+
+    list notify {
+
+      key name;
+
+      description
+        "Targets that will receive notifications";
+      reference "SNMP-NOTIFY-MIB.snmpNotifyTable";
+
+      leaf name {
+        type snmp:identifier;
+        description
+          "an arbitrary name for the list entry";
+        reference "SNMP-NOTIFY-MIB.snmpNotifyName";
+      }
+      leaf tag {
+        type snmp:identifier;
+        mandatory true;
+        /* FIXME: pyang bug - does not affect the C-code; just the CLI -
+           when this bug is fixed, we get tab-completion on tags.
+        type leafref {
+          path "/snmp/target/tag";
+        }
+        */
+        description
+          "target tag, selects a set of notification targets";
+        reference "SNMP-NOTIFY-MIB.snmpNotifyTag";
+      }
+      leaf type {
+        type enumeration {
+          enum trap { value 1; }
+          enum inform { value 2; }
+        }
+        default trap;
+        must
+          ". != 'inform' or
+           count(
+             /snmp/target[tag = current()/../tag]/../usm[../agent/engine-id])
+           = count(
+             /snmp/target[tag = current()/../tag]/../usm)" {
+          error-message
+            "When inform is configured, all v3 targets must have an
+             engine-id configured.";
+          tailf:dependency "/snmp/target/tag";
+          tailf:dependency "../tag";
+          tailf:dependency "/snmp/usm";
+          tailf:dependency "/snmp/agent/engine-id";
+        }
+        description "Defines notification type to be generated";
+        reference "SNMP-NOTIFY-MIB.snmpNotifyType";
+      }
+    }
+
+    list notify-profile {
+      if-feature notification-filter;
+      key name;
+
+      description "Notification filter profiles associated with targets";
+      reference "SNMP-NOTIFY-MIB.snmpNotifyFilterProfileTable";
+
+      leaf name {
+        type snmp:identifier;
+        reference "SNMP-NOTIFY-MIB.snmpNotifyFilterProfileName";
+        description "Name of the filter profile";
+      }
+      list subtree {
+        key "oids";
+
+        reference "SNMP-NOTIFY-MIB.snmpNotifyFilterTable";
+
+        leaf oids {
+          type wildcard-object-identifier;
+          description
+            "A family of subtrees included in this filter.";
+          reference "SNMP-NOTIFY-MIB.snmpNotifyFilterSubtree
+                     SNMP-NOTIFY-MIB.snmpNotifyFilterMask";
+        }
+
+        choice type {
+          mandatory true;
+          leaf included {
+            type empty;
+            description
+            "The family of subtrees is included in the filter";
+          }
+          leaf excluded {
+            type empty;
+            description
+            "The family of subtrees is excluded from the filter";
+          }
+          reference "SNMP-NOTIFY-MIB.snmpNotifyFilterType";
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+module TAILF-ALARM-MIB-ann {
+  namespace "urn:dummy";
+  prefix dummy;
+
+  import tailf-common {
+    prefix tailf;
+  }
+  import TAILF-ALARM-MIB {
+    prefix x;
+  }
+
+  description
+    "Annotation module for the generated TAILF-ALARM-MIB YANG module";
+
+  tailf:annotate "/x:TAILF-ALARM-MIB/x:tfAlarms" {
+    tailf:callpoint "ncs" {
+      tailf:internal;
+    }
+  }
+
+  tailf:annotate "/x:TAILF-ALARM-MIB/x:tfAlarmTable" {
+    tailf:callpoint "ncs" {
+      tailf:internal;
+    }
+  }
+
+}

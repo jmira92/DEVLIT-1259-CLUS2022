@@ -1,0 +1,178 @@
+<devices xmlns="http://tail-f.com/ns/ncs">
+  <device>
+    <name>catalyst0</name>
+    <description>Access Cisco</description>
+    <location>
+      <name>DC1 Server room 22</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.10118878132118451</x>
+        <y>0.73</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>catalyst1</name>
+      <description>Access Cisco</description>
+    <location>
+      <name>DC1 Server room 23</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.42105637813211844</x>
+        <y>0.73</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>catalyst2</name>
+    <description>Access Cisco</description>
+    <location>
+      <name>DC1 Server room 23</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.10118878132118451</x>
+        <y>0.73</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>catalyst3</name>
+    <description>Access Cisco</description>
+    <location>
+      <name>DC2 Server room ALFA</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.42105637813211844</x>
+        <y>0.73</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>catalyst4</name>
+      <description>Access Cisco</description>
+    <location>
+      <name>DC2 Server room BETA</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.39553931451612906</x>
+        <y>0.725</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>catalyst5</name>
+      <description>Access Cisco</description>
+    <location>
+      <name>DC2 Server room CEASAR</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.67578125</x>
+        <y>0.73</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>nexus0</name>
+      <description>Aggregation Nexus</description>
+    <location>
+      <name>DC1 Server room 342</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.25</x>
+        <y>0.4075</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>nexus1</name>
+      <description>Aggregation Nexus</description>
+    <location>
+      <name>DC1 Server room 456</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.6108870967741935</x>
+        <y>0.3925</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>nexus2</name>
+      <description>Aggregation Nexus</description>
+    <location>
+      <name>DC2 Server room Scotch</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.2991746471774194</x>
+        <y>0.4175</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>nexus3</name>
+      <description>Aggregation Nexus</description>
+    <location>
+      <name>DC2 Server room Beatle</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.5463709677419355</x>
+        <y>0.42</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>asr0</name>
+      <description>Core Cisco</description>
+    <location>
+      <name>DC1 Server room 1001</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.18429669703872437</x>
+        <y>0.045</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>asr1</name>
+      <description>Core Cisco</description>
+    <location>
+      <name>DC1 Server room 1002</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.6725680443548387</x>
+        <y>0.0475</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>asr2</name>
+      <description>Core Cisco</description>
+    <location>
+      <name>DC2 Server room Mother</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.1426358695652174</x>
+        <y>0.06</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>asr3</name>
+      <description>Core Cisco</description>
+    <location>
+      <name>DC2 Server room Father</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.7267391304347826</x>
+        <y>0.0925</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>dell0</name>
+      <description>Access Force10</description>
+    <location>
+      <name>DC1 Server room 144</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.6851851851851852</x>
+        <y>0.74</y>
+      </map-coord>
+    </location>
+  </device>
+  <device>
+    <name>dell1</name>
+      <description>Access Force10</description>
+    <location>
+      <name>DC2 Server room Cherry</name>
+      <map-coord xmlns="http://com/example/datacenter-webui">
+        <x>0.6851851851851852</x>
+        <y>0.74</y>
+      </map-coord>
+    </location>
+  </device>
+</devices>

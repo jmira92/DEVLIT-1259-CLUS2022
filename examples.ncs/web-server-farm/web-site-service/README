@@ -1,0 +1,226 @@
+WebSite Service Example
+=======================
+
+Introduction
+------------
+In the ../basic example we got an introduction of the NCS device manager
+functionality. In this example we take a first look at the service
+manager functionality within NCS.
+
+To run this example a properly installed NCS is required
+with the UNIX environment variable NCS_DIR set to where NCS is installed.
+
+The best way to do that is to source the ./ncsrc script found in the top dir
+of the NCS systems installation
+
+We have the following network where we manage one loadbalancer and 3
+webservers.
+
+The following ascii art shows the network:
+
+
+                NCS
+                 |
+                 |
+   ------------------------
+  |       |         |      |
+  |       |         |      |
+  lb0     www0      www1   www2   --- simulated network, confd agents
+
+
+The simulated network of managed devices, "lb0" and "www{0,1,2}" are
+represented by four ConfD instances running at localhost but on
+different ports. The tool ncs-netsim is used to simulate the network.
+
+In this example we implement service logic for a service we call the
+WebSite service. The role of this service is to provide a service
+automating the deployment of a website onto the load balancer and web
+servers in our network.
+
+The WebSite service comprises of the following extensions to the
+basic example:
+
+*) A Service Model - WebSite specific adornments of the generic NCS
+   service manager.
+
+*) Service Logic
+   -) Service Validation Logic - WebSite specific validation of service
+      instantiation.
+
+   -) Service Mapping Logic - Mapping of WebSite service instance data onto
+      the device layer.
+
+
+The following asciis arts describes the WebSite model.
+
+
+            ------------------------
+            |                      |
+        services                   |
+    ---------------                |
+    |             |                |
+ service     properties        devices
+    |             |                |
+  type         web-site            |
+    |                              |
+web-site                           |
+                                   |
+                                   |
+                       --------------------------
+                       |       |         |      |
+                       lb0     www0      www1   www2
+
+*) /services/web-site - the WebSite service model. The service
+   comprises the following attributes:
+   - url - the URL of the web-site.
+   - ip - the IP address of the web-site.
+   - port - the port to listen to.
+   - description - a description of the web-site.
+   - lb-profile - a reference to a configuration comprising of a load
+     balancers and one or more web servers.
+
+*) /services/properties/web-site - global settings for the web-site
+                                   service model.
+
+Building the Example
+--------------------
+To build the example execute:
+
+$ make all
+
+This will build:
+
+*) The simulated devices as done in the ../basic example.
+
+*) The website package
+
+
+Starting the Example
+--------------------
+To start the example you need to:
+
+1) Open two shells
+
+2) In the first shell, start the simulated network:
+
+$ ncs-netsim start
+
+and ncs:
+
+$ ncs
+
+This will start up the simulated devices, NCS and the Service Mapping Logic
+application.
+
+3) In the second shell, start the NCS CLI.
+
+$ ncs_cli -u admin
+
+Running the Example
+-------------------
+At this point we have four devices (lb0,www0,www1,www4), the ncs and
+the web-site service application running.
+
+1. The first step is to synchronize the devices. We call this coldstarting
+   NCS. Initially NCS has no data from the network loaded, and we typically
+   want NCS to be in sync with the network before we start deploying
+   any services.
+
+cli> request devices sync-from
+sync-result {
+    device lb0
+    result true
+}
+sync-result {
+    device www0
+    result true
+}
+sync-result {
+    device www1
+    result true
+}
+sync-result {
+    device www2
+    result true
+}
+
+2. Create a load balancer profile
+
+cli> configure
+cli% set services properties web-site profile gold lb lb0 backend www0
+cli% commit
+
+3. Then create a web site
+
+cli% set services web-site acme port 8080 ip 168.192.0.1 lb-profile gold url www.vip.org
+cli% commit
+
+4. Inspect the lbConfig and wsConfig of the managed devices.
+
+cli% show devices device www0..2 config ws:wsConfig
+cli% show devices device lb0 config lb:lbConfig
+
+5. Start cli on www0 (using the ncs-netsim tool) and delete the wsConfig
+   This is a rogue reconfiguration, the operator logs in directly on
+   a managed device and performs a reconfiguration
+
+$ ncs-netsim cli www0
+
+cli-www0> configure
+cli-www0% delete wsConfig
+cli-www0% commit
+
+6. Do a check-sync in the NCS CLI
+
+cli% request devices check-sync
+
+.
+.
+.
+
+sync-result {
+    device www0
+    result out-of-sync
+}
+.
+.
+.
+
+
+cli% request devices device www0 compare-config
+
+7. At this point, NCS and the device have different views on what the
+   actual configuration is. If we assume here, that the device is correct
+   and NCS is wrong, we sync from the device.
+
+cli% request devices sync-from
+
+8. Re-deploy the service.
+
+A rogue reconfiguration, may also effect services badly. In this case,
+since we synced from the device back to NCS, it may be the case that
+the configuration changes performed by some of our service instances
+have been overwritten
+
+cli% request services web-site acme check-sync
+cli% request services web-site acme check-sync outformat cli
+cli% request services web-site acme re-deploy
+cli% request services web-site acme check-sync
+
+9. Verify that wsConfig of www0 has been updated. in www0 CLI:
+
+cli-www0% show wsConfig
+listener 192.168.0.9 8008;
+
+The re-deploy performs a forced sync of the device config relating
+to the acme service.
+
+When you are ready with this example make sure all daemons are stopped. Stop
+NCS and then the simulated network:
+
+$ ncs --stop
+$ ncs-netsim stop
+
+Clean all created files:
+
+$ make clean

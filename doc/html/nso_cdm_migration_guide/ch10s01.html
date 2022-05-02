@@ -1,0 +1,702 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+   <head>
+      
+      <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+      
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+      
+      <title>NavuContext(Cdb) and NavuContext(CdbSession) constructors deprecated -  - NSO CDM Migration Guide</title>
+      <meta name="generator" content="DocBook XSL Stylesheets V1.78.1" />
+      <link rel="home" href="index.html" title="NSO CDM Migration Guide" />
+      <link rel="up" href="appendix1.Navu_deprecated.html" title="Appendix I" />
+      <link rel="prev" href="appendix1.Navu_deprecated.html" title="Appendix I" />
+      <link rel="next" href="appendix2.ui.prime.html" title="Appendix II" />
+      <meta xmlns="" name="Section-title" content="NavuContext(Cdb) and NavuContext(CdbSession) constructors deprecated" /><script xmlns="" type="text/javascript">
+      //The id for tree cookie
+      var treeCookieId = "treeview-863";
+      var language = "en";
+      var w = new Object();
+      //Localization
+      txt_filesfound = 'Results';
+      txt_enter_at_least_1_char = "You must enter at least one character.";
+      txt_browser_not_supported = "JavaScript is disabled on your browser. Please enable JavaScript to enjoy all the features of this site.";
+      txt_please_wait = "Please wait. Search in progress...";
+      txt_results_for = "Results for: ";
+    </script><link xmlns="" rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+      <link xmlns="" rel="stylesheet" type="text/css" href="common/css/positioning.css" />
+      <link xmlns="" rel="stylesheet" type="text/css" href="common/jquery/theme-redmond/jquery-ui-1.8.2.custom.css" />
+      <link xmlns="" rel="stylesheet" type="text/css" href="common/jquery/treeview/jquery.treeview.css" /><style xmlns="" type="text/css">
+      
+      #noscript{
+      font-weight:bold;
+      background-color: #55AA55;
+      font-weight: bold;
+      height: 25spx;
+      z-index: 3000;
+      top:0px;
+      width:100%;
+      position: relative;
+      border-bottom: solid 5px black;
+      text-align:center;
+      color: white;
+      }
+      
+      input {
+      margin-bottom: 5px;
+      margin-top: 2px;
+      }
+      .folder {
+      display: block;
+      height: 22px;
+      padding-left: 20px;
+      background: transparent url(common/jquery/treeview/images/folder.gif) 0 0px no-repeat;
+      }
+      span.contentsTab {
+      padding-left: 20px;
+      background: url(common/images/toc-icon.png) no-repeat 0 center;
+      }
+      span.searchTab {
+      padding-left: 20px;
+      background: url(common/images/search-icon.png) no-repeat 0 center;
+      }
+      
+      /* Overide jquery treeview's defaults for ul. */
+      .treeview ul {
+      background-color: transparent;
+      margin-top: 4px;
+      }		
+      #webhelp-currentid {
+      /* background-color: #D8D8D8 !important; */
+      background-color: #D8D8D8;
+      }
+      .treeview .hover { color: black; }
+      .filetree li span a { text-decoration: none; font-size: 12px; color: #517291; }
+      
+      /* Override jquery-ui's default css customizations. These are supposed to take precedence over those.*/
+      .ui-widget-content {
+      border: 0px; 
+      background: none; 
+      color: none;     
+      }
+      .ui-widget-header {
+      color: #e9e8e9;
+      border-left: 1px solid #e5e5e5;
+      border-right: 1px solid #e5e5e5;
+      border-bottom: 1px solid #bbc4c5;
+      border-top: 4px solid #e5e5e5;
+      border: medium none;
+      background: #F4F4F4; /* old browsers */
+      background: -moz-linear-gradient(top, #F4F4F4 0%, #E6E4E5 100%); /* firefox */
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#F4F4F4), color-stop(100%,#E6E4E5)); /* webkit */    
+      font-weight: none;
+      }
+      .ui-widget-header a { color: none; }
+      .ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default { 
+      border: none; background: none; font-weight: none; color: none; }
+      .ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited { color: black; text-decoration: none; }
+      .ui-state-hover, .ui-widget-content .ui-state-hover, .ui-widget-header .ui-state-hover, .ui-state-focus, .ui-widget-content .ui-state-focus, .ui-widget-header .ui-state-focus { border: none; background: none; font-weight: none; color: none; }
+      
+      .ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active { border: none; background: none; font-weight: none; color: none; }
+      .ui-state-active a, .ui-state-active a:link, .ui-state-active a:visited { 
+      color: black; text-decoration: none; 	
+      background: #C6C6C6; /* old browsers */
+      background: -moz-linear-gradient(top, #C6C6C6 0%, #D8D8D8 100%); /* firefox */
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#C6C6C6), color-stop(100%,#D8D8D8)); /* webkit */
+      -webkit-border-radius:15px; -moz-border-radius:10px;
+      border: 1px solid #f1f1f1;
+      }    
+      .ui-corner-all { border-radius: 0 0 0 0; }
+      
+      .ui-tabs { padding: .2em;}
+      .ui-tabs .ui-tabs-nav li { top: 0px; margin: -2px 0 1px; text-transform: uppercase; font-size: 10.5px;}
+      .ui-tabs .ui-tabs-nav li a { padding: .25em 2em .25em 1em; margin: .5em; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+      /**
+      *	Basic Layout Theme
+      * 
+      *	This theme uses the default layout class-names for all classes
+      *	Add any 'custom class-names', from options: paneClass, resizerClass, togglerClass
+      */
+      
+      .ui-layout-pane { /* all 'panes' */ 
+      background: #FFF; 
+      border: 1px solid #BBB; 
+      padding: 05x; 
+      overflow: auto;
+      } 
+      
+      .ui-layout-resizer { /* all 'resizer-bars' */ 
+      background: #DDD; 
+      top:100px
+      } 
+      
+      .ui-layout-toggler { /* all 'toggler-buttons' */ 
+      background: #AAA; 
+      } 
+      
+    </style>
+      <!--[if IE]>
+	<link rel="stylesheet" type="text/css" href="../common/css/ie.css"/>
+	<![endif]--><script xmlns="" type="text/javascript" src="common/browserDetect.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/jquery-1.7.2.min.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/jquery.ui.all.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/jquery.cookie.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/treeview/jquery.treeview.min.js">
+         <!----></script><script xmlns="" type="text/javascript" src="common/jquery/layout/jquery.layout.js">
+         <!----></script><style type="text/css">
+      
+      #header {
+      /* background: url("../images/header-bg.png") scroll top left repeat-x #4d8c83; */
+      background: transparent;
+      }
+      #leftnavigation {
+      /* background-color: #ededed!important; */
+      background-color: transparent;
+      }
+      #navheader {
+      visibility: hidden;
+      }
+      #webhelp-currentid {
+      /* background-color: #D8D8D8 !important; */
+      background-color: #FFFFFF; /*but must be changed in main.js as well*/
+      }
+      .filetree span.file {
+      /* background: url(images/file.gif) 0 0 no-repeat; */
+      background: initial;
+      }
+      .filetree span.folder, .filetree span.file {
+      padding: 1px 0 1px 7px;
+      display: block;
+      }
+
+      /* borrowed from cisco: clientlib.css */
+      .footer {
+      margin: 28px 30px 0 15px;
+      font-size: 80%;
+      line-height: 120%;
+      border-top: 1px solid #ccc;
+      padding-top: 7px;
+      color: #999;
+      }
+      .footer #footer-legal{display:inline;padding-bottom:18px}
+      #framework-footer{margin:0;padding:0 0 15px 0;min-width:900px;width:100%}
+      .footer a,.footer a:visited{color:#999}
+
+      /* from ccimr.css */
+      a:active  { color: #3366CC}
+      a:hover   { color: #3366CC}
+      a:link    { color: #3366CC}
+      a:visited { color: #3366CC}
+
+      #header img {
+      float: left;
+      margin-left: 20px;
+      margin-top: 0px;
+      }
+
+      #header h1 {
+      color: #336666;
+      margin-top: 4px;
+      }
+      #content h1, #content h2 {
+      color: #336666;
+      }
+      .title {
+      color: #336666;
+      }
+      p, pre {
+      margin-left: 0.1in;
+      }
+      p, ul, ol, li {
+        font-size: 95%;
+        font-family: Arial, Helvetica, sans-serif;
+        margin-top: 1px;
+      }
+      body {
+        font: 80.5% Arial, Helvetica, sans-serif;
+      }
+      ol {
+      display: block;
+      list-style-type: decimal;
+      -webkit-margin-before: 1em;
+      -webkit-margin-after: 1em;
+      -webkit-margin-start: 0px;
+      -webkit-margin-end: 0px;
+      -webkit-padding-start: 40px;
+      border: 1;
+      }
+    </style></head>
+   <body>
+      <noscript>
+         <div id="noscript">JavaScript is disabled on your browser. Please enable JavaScript to enjoy all the features of this site.</div>
+      </noscript>
+      <div id="header"><a href="index.html"><img style="margin-right: 2px; width: 110; height: 73; padding-right: 25px; padding-top: 8px" align="right" src="common/images/logo.gif" alt="Cisco Systems, Inc." /></a><h1>NSO CDM Migration Guide<br />Appendix I
+         </h1>
+         <div id="navheader">
+            <!---->
+            <table class="navLinks">
+               <tr>
+                  <td><a id="showHideButton" href="#" onclick="myLayout.toggle('west')" class="pointLeft" tabindex="5" title="Hide TOC tree">Sidebar
+                                                    </a></td>
+                  <td><a accesskey="p" class="navLinkPrevious" tabindex="5" href="appendix1.Navu_deprecated.html">Prev</a>
+                                                             |
+                                                             <a accesskey="u" class="navLinkUp" tabindex="5" href="appendix1.Navu_deprecated.html">Up</a>
+                                                         |
+                                                         <a accesskey="n" class="navLinkNext" tabindex="5" href="appendix2.ui.prime.html">Next</a></td>
+               </tr>
+            </table>
+         </div>
+      </div>
+      <div id="content">
+         <div class="sect1">
+            <div xmlns="" class="titlepage">
+               <div>
+                  <div>
+                     <h2 xmlns="http://www.w3.org/1999/xhtml" class="title" style="clear: both"><a id="d0e798"></a>NavuContext(Cdb) and NavuContext(CdbSession)
+                                    constructors deprecated
+                     </h2>
+                  </div>
+               </div>
+            </div>
+            <p>
+                         In NSO 4.2 the NAVU has been changed to fully support writable
+                         operational data transactions via MAAPI.
+                         For this reason the NavuContext(Cdb) and NavuContext(CdbSession)
+                         constructors has been deprecated.
+               		  The NavuCdbXXXSubscribers was deprecated in NSO 4.2 and finally
+               		  removed in NSO 5.1 and the strong
+                         recommendation is to change these to plain Cdb subscribers and if
+                         necessary in diff iterators make use of KeyPath2NavuNode.getNode()
+                         to be able to reuse old NavuCdbDiffIterator code.
+                       
+            </p>
+            <p>
+                         The following is an example on how to make these changes.
+                         The prerequisite is an NavuCdbSubscriber that is used as an
+                         application component in a package.
+                       
+            </p>
+            <p>
+                           We start with the following code which is part of the
+                           web-site-service example.
+                         
+            </p>
+            <div class="informalexample"><pre class="programlisting">public class CdbUpdateHandler implements ApplicationComponent,
+                                         NavuCdbConfigDiffIterate {
+    private static Logger LOGGER = Logger.getLogger(CdbUpdateHandler.class);
+    private static Logger PROPLOG = Logger.getLogger("PROPLOG");
+    private NavuCdbSubscriber navuCfgSubscriber;
+
+    private void configurePropLogger() throws IOException {
+        SimpleLayout layout = new SimpleLayout();
+        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+        String fileName = "logs/props.log";
+        FileAppender appender = new FileAppender(layout, fileName);
+        PROPLOG.addAppender(appender);
+        PROPLOG.setAdditivity(false);
+        PROPLOG.setLevel(Level.DEBUG);
+    }
+
+    @Override
+    public void init() throws Exception {
+        try {
+            configurePropLogger();
+            NcsMain ncsMain = NcsMain.getInstance();
+            ConfPath p = new ConfPath("/ncs:services/properties/wsp:web-site");
+            navuCfgSubscriber =
+                NavuCdbSubscribers.configSubscriber(ncsMain.getNcsHost(),
+                                                    ncsMain.getNcsPort());
+            navuCfgSubscriber.register(this, p);
+        } catch (Exception e) {
+            throw new RuntimeException("Fail in init", e);
+        }
+    }
+
+
+    @Override
+    public void run() {
+        navuCfgSubscriber.subscriberStart();
+        LOGGER.info("subscribed: ready");
+    }
+
+
+    @Override
+    public void finish() throws Exception {
+        try {
+            navuCfgSubscriber.subscriberStop();
+            navuCfgSubscriber.awaitStopped();
+        } catch (InterruptedException e) {
+            LOGGER.error("Exception in shutdownSubscriber", e);
+        } finally {
+            navuCfgSubscriber.executor().shutdown();
+        }
+    }
+
+    public void iterate(NavuCdbSubscriptionConfigContext ctx){
+        try {
+            NavuNode node = ctx.getNode();
+
+            DiffIterateOperFlag op = ctx.getOperFlag();
+            switch (op) {
+            case MOP_CREATED:
+                PROPLOG.info("CREATED : " + node.getKeyPath());
+                break;
+            case MOP_VALUE_SET:
+                PROPLOG.info("SET : " + node.getKeyPath());
+                PROPLOG.info("VALUE : " + ctx.getNewValue());
+                break;
+            case MOP_MODIFIED:
+                PROPLOG.info("MODIFIED : " + node.getKeyPath());
+                break;
+            case MOP_DELETED:
+                PROPLOG.info("DELETED : " + node.getKeyPath());
+                break;
+            }
+        } catch (Exception e) {
+            LOGGER.error("",e);
+        }
+        ctx.iterContinue();
+    }
+}</pre></div>
+            <p>
+                     
+            </p>
+            <p>
+                       First change the use of the NavuCdbConfigDiffIterate interface to the
+                       plain CdbDiffIterate interface instead:
+                         
+            </p>
+            <div class="informalexample"><pre class="programlisting">9c9,10
+&lt; public class CdbUpdateHandler implements ApplicationComponent, CdbDiffIterate {
+---
+&gt; public class CdbUpdateHandler implements ApplicationComponent,
+&gt;                                          NavuCdbConfigDiffIterate {</pre></div>
+            <p>
+                     
+            </p>
+            <p>
+               Make use of a Cdb instance for the subscription and a Maapi instance for
+               a NavuContext that will be used in the iterate method.
+               We also define a requestStop flag to signal the finish of the subscription:
+               We remove the reference to the NavuCdbSubscriber:
+                         
+            </p>
+            <div class="informalexample"><pre class="programlisting">12,19c13
+&lt;
+&lt;     @Resource(type=ResourceType.CDB, scope=Scope.INSTANCE)
+&lt;     private Cdb cdb;
+&lt;     private CdbSubscription cdbsubscr;
+&lt;     @Resource(type=ResourceType.MAAPI, scope=Scope.INSTANCE)
+&lt;     private Maapi maapi;
+&lt;     private NavuContext ncontext;
+&lt;     private boolean requestStop = false;
+---
+&gt;     private NavuCdbSubscriber navuCfgSubscriber;</pre></div>
+            <p>
+               
+               In the application components init() method we start a user session for the
+               Maapi and define the cdb subscription.
+               The NavuCdbSubscribers registration is removed:
+                         
+            </p>
+            <div class="informalexample"><pre class="programlisting">34,37d27
+&lt;             maapi.startUserSession("system", InetAddress.getByName(null),
+&lt;                                    "system", new String[]{},
+&lt;                                    MaapiUserSessionFlag.PROTO_TCP);
+&lt;             ncontext = new NavuContext(maapi);
+39,42c29,34
+&lt;             cdbsubscr = cdb.newSubscription();
+&lt;             cdbsubscr.subscribe(1, 0, "/ncs:services/properties/wsp:web-site");
+&lt;             cdbsubscr.subscribeDone();
+&lt;             requestStop = false;
+---
+&gt;             NcsMain ncsMain = NcsMain.getInstance();
+&gt;             ConfPath p = new ConfPath("/ncs:services/properties/wsp:web-site");
+&gt;             navuCfgSubscriber =
+&gt;                 NavuCdbSubscribers.configSubscriber(ncsMain.getNcsHost(),
+&gt;                                                     ncsMain.getNcsPort());
+&gt;             navuCfgSubscriber.register(this, p);</pre></div>
+            <p>
+               In the application components run() method we remove the
+               NavuCdbSubscriber start and replace it with a read loop for the plain
+               Cdb subscriber:
+                         
+            </p>
+            <div class="informalexample"><pre class="programlisting">50a43
+&gt;         navuCfgSubscriber.subscriberStart();
+52,69d44
+&lt;         try {
+&lt;             while (!requestStop) {
+&lt;                 try {
+&lt;                     int[] spoints = cdbsubscr.read();
+&lt;                     ncontext.startRunningTrans(Conf.MODE_READ);
+&lt;                     cdbsubscr.diffIterate(spoints[0], this);
+&lt;                     int th = ncontext.clearTrans();
+&lt;                     if (th &gt; 0) {
+&lt;                         maapi.finishTrans(th);
+&lt;                     }
+&lt;                 } finally {
+&lt;                     cdbsubscr.sync(CdbSubscriptionSyncType.DONE_PRIORITY);
+&lt;                 }
+&lt;             }
+&lt;         } catch (Throwable e) {
+&lt;             LOGGER.error("Error in subscription:", e);
+&lt;         }
+&lt;         requestStop = false;</pre></div>
+            <p>
+               In the application components finish() method we set the requestStop flag,
+               finish the maapi user session and unregister the resources.
+               Here the ResourceManager.unregisterResources will close both the Cdb and
+               Maapi sockets.
+               We remove the earlier NavuCdbSubscriber stopping code:
+               
+            </p>
+            <div class="informalexample"><pre class="programlisting">75,78d49
+&lt;         requestStop = true;
+&lt;         try {
+&lt;             maapi.endUserSession();
+&lt;         } catch (Throwable ignore) {}
+80,81c51,57
+&lt;             ResourceManager.unregisterResources(this);
+&lt;         } catch (Throwable ignore) {}
+---
+&gt;             navuCfgSubscriber.subscriberStop();
+&gt;             navuCfgSubscriber.awaitStopped();
+&gt;         } catch (InterruptedException e) {
+&gt;             LOGGER.error("Exception in shutdownSubscriber", e);
+&gt;         } finally {
+&gt;             navuCfgSubscriber.executor().shutdown();
+&gt;         }</pre></div>
+            <p>
+               We change the iterate method to the CdbDiffIterate interface:
+                         
+            </p>
+            <div class="informalexample"><pre class="programlisting">84,88c60
+&lt;     public DiffIterateResultFlag iterate(ConfObject[] kp,
+&lt;                                          DiffIterateOperFlag op,
+&lt;                                          ConfObject oldValue,
+&lt;                                          ConfObject newValue,
+&lt;                                          Object initstate) {
+---
+&gt;     public void iterate(NavuCdbSubscriptionConfigContext ctx){</pre></div>
+            <p>
+               In the iterate() method we make use of the KeyPath2NavuNode.getNode() to
+               obtain a NavuNode for the subscription entry:
+                         
+            </p>
+            <div class="informalexample"><pre class="programlisting">90c62
+&lt;             NavuNode node = KeyPath2NavuNode.getNode(kp, ncontext);
+---
+&gt;             NavuNode node = ctx.getNode();</pre></div>
+            <p>
+               In the iterate() method obtain the DiffIterateOperFlag and the
+               newValue directly and we change we need to return with the
+               DiffIterateResultFlag directly:
+                         
+            </p>
+            <div class="informalexample"><pre class="programlisting">91a64
+&gt;             DiffIterateOperFlag op = ctx.getOperFlag();
+98c71
+&lt;                 PROPLOG.info("VALUE : " + newValue);
+---
+&gt;                 PROPLOG.info("VALUE : " + ctx.getNewValue());
+110c83
+&lt;         return DiffIterateResultFlag.ITER_CONTINUE;
+---
+&gt;         ctx.iterContinue();</pre></div>
+            <p>
+               The resulting code should look the as the following:
+                         
+            </p>
+            <div class="informalexample"><pre class="programlisting">public class CdbUpdateHandler implements ApplicationComponent, CdbDiffIterate {
+    private static Logger LOGGER = Logger.getLogger(CdbUpdateHandler.class);
+    private static Logger PROPLOG = Logger.getLogger("PROPLOG");
+
+    @Resource(type=ResourceType.CDB, scope=Scope.INSTANCE)
+    private Cdb cdb;
+    private CdbSubscription cdbsubscr;
+    @Resource(type=ResourceType.MAAPI, scope=Scope.INSTANCE)
+    private Maapi maapi;
+    private NavuContext ncontext;
+    private boolean requestStop = false;
+
+    private void configurePropLogger() throws IOException {
+        SimpleLayout layout = new SimpleLayout();
+        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+        String fileName = "logs/props.log";
+        FileAppender appender = new FileAppender(layout, fileName);
+        PROPLOG.addAppender(appender);
+        PROPLOG.setAdditivity(false);
+        PROPLOG.setLevel(Level.DEBUG);
+    }
+
+    @Override
+    public void init() throws Exception {
+        try {
+            maapi.startUserSession("system", InetAddress.getByName(null),
+                                   "system", new String[]{},
+                                   MaapiUserSessionFlag.PROTO_TCP);
+            ncontext = new NavuContext(maapi);
+            configurePropLogger();
+            cdbsubscr = cdb.newSubscription();
+            cdbsubscr.subscribe(1, 0, "/ncs:services/properties/wsp:web-site");
+            cdbsubscr.subscribeDone();
+            requestStop = false;
+        } catch (Exception e) {
+            throw new RuntimeException("Fail in init", e);
+        }
+    }
+
+
+    @Override
+    public void run() {
+        LOGGER.info("subscribed: ready");
+        try {
+            while (!requestStop) {
+                try {
+                    int[] spoints = cdbsubscr.read();
+                    ncontext.startRunningTrans(Conf.MODE_READ);
+                    cdbsubscr.diffIterate(spoints[0], this);
+                    int th = ncontext.clearTrans();
+                    if (th &gt; 0) {
+                        maapi.finishTrans(th);
+                    }
+                } finally {
+                    cdbsubscr.sync(CdbSubscriptionSyncType.DONE_PRIORITY);
+                }
+            }
+        } catch (Throwable e) {
+            LOGGER.error("Error in subscription:", e);
+        }
+        requestStop = false;
+    }
+
+
+    @Override
+    public void finish() throws Exception {
+        requestStop = true;
+        try {
+            maapi.endUserSession();
+        } catch (Throwable ignore) {}
+        try {
+            ResourceManager.unregisterResources(this);
+        } catch (Throwable ignore) {}
+    }
+
+    public DiffIterateResultFlag iterate(ConfObject[] kp,
+                                         DiffIterateOperFlag op,
+                                         ConfObject oldValue,
+                                         ConfObject newValue,
+                                         Object initstate) {
+        try {
+            NavuNode node = KeyPath2NavuNode.getNode(kp, ncontext);
+
+            switch (op) {
+            case MOP_CREATED:
+                PROPLOG.info("CREATED : " + node.getKeyPath());
+                break;
+            case MOP_VALUE_SET:
+                PROPLOG.info("SET : " + node.getKeyPath());
+                PROPLOG.info("VALUE : " + newValue);
+                break;
+            case MOP_MODIFIED:
+                PROPLOG.info("MODIFIED : " + node.getKeyPath());
+                break;
+            case MOP_DELETED:
+                PROPLOG.info("DELETED : " + node.getKeyPath());
+                break;
+            }
+        } catch (Exception e) {
+            LOGGER.error("",e);
+        }
+        return DiffIterateResultFlag.ITER_CONTINUE;
+    }
+}</pre></div>
+            <p>
+                     
+            </p>
+         </div><script type="text/javascript" src="common/main.js">
+            <!----></script><script type="text/javascript" src="common/splitterInit.js">
+            <!----></script><div class="footer" id="footer-legal">
+            <div class="footer-legal framework-footer-cq">
+               <div id="framework-footer">
+                  <div id="footer-legal"><a href="http://www.cisco.com/web/siteassets/legal/terms_condition.html">Terms &amp; Conditions</a> |
+                                 <a href="http://www.cisco.com/web/siteassets/legal/privacy.html">Privacy Statement</a> |
+                                 <a href="http://www.cisco.com/web/siteassets/legal/privacy.html#cookies">Cookie Policy</a> |
+                                 <a href="http://www.cisco.com/web/siteassets/legal/trademark.html">Trademarks</a></div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div id="sidebar">
+         <div id="leftnavigation" style="padding-top:3px;">
+            <div id="tabs">
+               <ul style="visibility: hidden;"></ul>
+               <div id="treeDiv"><img src="common/images/loading.gif" alt="loading table of contents..." id="tocLoading" style="display:block;" /><div id="ulTreeDiv" style="display:none">
+                     <ul id="tree" class="filetree">
+                        <li><span class="file"><a href="ncs.cdm.intro.html" tabindex="1">Introduction</a></span></li>
+                        <li><span class="file"><a href="ncs.cdm.ident.html" tabindex="1">Internals</a></span><ul>
+                              <li><span class="file"><a href="ch02s01.html" tabindex="1">The YANG Module Namespace Identifier</a></span></li>
+                              <li><span class="file"><a href="ch02s02.html" tabindex="1">The Mount Point</a></span></li>
+                           </ul>
+                        </li>
+                        <li><span class="file"><a href="ncs.cdm.backward.html" tabindex="1">Backward Incompatibilities</a></span><ul>
+                              <li><span class="file"><a href="ch03s01.html" tabindex="1">Schema Changes</a></span><ul>
+                                    <li><span class="file"><a href="ch03s01s01.html" tabindex="1">Device Type</a></span></li>
+                                    <li><span class="file"><a href="ch03s01s02.html" tabindex="1">YANG import Statement</a></span></li>
+                                    <li><span class="file"><a href="ch03s01s03.html" tabindex="1">Device Templates</a></span></li>
+                                    <li><span class="file"><a href="ch03s01s04.html" tabindex="1">Device group RPCs</a></span></li>
+                                    <li><span class="file"><a href="ch03s01s05.html" tabindex="1">Notification Kickers</a></span></li>
+                                    <li><span class="file"><a href="ch03s01s06.html" tabindex="1">API</a></span><ul>
+                                          <li><span class="file"><a href="ch03s01s06.html#d0e189" tabindex="1">Java API incompatibilities</a></span></li>
+                                       </ul>
+                                    </li>
+                                 </ul>
+                              </li>
+                              <li><span class="file"><a href="ch03s02.html" tabindex="1">Other Changes</a></span><ul>
+                                    <li><span class="file"><a href="ch03s02s01.html" tabindex="1">NED compilations</a></span></li>
+                                    <li><span class="file"><a href="ch03s02s02.html" tabindex="1">Removed earlier deprecations</a></span></li>
+                                 </ul>
+                              </li>
+                           </ul>
+                        </li>
+                        <li><span class="file"><a href="ncs.cdm.migrate.html" tabindex="1">NSO CDM migration</a></span></li>
+                        <li><span class="file"><a href="ncs.cdm.service.html" tabindex="1">Service Handling of Ambiguous Device Models</a></span><ul>
+                              <li><span class="file"><a href="ch05s01.html" tabindex="1">Template Services</a></span></li>
+                              <li><span class="file"><a href="ch05s02.html" tabindex="1">Java Services</a></span></li>
+                              <li><span class="file"><a href="ch05s03.html" tabindex="1">Python Services</a></span></li>
+                           </ul>
+                        </li>
+                        <li><span class="file"><a href="ncs.cdm.ned.internals.html" tabindex="1">NED Internals</a></span><ul>
+                              <li><span class="file"><a href="ch06s01.html" tabindex="1">Backward Incompatibilities</a></span><ul>
+                                    <li><span class="file"><a href="ch06s01s01.html" tabindex="1">NED Settings</a></span></li>
+                                    <li><span class="file"><a href="ch06s01s02.html" tabindex="1">Schema Traversals in NED Java code</a></span></li>
+                                 </ul>
+                              </li>
+                           </ul>
+                        </li>
+                        <li><span class="file"><a href="ncs.cdm.ned.cli.gen.convert.html" tabindex="1">Converting old cli and generic NEDs to CDM</a></span></li>
+                        <li><span class="file"><a href="ncs.cdm.ned.nc.convert.html" tabindex="1">Converting old netconf NEDs to CDM</a></span></li>
+                        <li><span class="file"><a href="ncs_lsa.lsa_and_cdm.html" tabindex="1">LSA and Common Data Models</a></span><ul>
+                              <li><span class="file"><a href="ch09s01.html" tabindex="1">LSA and Common Data Models</a></span></li>
+                           </ul>
+                        </li>
+                        <li><span class="file"><a href="appendix1.Navu_deprecated.html" tabindex="1">Appendix I</a></span><ul>
+                              <li id="webhelp-currentid"><span class="file"><a href="ch10s01.html" tabindex="1">NavuContext(Cdb) and NavuContext(CdbSession)
+                                                   constructors deprecated</a></span></li>
+                           </ul>
+                        </li>
+                        <li><span class="file"><a href="appendix2.ui.prime.html" tabindex="1">Appendix II</a></span><ul>
+                              <li><span class="file"><a href="ch11s01.html" tabindex="1">Old web-ui removed</a></span></li>
+                           </ul>
+                        </li>
+                     </ul>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </body>
+</html>

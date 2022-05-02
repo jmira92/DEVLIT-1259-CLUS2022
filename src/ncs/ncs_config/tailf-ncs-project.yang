@@ -1,0 +1,225 @@
+module tailf-ncs-project {
+
+  namespace "http://tail-f.com/ns/ncs-project";
+  prefix ncsproj;
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  organization "Tail-f Systems";
+
+  description
+    "This module defines the Tail-f/Cisco ncs-project model.";
+
+  revision 2016-05-12 {
+    description
+      "Released as part of NCS-4.2. Introduces 'export', which is used to
+       point out which packages to bundle into a tarball to be released.";
+  }
+
+  revision 2015-08-19 {
+    description
+      "Initial release.";
+  }
+
+  grouping git-body {
+    leaf repo {
+      description "The git repository containing this package";
+      type string;
+    }
+    choice git-type {
+      case branch {
+        leaf branch {
+          type string;
+        }
+      }
+      case tag {
+        leaf tag {
+          type string;
+        }
+      }
+      case commit {
+        leaf commit {
+          type string;
+        }
+      }
+    }
+  }
+
+  grouping package-location-group {
+    choice package-location {
+      case local {
+        leaf local {
+          type empty;
+          description
+            "A package local to this project.
+
+             This package exists in place, i.e it is not retrieved
+             from some other location. Note that it still need to
+             be a proper NCS package with a project-meta-data.xml file.";
+        }
+      }
+      case url {
+        leaf url {
+          tailf:info "HTTP/FILE URL";
+          description "The HTTP/FILE URL pointing to this package.
+                      The package needs to be compressed with tar gzip
+                      (tar.gz).";
+          type string;
+        }
+      }
+      case git {
+        container git {
+          uses git-body;
+        }
+      }
+    }
+  }
+
+
+  container project-meta-data {
+    description
+      "This grouping describes meta-data for a NCS project.
+
+       An NCS project is a complete running NCS installation.
+       It contains all the needed packages and the config data
+       that is required to run the system.
+
+       The NCS project is described in a project-meta-data.xml
+       file according to the Yang model. By using the ncs-project
+       commands, the complete project can be populated.
+
+       This can be used for encapsulating NCS demos or even
+       a full blown turn-key system.";
+
+    typedef version {
+      type string {
+        pattern '\d+\.\d+([-.](\d+|\w+))*';
+      }
+      description
+        "The version is a sequence of numbers and words, separated by '.'
+         or '-'.  When NCS compares a version string, it parses the string
+         into the sequence of numbers and words, and compares each component
+         individually.";
+    }
+
+    leaf name {
+      mandatory true;
+      type string;
+      description
+        "A unique name, used to identify the project.";
+    }
+
+    leaf project-version {
+      type version;
+      description
+        "The version of the project.";
+    }
+
+    leaf description {
+      type string;
+      description
+        "Free-form text describing the project.";
+    }
+
+    container packages-store {
+      description
+        "Where to look for NCS packages.
+         In particular, where to look for package dependant packages.";
+
+      list directory {
+        description "Directory paths where to look for packages";
+        ordered-by user;
+        key name;
+        leaf name {
+          type string;
+          description "Directory path name";
+        }
+      }
+
+      list git {
+        description "Default package git repositories";
+        ordered-by user;
+        key repo;
+        uses git-body;
+      }
+    }
+
+    container netsim {
+      description "Netsim devices used in this project.
+                   Only used for generating a proper makefile when
+                   running the 'ncs-project setup' script";
+      list device {
+        key name;
+        leaf name {
+          type leafref {
+            path "/project-meta-data/package/name";
+          }
+        }
+        leaf prefix {
+          mandatory true;
+          type string;
+        }
+        leaf num-devices {
+          mandatory true;
+          type int32;
+        }
+      }
+    }
+
+    container bundle {
+      presence "Bundle configuration";
+      tailf:info "Project bundle information";
+      description "Bundle contains information to collect all related packages,
+                   and pack them into one file - a bundle.";
+
+      leaf name {
+        type string;
+        tailf:default-ref '../../name';
+        tailf:info "Used to create tarball filename";
+        description "Will be used to created the filename to save the bundle
+                     in. Default if not set is
+                     <../../name>-<../../version>.tar.gz.
+                     NOTE: The filename will have '.tar.gz' appended.";
+        }
+
+      container includes {
+        list file {
+          key path;
+          leaf path {
+            type string;
+          }
+        }
+        tailf:info "List of files to include in the bundle";
+        description "List of files, e.g. README, ncs.conf etc, to include in
+                     the bundle when doing export. Wildcards are not allowed.";
+      }
+
+      list package {
+        key "name";
+        leaf name {
+          type leafref {
+            path "../../../package/name";
+          }
+          tailf:info "List of bundled packages";
+          description "This list of packages will be included in the bundle.
+                     Note: all information about the bundled packages, apart
+                     from which package to include, is defined in
+                     ../../../package .";
+        }
+        uses package-location-group;
+      } // bundle
+    }
+    list package {
+      key name;
+      description
+        "A list of packages used by this project.";
+      leaf name {
+        tailf:info "Required package name";
+        type string;
+      }
+      uses package-location-group;
+    }
+  }
+}

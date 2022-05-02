@@ -1,0 +1,61 @@
+
+This example shows a few different ways to subscribe to changes
+in the CDB configuration database.
+
+This example uses two NCS packages.The router package introduced
+in ../0-router-network and a package called just 'cdb' with some
+Cdb Python code examples
+
+$ ls ./packages
+cdb    router
+
+To build the two packages, do
+
+$ make all
+
+To start the ncs-netsim network, follow the instructions in
+../0-router-network, it's the same network here.
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+
+
+To study this example, first take a look at the file
+packages/cdb/package-meta-data.xml
+
+The file says that the package has 2 components, each component here
+is of type 'application'.
+
+The two components are
+
+- A plain CDB subscriber which uses the raw lowlevel subscription
+  API (commented out).
+
+- A subscriber which which uses the raw lowlevel subscription
+  API to listen to operational data events.
+
+See the comments in the corresponding Python source file for
+further instructions on how to run the three different 'components'
+The files are:
+
+./packages/cdb/python/plaincdbsub/plancdbsub.py
+./packages/cdb/python/opercdbsub/opercdbsub.py
+
+- To start the emulated network, do ncs-netsim start | help
+- To start NCS, do ncs  [--verbose --foreground]
+- To stop NCS, do ncs --stop
+- To get a Juniper CLI into NCS, do ncs_cli -u admin
+
+- To restart NCS from scratch, ncs-setup --reset
+    this will ensure NCS is reinitialized from the ncs-cdb/*.xml files
+    when restarted
+
+- To restart the netsim network from scratch, do
+    ncs-netsim stop
+    ncs-netsim reset
+    ncs-netsim start
+       or in one swoop
+    ncs-netsim restart
+

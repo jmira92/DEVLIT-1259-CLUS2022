@@ -1,0 +1,12 @@
+NSO 5.7.1 for darwin on x86_64.
+Revision: 0c048c0da8bb129184d766dbbc63567506b43d52 (GIT)
+Date: Wed Jan 26 09:46:16 CET 2022
+DOCUMENTATION_PACKAGE=nso-5.7.1.doc.tar.gz
+JAVA_PACKAGE=ncs-5.7.1.java.tar.gz
+EXAMPLE_PACKAGE=ncs-5.7.1.examples.tar.gz
+GLIBC version: none
+Erlang/OTP version: 22.3.4.17
+SSL version: ciscossl-1.1.1l.7.2.289
+Python3 version: 3.7.12
+BUILD_ID: 220126.085355773.0c048c0da8bb
+Java version: 1.8.0_282

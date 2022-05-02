@@ -1,0 +1,104 @@
+
+This example illustrates how to
+
+- do write and use a pre-modification callback to alter device data outside
+  of the FASTMAP algoritm. In this example a new dns server will be set
+  permanently
+
+This example uses a simple service package vpnep. This illustrates a service
+that will set an interface as an vpn-endpoint on a defined router.
+However a prerequisite is that the router has a specified dns server set.
+This server should be set on the router permanently and independently
+if the is a service instance defined for the router or not.
+The router package is the ned package familiar from many of the
+getting-started examples
+
+This implies that it is viable to set the dns server in a pre-modification
+callback. This implies that the dns server will is set outside of the
+FASTMAP algorithm i.e. it will not be automatically be removed when the service
+is removed.
+
+First we build and run the vpn-endpoint service and sync-from devices to see
+what the initial device configuration looks like.
+
+To build the two packages, do
+
+$ make all
+
+To start the ncs-netsim network, follow the instructions in
+../0-router-network, it's the same network here.
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+
+To run the example we do:
+
+$ ncs
+
+This will start ncs, and ncs will load the two packages, load the
+data models defined by the two packages and start the Java code defined
+by the packages.
+
+We now start a cli to work with this package:
+
+$ ncs_cli -u admin
+
+We need an initial sync-from devices:
+
+admin@ncs> request devices sync-from
+sync-result {
+    device ex0
+    result true
+}
+sync-result {
+    device ex1
+    result true
+}
+sync-result {
+    device ex2
+    result true
+}
+
+admin@ncs> configure
+
+
+We check the initial dns server configuration for the device ex0
+It should NOT contain the server with ip 10.10.10.1
+
+
+admin@ncs% show devices device ex0 config r:sys dns
+server 10.2.3.4;
+
+We now create and delete a couple of services
+since we remove the services again FASTMAP will remove all settings again
+but the server 10.10.10.1 is set by a pre-modification callback and
+will therefore not be removed.
+
+
+admin@ncs% set services vpn-endpoint s1 router ex0 iface ethX unit 1 vid 2
+admin@ncs% commit
+
+admin@ncs% show devices device ex0 config r:sys dns
+server 10.2.3.4;
+server 10.10.10.1;
+
+admin@ncs% set services vpn-endpoint s2 router ex0 iface ethX unit 2 vid 3
+admin@ncs% commit
+
+
+We remove both services which will restore the original state of the device
+
+admin@ncs% delete services vpn-endpoint s1
+admin@ncs% delete services vpn-endpoint s2
+admin@ncs% commit
+
+
+However the dns server 10.10.10.1 is set permanently since it was set
+in a pre-modification callback
+
+admin@ncs% show devices device ex0 config r:sys dns
+server 10.2.3.4;
+server 10.10.10.1;
+

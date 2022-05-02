@@ -1,0 +1,231 @@
+#!/bin/bash
+#
+# The ncs-project update script
+#
+# Handles wrapping the ncs_project code and patching makefiles etc.
+#
+
+prgname="ncs-project update"
+curdir=$(pwd)
+force=""
+ncsc_args=""
+function error()
+{
+    if [ ! -z "$1" ]; then
+        echo >&2 "${prgname}: error: $1"
+        echo >&2
+    fi
+    echo >&2 "Try ${prgname} --help to get usage text"
+    exit 1
+}
+
+function get_netsims()
+{
+    xsltproc - "${dest}/project-meta-data.xml" <<EOF
+<?xml version="1.0"?>
+<xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:proj="http://tail-f.com/ns/ncs-project">
+  <xsl:output method='text'/>
+  <xsl:template match="proj:project-meta-data">
+      <xsl:apply-templates select="proj:netsim"/>
+  </xsl:template>
+  <xsl:template match="proj:netsim">
+      <xsl:apply-templates select="proj:device"/>
+  </xsl:template>
+  <xsl:template match="proj:device">
+      <xsl:value-of select="concat(proj:name,','
+      ,proj:num-devices,',',proj:prefix,'#')"/>
+  </xsl:template>
+</xsl:stylesheet>
+EOF
+}
+
+function setup_makefile()
+{
+    netsims=$(get_netsims)
+    pkgline=$(grep -m1 -e 'PACKAGES' < .build-meta)
+    if [ -z "$pkgline" ]; then
+        error "package build order missing from .build-meta\n"
+    fi
+    printf "# THIS MAKFILE IS GENERATED\n\n" >> ${dest}/setup.mk
+    printf "$pkgline" >> ${dest}/setup.mk
+    printf "\n\n" >> ${dest}/setup.mk
+    IFS='# ' read -a neta <<< "$netsims"
+    printf "NETWORK = " >> ${dest}/setup.mk
+    deli=""
+    for index in "${!neta[@]}"
+    do
+        IFS=', ' read -a net <<< "${neta[index]}"
+        printf "${deli}create-network packages/${net[0]} ${net[1]} ${net[2]} " \
+            >> ${dest}/setup.mk
+        deli=' \\\n          '
+    done
+    printf "\n\n" >> ${dest}/setup.mk
+
+    if [ ! -z "${netsims}" ]; then
+        cat <<'EOF' >> ${dest}/setup.mk
+.PHONY: netsim netsim-clean netsim-start netsim-stop
+netsim:
+	if [ ! -d netsim ]; then \
+		mkdir netsim; \
+		ncs-netsim --dir netsim $(NETWORK); \
+		ncs-netsim ncs-xml-init > ncs-cdb/netsim_devices_init.xml; \
+	fi
+
+netsim-clean:
+	rm -rf netsim
+	rm -rf ncs-cdb/netsim_devices_init.xml
+
+netsim-start:
+	ncs-netsim start
+
+netsim-stop:
+	[ -d netsim ] && ncs-netsim stop || true
+
+EOF
+    else
+        cat <<'EOF' >> ${dest}/setup.mk
+.PHONY: netsim netsim-clean netsim-start netsim-stop
+netsim:
+
+netsim-clean:
+
+netsim-start:
+
+netsim-stop:
+
+EOF
+    fi
+
+    cat <<'EOF' >> ${dest}/setup.mk
+.PHONY: packages packages-clean
+packages:
+	(for i in $(PACKAGES); do \
+	        $(MAKE) -C packages/$${i}/src all || exit 1; \
+	done)
+
+packages-clean:
+	(for i in $(PACKAGES); do \
+	        $(MAKE) -C packages/$${i}/src clean || exit 1; \
+	done)
+
+EOF
+        unset IFS
+}
+
+function usage()
+{
+    cat <<EOF
+Usage: ${prgname} [options]
+
+  Update a NCS project
+
+  OPTIONS
+  -v, --verbose        Display verbose progress information.
+
+  -h, --help           Show this help text.
+
+  -y                   Answer yes in all user prompts, e.g. overwrite setup.mk
+
+      --ncs-min-version
+                       Use the NCSVSNSTRICT defined from .build-meta
+
+      --ncs-min-version-non-strict
+                       Use the NCSVSN defined from .build-meta
+
+      --use-bundle-packages
+                       Update using the packages defined in the "bundle" section
+
+See manpage for ncs-project-update(1) for more info.
+EOF
+}
+
+while true; do
+    case ${1} in
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        -v | --verbose)
+            ncscargs="${ncscargs} -v"
+            ;;
+        --ncs-min-version)
+            strict=true
+            dispvsn=true
+            ;;
+        --ncs-min-version-non-strict)
+            nonstrict=true
+            dispvsn=true
+            ;;
+        --use-bundle-packages)
+            ncscargs="${ncscargs} --project_use_bundle_pkg"
+            ;;
+        -y)
+            force=true
+            ;;
+        -*)
+            error "no such option ${1}"
+            ;;
+        *)
+            if [ -z "${1}" ]; then
+                break
+            else
+                error "unexpected argument ${1}"
+            fi
+    esac
+    shift
+done
+
+if [ -n "$dispvsn" ]; then
+    if [ ! -e ".build-meta" ]; then
+        error ".build-meta is missing, please (re)run 'ncs-project update'"
+    fi
+    if [ -n "$strict" ]; then
+        vsnline=$(grep -m1 -e 'NCSVSNSTRICT' < .build-meta)
+    fi
+    if [ -n "$nonstrict" ]; then
+        vsnline=$(grep -m1 -e 'NCSVSN' < .build-meta)
+    fi
+    if [ -z "$vsnline" ]; then
+        error "version info is missing from .build-meta"
+    fi
+    IFS=', ' read -a vsns <<< "$vsnline"
+    i=0
+    for vsn in "${!vsns[@]}"
+    do
+        i=$((i + 1))
+        if [ $i -ne 1 ]; then
+            echo "${vsns[vsn]}"
+        fi
+    done
+    exit 0
+fi
+
+if [ -z "$dest" ]; then
+    dest="${curdir}"
+fi
+
+ncsc --project ${dest} ${ncscargs}
+res=$?
+if [[ ${res} -ne 0 ]]; then
+    exit 1
+fi
+
+if [ -f "${dest}/setup.mk" ] && [ -z "${force}" ]; then
+    cat << 'EOF'
+The file 'setup.mk' will be overwritten, Continue (y/n)?
+EOF
+    read mk_a
+    if [[ ${mk_a} = "y" ]]; then
+        mv ${dest}/setup.mk ${dest}/setup.mk.old
+        setup_makefile
+    fi
+else
+    if [ -f "${dest}/setup.mk" ]; then
+        # If force is enabled, move the old file out of the way
+        mv ${dest}/setup.mk ${dest}/setup.mk.old
+    fi
+    setup_makefile
+fi
+exit 0

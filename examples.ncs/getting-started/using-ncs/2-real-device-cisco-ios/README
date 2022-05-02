@@ -1,0 +1,195 @@
+Running NCS towards real Cisco IOS routers
+--------------------------------------------
+Make sure you have run the 1-simulated-cisco-ios example before trying this.
+The 1-simulated-cisco-ios explains the basics around NEDs, packages, and gives
+an overview of the NCS CLI commands.
+
+This example is valid for any kind of CLI NED.
+
+Preparations
+------------
+
+1) Make sure you have sourced the ncsrc file in $NCS_DIR. This sets up paths and
+   environment variables in order to run NCS. So this must be done all times
+   before running NCS, so it is recommended to put that in your profile.
+
+Optional:
+If you do not want to create the example files in the NCS installation
+directory $NCS_DIR/examples.ncs/getting-started/using-ncs/2-real-device-c7200/,
+for example if you are several users sharing the same installation, you can
+run the example in a separate directory.
+
+2) Create an empty directory, for example in your home directory. NCS and the
+   simulator will create files and directories in this example. Make sure you
+   change to this directory before continuing.
+
+Setting up NCS to work with the routers
+---------------------------------------
+
+First create the NCS environment based on the example
+cisco-ios-cli-3.0 package:
+
+ $ ncs-setup --dest . --ned-package ${NCS_DIR}/packages/neds/cisco-ios-cli-3.0
+
+(This can be done in another empty directory as well)
+
+Start the NCS daemon:
+
+ $ ncs
+
+And then the CLI:
+
+ $ ncs_cli -u admin
+
+NCS will load the package for the cisco-ios-cli-3.0:
+
+    > show packages
+packages package cisco-ios-cli-3.0
+ package-version 3.0.0.1
+ description     "NED package for Cisco IOS"
+ ncs-min-version [ 3.2.2 3.3 3.4 ]
+ directory       ./state/packages-in-use/1/cisco-ios-cli-3.0
+ component IOSDp2
+  callback java-class-name [ com.tailf.packages.ned.ios.IOSDp2 ]
+ component IOSDp
+  callback java-class-name [ com.tailf.packages.ned.ios.IOSDp ]
+ component cisco-ios
+  ned cli ned-id  cisco-ios-cli-3.0
+  ned cli java-class-name com.tailf.packages.ned.ios.IOSNedCli
+  ned device vendor Cisco
+
+Add the device
+
+ > configure
+
+1) create the authgroup
+authgroups are used to map the NCS user to the device authentication.
+In this example we make the simplest alternative to just have a default
+mapping to a remote username and password:
+
+  % edit devices authgroups group mygroup
+  % set default-map remote-name admin
+  % set default-map remote-password admin
+  % top
+
+(We will commit later when adding the device)
+
+2) Add the device
+
+  % edit devices device myrouter1
+  % set address (fill in address)
+  % set port 22
+  % set authgroup mygroup
+  % set device-type cli ned-id cisco-ios-cli-3.0
+  % set state admin-state unlocked
+
+Note, that the device refers to the authgroup created above. This was
+not committed, but we do all in one go below.
+
+By default, NCS requires that it has a known host key for any device
+that it connects to via SSH. This can be changed per device and on a
+global level, but it is of course best from a security point of view to
+fulfill the requirement. A convenient way of doing this is to use the
+'fetch-host-keys' action, which connects to the device, retrieves the
+host key(s), and stores them in the configuration. And provided that the
+device is up and running at this point, we can do it here - but it can
+also be done later on.
+
+  % request ssh fetch-host-keys
+
+The action prints the "fingerprint" for each key, so we can verify that
+we received the correct keys if we have some independent information
+about what the fingerprints should be. At this point, when the action
+has been run before the device entry has been committed, the keys are not
+yet committed, but they will be committed along with the other changes:
+
+  % top
+  % commit
+
+  % show devices device myrouter*
+
+3) Save the config (in case you want to restore later)
+
+  % save authgr.cfg devices authgroups
+  % save dev.cfg devices device myrouter*
+
+This creates two files authgr.cfg with the config of devices authgroups and
+dev.cfg with the config of devices device myrouter* (only one in this case).
+
+These can be restored like shown below:
+
+4) Restore
+
+  > configure
+  % load merge authgr.cfg
+  % load merge dev.cfg
+
+  % commit
+  % show devices device myrouter*
+
+Configuring the routers
+-----------------------
+
+The typical scenario for using NCS is like the following:
+
+Make sure you can connect:
+
+  > request devices connect
+
+If this does not work, check address, port, and authentication information.
+
+Get the current configuration from the device:
+
+  > request devices sync-from
+
+This ingests the configuration from the device into CDB. Note that only portions
+modeled will be loaded. The data-model is in:
+* $NCS_DIR/packages/neds/cisco-ios-cli-3.0/src/yang/tailf-ned-cisco-ios.yang.
+
+Read the user guide on how to extend the model if needed.
+
+Show the configuration of the router:
+
+  > show configuration devices device myrouter1 config
+
+Change into configuration mode:
+
+  > configure
+
+Change any part of the configuration:
+
+  % set devices device myrouter1 config ...
+
+Inspect the changes:
+
+  % compare running brief
+
+Commit the changes:
+
+  % commit
+
+It might be the case that network engineers still bypass NCS and does local
+modifications. NCS can diff the NCS database with the actual device by:
+
+  % request devices device myrouter1 compare-config
+
+A NCS user can then synchronize in either direction:
+
+  % request devices device myrouter1 sync-from
+
+or:
+
+  % request devices device myrouter1 sync-to
+  % exit
+  > exit
+
+The sync-to command has a dry-run option
+Also try the WebUI at http://http://127.0.0.1:8080.
+
+Do not forget to stop ncs before moving on:
+
+  $ ncs --stop
+
+If you want to restore the example to the initial configuration do:
+  $ ncs-setup --reset
+

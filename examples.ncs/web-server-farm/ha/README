@@ -1,0 +1,80 @@
+High Availability Example
+=======================
+
+Introduction
+------------
+
+This small example tries to exemplify how to use the NCS ha (high availability)
+framework. See chapter "High availability" in the user guide.
+
+The example builds and starts two NCS nodes, called n1 and n2 respectively.
+Both nodes run on the same host (localhost) using different
+NCS_IPC_PORTs
+
+The data models are extremely simple, see the package
+$NCS_DIR/packages/services/manual-ha
+
+It basically defines a set of action points allowing the operator
+to set the current node to be master, slave or none.
+The Java/Yang code is found in the package $NCS_DIR/packages/services/manual-ha
+implements the actions using the Java API for HA and action callbacks.
+
+
+
+
+Building the Example
+--------------------
+To build the example execute:
+
+$ make all
+
+Starting the Example
+--------------------
+To start the example you need to:
+
+1) Open three shells
+
+2) In the first shell, start the simulated network
+
+$ ncs-netsim start
+
+3) in the second shell start NCS node n1:
+
+$ cd n1
+$ NCS_IPC_PORT=5757 sname=n1 NCS_HA_NODE=n1 ncs -c ncs.conf
+
+4) in the third shell start NCS node n2:
+
+$ cd n2
+$ NCS_IPC_PORT=5758 sname=n2 NCS_HA_NODE=n2 ncs -c ncs.conf
+
+Now everything is up and running, in shell n1 start the NCS CLI towards
+that node:
+
+$ NCS_IPC_PORT=5757 ncs_cli -u admin
+
+admin connected from 127.0.0.1 using console on zoe
+admin@zoe> request ha-config be-master
+
+
+In shell n2 start the NCS CLI towards that node:
+
+$ NCS_IPC_PORT=5758 ncs_cli -u admin
+
+admin connected from 127.0.0.1 using console on zoe
+admin@zoe> request ha-config be-slave
+[ok][2010-11-08 15:10:02]
+
+Stopping the Example
+-------------------
+
+When you are ready with this example make sure all daemons are stopped. Stop
+NCS and then the simulated network:
+
+$ NCS_IPC_PORT=5757 sname=n1 ncs --stop
+$ NCS_IPC_PORT=5758 sname=n2 ncs --stop
+$ ncs-netsim stop
+
+Clean all created files:
+
+$ make clean

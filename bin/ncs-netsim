@@ -1,0 +1,1330 @@
+#!/bin/bash
+COUNTER=0
+TWO_DIGIT_COUNTER=00
+
+
+
+# It's possible to override the base ports used
+# if a host has some of the port already used
+
+[[ -z $IPC_PORT ]] && IPC_PORT=5010
+[[ -z $NETCONF_SSH_PORT ]] && NETCONF_SSH_PORT=12022
+[[ -z $NETCONF_TCP_PORT ]] && NETCONF_TCP_PORT=13022
+[[ -z $SNMP_PORT ]] && SNMP_PORT=11022
+[[ -z $CLI_SSH_PORT ]] && CLI_SSH_PORT=10022
+
+CONFD=${NCS_DIR}/netsim/confd/bin/confd
+CONFD_CLI=${NCS_DIR}/netsim/confd/bin/confd_cli
+
+FULLCMD="$0 $@"
+
+function usage()
+{
+    cat <<EOF
+Usage ncs-netsim  [--dir <NetsimDir>]
+                  create-network <NcsPackage> <NumDevices> <Prefix> |
+                  create-device <NcsPackage> <DeviceName>           |
+                  add-to-network <NcsPackage> <NumDevices> <Prefix> |
+                  add-device <NcsPackage> <DeviceName> |
+                  delete-network                     |
+                  [-a | --async]  start [devname]    |
+                  [-a | --async ] stop [devname]     |
+                  [-a | --async ] reset [devname]    |
+                  [-a | --async ] restart [devname]  |
+                  list                      |
+                  is-alive [devname]        |
+                  status [devname]          |
+                  whichdir                  |
+                  ncs-xml-init [devname]    |
+                  ncs-xml-init-remote <RemoteNodeName> [devname] |
+                  [--force-generic]                  |
+                  packages                  |
+                  netconf-console devname [XpathFilter] |
+                  [-w | --window] [cli | cli-c | cli-i] devname |
+                  get-port devname [ipc | netconf | cli | snmp]
+
+See manpage for ncs-netsim for more info. NetsimDir is optional
+and defaults to ./netsim, any netsim directory above in the path,
+or \$NETSIM_DIR if set.
+
+EOF
+}
+
+function missing_cmd()
+{
+    which_cmd=`which $1 2>&1`
+    if [ $? -eq 0 -a `echo "$which_cmd" | wc -w` -eq 1 ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+if missing_cmd gmake; then
+    MAKE=make
+else
+    MAKE=gmake
+fi
+
+function abspath() {
+    if [[ -d "$1" ]]; then
+        pushd "$1" >/dev/null
+        pwd -P
+        popd >/dev/null
+    elif [[ -e "$1" ]]; then
+        pushd $(dirname $1) >/dev/null
+        echo $(pwd -P)/$(basename "$1")
+        popd >/dev/null
+    else
+        echo $1 does not exist! >&2
+        return 127
+    fi
+}
+
+function is_not_integer() {
+    s=$(echo $1 | tr -d 0-9)
+    if [ -z "$s" ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+function is_not_dir() {
+    if [ ! -d "$1" ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+
+function rm_tmps() {
+    cd "$p"
+    for  ((u=0; u<$tmpsi; u++)); do
+        rm -rf "${tmps[$u]}"
+    done
+}
+
+
+function error()
+{
+    if [ ! -z "$1" ]; then
+        echo >&2
+        while [ $# -gt 0 ]; do
+            echo >&2 "*** $1"
+            shift
+        done
+    fi
+    echo >&2 " Try ncs-netsim --help or man ncs-netsim to get usage text"
+    rm_tmps
+    exit 1;
+}
+
+function incr()
+{
+    IPC_PORT=$(($IPC_PORT+1))
+    NETCONF_SSH_PORT=$(($NETCONF_SSH_PORT+1))
+    NETCONF_TCP_PORT=$(($NETCONF_TCP_PORT+1))
+    SNMP_PORT=$(($SNMP_PORT+1))
+    CLI_SSH_PORT=$(($CLI_SSH_PORT+1))
+    COUNTER=$(($COUNTER+1))
+    # add leading 0 to value if < 10
+    TWO_DIGIT_COUNTER=$(leading0 $COUNTER)
+}
+
+function vars() {
+    cat <<EOF
+export CONFD_IPC_PORT="${IPC_PORT}"
+export NETCONF_SSH_PORT="${NETCONF_SSH_PORT}"
+export NETCONF_TCP_PORT="${NETCONF_TCP_PORT}"
+export CLI_SSH_PORT="${CLI_SSH_PORT}"
+export SNMP_PORT="${SNMP_PORT}"
+export NAME="$1"
+export COUNTER="${COUNTER}"
+export TWO_DIGIT_COUNTER="${TWO_DIGIT_COUNTER}"
+export CONFD="\${NCS_DIR}/netsim/confd/bin/confd"
+export CONFDC="\${NCS_DIR}/netsim/confd/bin/confdc"
+export CONFD_DIR="\${NCS_DIR}/netsim/confd"
+export PATH="\${NCS_DIR}/netsim/confd/bin:\${PATH}"
+EOF
+}
+
+function stop_start_cli() {
+    local nsdir=$1
+    local relns=$2
+    local rname=$3
+
+
+    vars $rname > env.sh
+    echo "export PACKAGE_NETSIM_DIR=\"${relns}\"" >> env.sh
+
+    echo "#!/bin/sh" > start.sh
+    echo ". ./env.sh " >> start.sh
+    if [ -f "$1/start.sh" ]; then
+        cat "$1/start.sh" >> start.sh
+    else
+        echo 'env sname=${NAME} ${CONFD} -c confd.conf --addloadpath ' \
+             '${CONFD_DIR}/etc/confd ${CONFD_FLAGS}' >> start.sh
+    fi
+
+    echo "#!/bin/sh" > stop.sh
+    echo ". ./env.sh " >> stop.sh
+    if [ -f "$1/stop.sh" ]; then
+        cat "$1/stop.sh" >> stop.sh
+    else
+        echo '${CONFD} --stop 2>/dev/null' >> stop.sh
+    fi
+
+    echo "#!/bin/sh" > cli.sh
+    echo '# note that this script is for backwards compatibility only' >> cli.sh
+    echo '# it is not used by ncs-netsim cli command' >> cli.sh
+    echo ". ./env.sh " >> cli.sh
+    echo '${CONFD_DIR}/bin/confd_cli -u admin -J ${CONFD_CLI_FLAGS}' >> cli.sh
+
+
+    echo "#!/bin/sh" > status.sh
+    echo ". ./env.sh " >> status.sh
+    if [ -f "$1/status.sh" ]; then
+        cat "$1/status.sh" >> status.sh
+    else
+        echo '${CONFD} --status' >> status.sh
+    fi
+
+    chmod +x start.sh stop.sh cli.sh status.sh
+}
+
+function subst() {
+    for file in `ls confd.conf*.netsim`; do
+    for f in `echo ${file}`; do
+        tgt=`echo $f | sed 's/\.netsim//'`
+        sed -e "s/%IPC_PORT%/${IPC_PORT}/g" \
+            -e "s/%NETCONF_SSH_PORT%/${NETCONF_SSH_PORT}/g" \
+            -e "s/%NETCONF_TCP_PORT%/${NETCONF_TCP_PORT}/g" \
+            -e "s/%CLI_SSH_PORT%/${CLI_SSH_PORT}/g"  \
+            -e "s/%SNMP_PORT%/${SNMP_PORT}/g" \
+            -e "s/%NAME%/$1/g" \
+            -e "s/%TWO_DIGIT_COUNTER%/${TWO_DIGIT_COUNTER}/g" \
+            -e "s/%COUNTER%/${COUNTER}/g" < $f  > ${tgt}
+    done
+    done
+}
+
+# add leading 0 to value if < 10
+function leading0() {
+    printf "%02d" ${COUNTER}
+}
+
+# turn an arbitrary (prefix) string into something
+# that can be part of a variable name for 'eval'
+# - bash pre-4.0 doesn't have assoc arrays
+function hexify() {
+    echo "$1" | od -A n -t x1 | tr -d ' \011\012'
+}
+
+
+
+
+pmodels=0
+async=false
+tmpsi=0
+ipaddress=127.0.0.1
+force_generic=false
+
+while [ $# -gt 0 ]; do
+    arg="$1"
+    shift
+    case "$arg" in
+        -h | --help | help)
+            usage
+            exit 0;;
+        -w | --window)
+            window=true;;
+        -a | --async)
+            async=true;;
+        --dir)
+            dest=$1;
+            shift;;
+        create-device|add-device|create-network|add-to-network)
+            if [ "x$cmd" != "x" -a "x$cmd" != "x$arg" ]; then
+                error "Cannot combine $cmd and $arg"
+            fi
+            if [ -d "$1/netsim" ]; then
+                builtin_package[${pmodels}]=false
+                darg="$(abspath "$1")"
+                sarg=$darg
+            elif [[ "$1" == *.tar.gz ]]; then
+                tmp=tmp.$3.$$
+                mkdir "$tmp";
+                ## array of unpacked tar files
+                tmps[$tmpsi]=$tmp
+                tmpsi=$((tmpsi+1))
+                tarfile="$(abspath "$1")"
+                (cd "$tmp"; tar xfz "$tarfile")
+                 builtin_package[${pmodels}]=false
+                 pck=$tmp/`ls $tmp`
+                 darg="$(abspath "$pck")"
+                 sarg="$(abspath "$1")"
+                 if [ ! -d "$pck/netsim" ]; then
+                     error "The NED package called " \
+                          "<$1> " \
+                          "doesn't have a netsim directory " \
+                          "Maybe the netsim dir was stripped "\
+                          "from the package during compilation"
+                 fi
+            else
+                if [ -d "$NCS_DIR/packages/neds/$1/netsim" ]; then
+                    builtin_package[${pmodels}]=true
+                    builtin_package_name[${pmodels}]=$1
+                    darg="$(abspath "$NCS_DIR/packages/neds/$1")"
+                    sarg=$darg
+                else
+                    error "The NED package called <$1> doesn't have a " \
+                          "netsim directory. ncs-netsim cannot emulate " \
+                          "devices that do not have a netsim directory."
+                fi
+            fi
+            shift;
+            if [[ $arg == *-device ]]; then
+                pnum[${pmodels}]=1
+            else # *-network
+                is_not_integer "$1" && \
+                    error "Need integer for number of devices"
+                pnum[${pmodels}]=$1
+                shift;
+            fi
+            [ -z "$1" ] && error "Need prefix for device names"
+
+            packagedir[${pmodels}]=$darg
+            packagesrc[${pmodels}]=$sarg
+            pprefix[${pmodels}]=$1
+            eval next_n_$(hexify "$1")=0
+            pmodels=$(($pmodels+1))
+            cmd=$arg;
+            shift;;
+        delete-network)
+            cmd=$arg;;
+        ncs-xml-init)
+            cmd=$arg
+            case "$*" in
+                "")
+                    cmdarg=_all_;;
+                *)
+                    cmdarg=$*;;
+            esac
+            break;;
+        ncs-xml-init-remote)
+            cmd=$arg
+            node=${1:?"missing node"}
+            shift
+            case "$*" in
+                "")
+                    cmdarg=_all_;;
+                *)
+                    cmdarg=$*;;
+            esac
+            break;;
+        --force-generic)
+            force_generic=true;;
+        netconf-console|get-port)
+            cmd=$arg
+            cmdarg=$1
+            cmdarg2=$2
+            shift; shift; shift;;
+        --ip-address)
+            ipaddress=$1;
+            shift;;
+        *)
+            cmd=$arg;
+            if [ ! -z "$cmdarg" ]; then
+                error "Can only do one command";
+            fi
+            case "$cmd" in
+                start | stop | "is-alive" | status  \
+                | list   | help |reset | whichdir  \
+                | restart | packages)
+                    case "$1" in
+                        "")
+                            cmdarg=_all_;;
+                        --*)
+                            cmdarg=_all_;;
+                        *)
+                            cmdarg=$1
+                            shift;;
+                    esac;;
+                cli | cli-c | cli-i | netconf-console)
+                    case $1 in
+                        "")
+                            error "command \"$cmd\" needs a device argument";;
+                        *)
+                            cmdarg=$1
+                            shift;;
+                    esac;;
+                *)
+                    error "Unknown arg $cmd"
+            esac;;
+    esac
+done
+
+
+
+if [ -z "${cmd}" ]; then
+    error "Need a command to do";
+fi
+if [ -z "$dest" ]; then
+    if [ "$cmd" = create-network \
+        -o "$cmd" = create-device \
+        -o "$cmd" = delete-network ]; then
+        dest=netsim
+    elif [ -f .netsiminfo ]; then
+        dest=`pwd -P`
+    elif [ -f netsim/.netsiminfo ]; then
+        dest=netsim
+    elif [ ! -z "$NETSIM_DIR" ]; then
+        dest=${NETSIM_DIR}
+    fi
+fi
+
+## still zero ?
+if [ -z "$dest" ]; then
+    pp=`pwd -P`
+    while [ ! $pp = / ]; do
+        pp="$(dirname "$pp")"
+        if [ -f "$pp/.netsiminfo" ]; then
+            dest=$pp
+            break;
+        fi
+        if [ -f "$pp/netsim/.netsiminfo" ]; then
+            dest=$pp/netsim
+            break
+        fi
+    done
+fi
+
+# Still zero ?
+if [ -z "$dest" ]; then
+    error "Need to either specify a netsim directory with --dir or be able" \
+          "to find a netsim directory above us in the directory hierarchy"
+fi
+
+
+locked=false
+
+function lock() {
+    while (true); do
+        mkdir "${dest}/lock" 2>/dev/null
+        if [ $? = 0 ]; then
+            locked=true
+            return
+        fi
+        sleep 1
+    done
+}
+
+function unlock() {
+    rm -rf "${dest}/lock"
+    locked=false
+}
+
+trap "unlock; exit" 0 1 2 3 15 EXIT
+
+function smkdir() {
+    mkdir -p "$1"
+}
+
+
+case $cmd in
+    help)
+        true;;
+    create-device|create-network)
+        if [ -e "$dest/.netsiminfo" ]; then
+            error "A netsim network already exists in directory $dest" \
+                "Please use 'ncs-netsim delete-network' to remove it before" \
+                "creating a new network, or 'ncs-netsim add-to-network' to" \
+                "add devices to the existing network."
+        fi
+        smkdir "$dest"
+        dest="$(abspath "$dest")";;
+    delete-network)
+        if [ ! -d "$dest" ]; then
+            if [ -e "$dest" ]; then
+                error "'$dest' exists but is not a directory"
+            else
+                # doesn't exist - nothing to do
+                exit 0
+            fi
+        fi
+        dest="$(abspath "$dest")"
+        if [ ! -f "${dest}/.netsiminfo" ]; then
+            error "Dir $dest is not a netsim directory";
+        fi;;
+    *)
+        if [ ! -d "$dest" ]; then
+            if [ -e "$dest" ]; then
+                error "'$dest' exists but is not a directory"
+            else
+                error "Dir '$dest' does not exist"
+            fi
+        fi
+        dest="$(abspath "$dest")"
+        if [ ! -f "${dest}/.netsiminfo" ]; then
+            error "Dir $dest is not a netsim directory";
+        fi;;
+esac
+
+p=`pwd -P`
+# global variable
+rno=0
+
+
+function check-err() {
+    if [ $1 != 0 ]; then
+        error "$2"
+    fi
+}
+
+# usage: relpath from to
+function relpath() {
+
+    if [[ "$1" == "$2" ]]
+      then
+      echo "."
+      exit
+    fi
+
+    IFS="/"
+    current=($1)
+    absolute=($2)
+    abssize=${#absolute[@]}
+    cursize=${#current[@]}
+
+    while [[ ${absolute[level]} == ${current[level]} ]]
+      do
+      (( level++ ))
+      if (( level > abssize || level > cursize ))
+        then
+        break
+      fi
+    done
+
+    for ((i = level; i < cursize; i++))
+      do
+      if ((i > level))
+        then
+        newpath=$newpath"/"
+      fi
+      newpath=$newpath".."
+    done
+
+    for ((i = level; i < abssize; i++))
+      do
+      if [[ -n $newpath ]]
+        then
+        newpath=$newpath"/"
+      fi
+      newpath=$newpath${absolute[i]}
+    done
+    echo "$newpath"
+}
+
+function whichdir() {
+    echo "$dest"
+    exit 0;
+}
+
+function netsiminfo() {
+    local prefix=$1
+    local rname=$2
+    local abspackdir=$3
+    local relpackdir=$4
+
+    cat <<EOF
+
+## device ${rname}
+devices[${rno}]=${rname}
+prefix[${rno}]=$prefix
+netconf_ssh_port[${rno}]=$NETCONF_SSH_PORT
+netconf_tcp_port[${rno}]=$NETCONF_TCP_PORT
+snmp_port[${rno}]=$SNMP_PORT
+cli_ssh_port[${rno}]=$CLI_SSH_PORT
+ipc_port[${rno}]=$IPC_PORT
+devicedirs[${rno}]=${prefix}/${rname}
+packagedirs[${rno}]=$relpackdir
+abspackagedirs[${rno}]=$abspackdir
+#######
+
+EOF
+}
+
+function packsetup() {
+    local nn=$1
+    abspackdir=${packagedir[$nn]}
+    abspacksrc=${packagesrc[$nn]}
+    dnum=${pnum[$nn]}
+    prefix=${pprefix[$nn]}
+    bp_bool=${builtin_package[$nn]}
+    bp_name=${builtin_package_name[$nn]}
+    eval local n=\$next_n_$(hexify "$prefix")
+    dnum=$(($n+$dnum))
+    eval next_n_$(hexify "$prefix")=$dnum
+    cd "$dest"
+    if [ $bp_bool = true ]; then
+        abspackdir=${NCS_DIR}/packages/neds/${bp_name}
+    fi
+    relpackdir="$(relpath "$dest" "$abspackdir")"
+    relpacksrc="$(relpath "$dest" "$abspacksrc")"
+    # check if device name with given prefix already exists
+    check-if-device-exists ${prefix}
+    smkdir "${prefix}"
+    cd "${prefix}"
+    while [ $n -lt $dnum ]; do
+        case $cmd in
+            *-device) local rname=${prefix} ;;
+            *) local rname=${prefix}${n} ;;
+        esac
+        destdir=${dest}/${prefix}/${rname}
+        mkdir "$rname" 2>/dev/null || error "Device ${rname} already exists"
+        dir[${rno}]=${prefix}/$rname
+        netsiminfo ${prefix} $rname ${abspacksrc} ${relpacksrc}   \
+             >> ../.netsiminfo
+        cd "${abspackdir}/netsim";
+        local counter=$(leading0 "$rno")
+        env DEST_DIR="${destdir}" NAME=${rname} COUNTER=${rno} \
+            TWO_DIGIT_COUNTER=${counter} ${MAKE} -s install
+        check-err $? "Failed to install"
+        cd "${destdir}"
+        subst "${rname}"
+        relnetsim="$(relpath "${dest}/${prefix}/${rname}" \
+            "${abspackdir}/netsim")"
+        stop_start_cli "${abspackdir}/netsim" "${relnetsim}" "${rname}"
+        echo "DEVICE ${rname} CREATED"
+        cd ..
+        routers[${rno}]=$rname
+        ipc[${rno}]=$IPC_PORT
+
+        # increment and loop
+        incr
+        n=$(($n+1))
+        rno=$(($rno+1))
+    done
+}
+
+# Check if the device name already exists
+function check-if-device-exists {
+    local device=$1
+    ddsz=${#devices[@]}
+    for ((k=0; k<$ddsz; k++)); do
+        if [ "${devices[$k]}" = "$device" ]; then
+            error "Device $device already exists"
+        fi
+    done
+    return 0
+}
+
+function readme() {
+    cat <<EOF
+This netsim project manages a set of emulated devices. Each device
+is emulated by ConfD. The devices are:
+
+EOF
+
+list _all_
+
+cat <<EOF
+
+Run ncs-netsim help for available commands to control this
+emulated network
+
+There exists directories for each device below here, the logs
+as well as start/stop/cli/status scripts for each device reside in
+each corresponding directory
+
+EOF
+}
+
+function readme-create() {
+    cat <<EOF
+
+This is a netsim project directory. The directory has been generated
+through the invocation of
+
+$FULLCMD
+
+EOF
+}
+
+function readme-add-to() {
+    cat <<EOF
+$1
+
+$FULLCMD
+
+EOF
+}
+
+
+function create-network() {
+    smkdir "$dest"
+    lock
+    if [ ! -d "$dest" ]; then
+        error "Cannot mkdir -p $dest"
+    fi
+    local u
+    for ((u=0; u<$pmodels; u++)); do
+        cd "$p"; cd "$dest"
+        packsetup "$u"
+    done
+    cd "$p"; cd "$dest"
+    unlock
+    (readme-create; readme) > README.netsim
+}
+
+function add-to-network() {
+    lock
+    . "${dest}/.netsiminfo"
+    ddsz=${#devices[@]}
+    rno=$ddsz
+    local prev_rno=$(($rno-1))
+    IPC_PORT=${ipc_port[$prev_rno]}
+    NETCONF_SSH_PORT=${netconf_ssh_port[$prev_rno]}
+    NETCONF_TCP_PORT=${netconf_tcp_port[$prev_rno]}
+    SNMP_PORT=${snmp_port[$prev_rno]}
+    CLI_SSH_PORT=${cli_ssh_port[$prev_rno]}
+    incr
+    COUNTER=${rno}
+    TWO_DIGIT_COUNTER=$(leading0 $COUNTER)
+    for ((k=0; k<$ddsz; k++)); do
+        eval n=\$next_n_$(hexify "${prefix[$k]}")
+        eval next_n_$(hexify "${prefix[$k]}")=$(($n+1))
+    done
+    local u
+    for ((u=0; u<$pmodels; u++)); do
+        cd "$p"; cd "$dest"
+        packsetup "$u"
+    done
+    cd "$p"; cd "$dest"
+    local hdr=`sed '/^This netsim project manages/,$d' README.netsim`
+    unlock
+    (readme-add-to "$hdr"; readme) > README.netsim
+}
+
+function create-device() {
+    create-network $@
+}
+
+function add-device() {
+    add-to-network $@
+}
+
+function delete-network() {
+    cmdarg=_all_
+    stop
+    rm -rf "$dest"
+}
+
+## Get the array number of device called $cmdarg
+
+function get-dev-num {
+    local device=$1
+    ddsz=${#devices[@]}
+    for ((k=0; k<$ddsz; k++)); do
+        if [ "${devices[$k]}" = "$device" ]; then
+            devnum=$k
+            return 0
+        fi
+    done
+    error "No device called $device in this netsim project"
+}
+
+devnum=0;
+
+
+function read-dot-netsiminfo() {
+    lock
+    . "${dest}/.netsiminfo"
+    unlock
+}
+
+function list() {
+    cd "$p"; cd "$dest"
+    read-dot-netsiminfo
+    echo "ncs-netsim list for " `pwd -P`
+    echo
+    if [ "$cmdarg" = _all_ ]; then
+        do-all do-list
+    elif [ "$1" = _all_ ]; then
+        do-all do-list
+    else
+        do-list $cmdarg
+    fi
+}
+
+function restart() {
+    reset $cmdarg
+    start $cmdarg
+}
+
+function is-alive() {
+    cd "$dest"
+    read-dot-netsiminfo
+    if [ $cmdarg = _all_ ]; then
+        do-all do-is-alive
+    else
+        do-is-alive $cmdarg
+    fi
+}
+
+
+function packages() {
+    cd "$dest"
+    read-dot-netsiminfo
+    ddsz=${#devices[@]}
+    local arr[0]=${abspackagedirs[0]}
+    local x
+    local asz
+    local found
+    for ((k=1; k<$ddsz; k++)); do
+        x=${abspackagedirs[$k]}
+        asz=${#arr[@]}
+        found=false
+        for ((m=0; m<$asz; m++)); do
+            if [ "$x" = ${arr[$m]} ]; then
+                found=$x
+            fi
+        done
+        if [ $found = false ]; then
+            arr[$asz]=$x
+        fi
+    done
+    asz=${#arr[@]}
+    for ((m=0; m<$asz; m++)); do
+        echo ${arr[$m]}
+    done
+}
+
+function reset() {
+    stop "$cmdarg"
+    cd "$dest"
+    read-dot-netsiminfo
+    if [ $cmdarg = _all_ ]; then
+        do-all do-reset
+    else
+        do-reset $cmdarg
+    fi
+}
+
+function status() {
+    cd "$dest"
+    read-dot-netsiminfo
+    if [ $cmdarg = _all_ ]; then
+        do-all do-status
+    else
+        do-status $cmdarg
+    fi
+}
+
+
+function stop() {
+    cd "$dest"
+    read-dot-netsiminfo
+    if [ $cmdarg = _all_ ]; then
+        do-all do-stop
+    else
+        do-stop $cmdarg
+    fi
+}
+
+
+function start() {
+    cd "$dest"
+    read-dot-netsiminfo
+    if [ $cmdarg = _all_ ]; then
+        do-all do-start
+    else
+        do-start $cmdarg
+    fi
+}
+
+function netconf-console() {
+    cd "$dest"
+    read-dot-netsiminfo
+    if [ "$cmdarg" = "" ]; then
+        error "netconf-console command requires a device argument"
+    fi
+    local x;
+    if [ "$cmdarg2" = "" ]; then
+        x="";
+    else
+        x=" -x $cmdarg2"
+    fi
+    get-dev-num $cmdarg
+    local ncp=${netconf_ssh_port[$devnum]}
+    echo "netconf-console --user=admin --password=admin "\
+         "--port ${ncp} --get-config $x"
+    $NCS_DIR/bin/netconf-console --user=admin --password=admin \
+                                 --port ${ncp} --get-config $x
+}
+
+function cli() {
+    cli2 -J
+}
+
+function cli-i() {
+    cli2 -I
+}
+
+function cli-c() {
+    cli2 -C
+}
+
+function get-port() {
+    cd "$dest"
+    read-dot-netsiminfo
+    if [ "$cmdarg" = "" ]; then
+        error "get-port command requires a device argument"
+    fi
+    get-dev-num $cmdarg
+    case $cmdarg2 in
+        ''|ipc)  echo ${ipc_port[$devnum]};;
+        netconf) echo ${netconf_ssh_port[$devnum]};;
+        cli)     echo ${cli_ssh_port[$devnum]};;
+        snmp)    echo ${snmp_port[$devnum]};;
+        *)       error "Unknown protocol '$cmdarg2'";;
+    esac
+}
+
+function get-package-meta-data() {
+    local packsrc=$1
+    if [[ $packsrc == *.tar.gz ]]; then
+        local tar_wildcard_flag
+        if [[ $(tar --version) =~ "GNU tar" ]]; then
+            tar_wildcard_flag=--wildcards
+        fi
+        tar $tar_wildcard_flag -xOzf $packsrc */package-meta-data.xml
+    else
+        cat ${packsrc}/package-meta-data.xml
+    fi
+}
+
+function get-ned-id() {
+    local packdir=$1
+    local id=`get-package-meta-data ${packdir} | \
+        xsltproc ${NCS_DIR}/support/ned-pkg-ned-id-tag.xsl -`
+    echo ${id} | sed 's% xmlns="http://tail-f.com/ns/ncs-packages"%%'
+}
+
+function ncs-netconf-init-dev() {
+    local dev=$1
+
+    local name=${devices[${dev}]}
+    local port=${netconf_ssh_port[${dev}]}
+    local nid=`get-ned-id $abs_pdir`
+    local ssh=`ssh-host-key-init ${dev}`
+
+    cat <<EOF
+   <device>
+     <name>${name}</name>
+     <address>${ipaddress}</address>
+     <port>${port}</port>
+     ${ssh}
+     <state>
+       <admin-state>unlocked</admin-state>
+     </state>
+     <authgroup>default</authgroup>
+     <device-type>
+       <netconf>
+         ${nid}
+       </netconf>
+     </device-type>
+   </device>
+EOF
+}
+
+function gen-dev-init-remote() {
+    local dev=$1
+    local node=$2
+    local name=${devices[${dev}]}
+    cat <<EOF
+   <device>
+     <name>${name}</name>
+     <remote-node>${node}</remote-node>
+    </device>
+EOF
+}
+
+function has-tag() {
+    local packdir=$1
+    local tag=$2
+
+    get-package-meta-data ${packdir} | grep "<${tag}>" > /dev/null
+    local r1=$?
+    get-package-meta-data ${packdir} | grep "</${tag}>" > /dev/null
+    local r2=$?
+    get-package-meta-data ${packdir} | grep "<${tag}/>" > /dev/null
+    local r3=$?
+    if [ $r1 = 0 -a $r2 = 0 ]; then
+        return 0;
+    elif [ $r3 = 0 ]; then
+        return 0;
+    else
+        return 1
+    fi
+}
+
+function ned-type() {
+    local packdir=$1
+    if has-tag ${packdir} cli; then
+        echo cli
+    elif has-tag ${packdir} snmp; then
+        echo snmp
+    elif has-tag ${packdir} generic; then
+        echo generic
+    elif has-tag ${packdir} netconf; then
+        echo netconf
+    else
+        echo none
+    fi
+}
+
+function ssh-host-key-init() {
+    local dev=$1
+
+    (
+        cd "${devicedirs[${dev}]}"
+        # making some assumptions here...
+        ssh_dir=`sed -n \
+                    's|^.*<sshServerKeyDir>\(.*\)</sshServerKeyDir>.*$|\1|p' \
+                    confd.conf`
+        cd "$ssh_dir"
+        echo '<ssh>'
+        ls | while read file; do
+            case $file in
+                ssh_host_dsa_key.pub) algo="ssh-dss";;
+                ssh_host_rsa_key.pub) algo="ssh-rsa";;
+                ssh_host_ed25519_key.pub) algo="ssh-ed25519";;
+                *)                    continue;;
+            esac
+            key=`cat "$file"`
+            cat <<EOF
+       <host-key>
+         <algorithm>$algo</algorithm>
+         <key-data>$key</key-data>
+       </host-key>
+EOF
+        done
+        echo '     </ssh>'
+        echo '     <ssh-algorithms>'
+        ls | while read file; do
+            case $file in
+                ssh_host_dsa_key.pub) algo="ssh-dss";;
+                ssh_host_rsa_key.pub) algo="ssh-rsa";;
+                ssh_host_ed25519_key.pub) algo="ssh-ed25519";;
+                *)                    continue;;
+            esac
+            cat <<EOF
+       <public-key>$algo</public-key>
+EOF
+        done
+        echo '     </ssh-algorithms>'
+    )
+}
+
+function ncs-cli-init-dev() {
+    local dev=$1
+
+    local name=${devices[${dev}]}
+    local port=${cli_ssh_port[${dev}]}
+    local abs_pdir=${abspackagedirs[$dev]}
+    local nid=`get-ned-id $abs_pdir`
+    local ssh=`ssh-host-key-init ${dev}`
+    cat <<EOF
+   <device>
+     <name>${name}</name>
+     <address>${ipaddress}</address>
+     <port>${port}</port>
+     ${ssh}
+     <state>
+       <admin-state>unlocked</admin-state>
+     </state>
+     <authgroup>default</authgroup>
+     <device-type>
+       <cli>
+         ${nid}
+       </cli>
+     </device-type>
+   </device>
+EOF
+}
+
+function ncs-generic-init-dev() {
+    local dev=$1
+
+    local name=${devices[${dev}]}
+    if [ $force_generic = true ]; then
+        local device_type=generic
+        local port=${cli_ssh_port[${dev}]}
+    else
+        local device_type=netconf
+        local port=${netconf_ssh_port[${dev}]}
+    fi
+    local abs_pdir=${abspackagedirs[$dev]}
+    local nid=`get-ned-id $abs_pdir`
+    local ssh=`ssh-host-key-init ${dev}`
+    cat <<EOF
+   <device>
+     <name>${name}</name>
+     <address>${ipaddress}</address>
+     <port>${port}</port>
+     ${ssh}
+     <state>
+       <admin-state>unlocked</admin-state>
+     </state>
+     <authgroup>default</authgroup>
+     <device-type>
+       <${device_type}>
+         ${nid}
+       </${device_type}>
+     </device-type>
+   </device>
+EOF
+}
+
+function ncs-snmp-init-dev() {
+    local dev=$1
+
+    local name=${devices[${dev}]}
+    local port=${snmp_port[${dev}]}
+    local abs_pdir=${abspackagedirs[$dev]}
+    local nid=`get-ned-id $abs_pdir`
+    cat <<EOF
+   <device>
+     <name>${name}</name>
+     <address>${ipaddress}</address>
+     <port>${port}</port>
+     <state>
+       <admin-state>unlocked</admin-state>
+     </state>
+     <device-type>
+       <snmp>
+         ${nid}
+         <version>v2c</version>
+         <snmp-authgroup>default</snmp-authgroup>
+       </snmp>
+     </device-type>
+   </device>
+EOF
+}
+
+
+function gen-dev-init() {
+    local k=$1
+    abs_pdir=${abspackagedirs[$k]}
+    ntype="$(ned-type "$abs_pdir")"
+    if [ $force_generic = true ]; then
+        local device_type=generic
+    else
+        local device_type=NETCONF
+    fi
+    case $ntype in
+        cli)
+            ncs-cli-init-dev $k;;
+        netconf)
+            ncs-netconf-init-dev $k;;
+        snmp)
+            ncs-snmp-init-dev $k;;
+        generic)
+            local n=${devices[${k}]}
+            echo "NOTE running netsim towards generic NED for $n" >&2
+            echo "     running the NED as ${device_type}" >&2
+            ncs-generic-init-dev $k;;
+        *)
+            true;;
+    esac
+}
+
+function ncs-xml-init() {
+    cd "$dest"
+    read-dot-netsiminfo
+    ddsz=${#devices[@]}
+    echo '<devices xmlns="http://tail-f.com/ns/ncs">'
+    if [ "$cmdarg" == _all_ ]; then
+        for ((k=0; k<$ddsz; k++)); do
+            gen-dev-init $k
+        done
+     else
+        for devx in $cmdarg; do
+            ## Just one single device
+            get-dev-num $devx
+            k=$devnum
+            gen-dev-init $devnum
+        done
+    fi
+    echo '</devices>'
+}
+
+
+function ncs-xml-init-remote() {
+    cd "$dest"
+    read-dot-netsiminfo
+
+    ddsz=${#devices[@]}
+    echo '<devices xmlns="http://tail-f.com/ns/ncs">'
+    if [ "$cmdarg" == _all_ ]; then
+        for ((k=0; k<$ddsz; k++)); do
+            gen-dev-init-remote $k $node
+        done
+     else
+        for devx in $cmdarg; do
+            ## Just one single device
+            get-dev-num $devx
+            k=$devnum
+            gen-dev-init-remote $devnum $node
+        done
+    fi
+    echo '</devices>'
+}
+
+function cli2() {
+    local jarg=$1
+    cd "$dest"
+    read-dot-netsiminfo
+    get-dev-num $cmdarg
+    cd ${devicedirs[$devnum]}
+    if [ $cmdarg = _all_ ]; then
+        error "cli command requires a device argument"
+    fi
+    local IPC=${ipc_port[$devnum]}
+    if [ -z "$window" ]; then
+        CONFD_IPC_PORT=${IPC} ${CONFD_CLI} ${jarg} -u admin
+    else
+        title=$cmdarg
+        doread="echo -n '\n** hit [enter] to close window'; read x"
+        cmd="CONFD_IPC_PORT=${IPC} ${CONFD_CLI} ${jarg} -u admin"
+        if [ x${TERM_PROGRAM} = xApple_Terminal ]; then
+            osascript - "`pwd`" "${title}" "${cmd} ; ${doread} ; exit" <<EOF
+on run argv
+    set dir to quoted form of (item 1 of argv)
+    set title to item 2 of argv
+    tell application "Terminal"
+        -- Start a new window running /bin/sh and save its tab in tt
+        set tt to do script "exec /bin/sh"
+        set custom title of tt to title
+        -- Descend to current directory
+        do script "cd " & dir in tt
+        -- Now pass environment
+        repeat with var in system attribute
+          do script "export " & var & "=" & quoted form of (system attribute var) in tt
+        end
+        -- Then execute whatever we were given as args...
+        repeat with cmd in rest of (rest of argv)
+          do script cmd in tt
+        end
+    end tell
+end run
+EOF
+        elif [ -x /usr/bin/gnome-terminal ]; then
+            titlecmd="--title ${title}"
+            /usr/bin/gnome-terminal ${titlecmd} -x /bin/sh -c "${cmd}; ${doread}" &
+        else
+            titlecmd="-title ${title}"
+            xterm ${titlecmd} -e /bin/sh -c "${cmd}; ${doread}" &
+        fi
+    fi
+
+}
+
+
+function do-all() {
+    local operation=$1
+    ddsz=${#devices[@]}
+    for ((k=0; k<$ddsz; k++)); do
+        if [ $async = true ]; then
+            eval ${operation} ${devices[$k]} &
+        else
+            eval ${operation} ${devices[$k]}
+        fi
+    done
+    wait
+}
+
+function help() {
+    usage
+}
+
+function do-list () {
+    local device=$1
+    get-dev-num $device
+    printf "name=%s netconf=%d snmp=%d ipc=%d cli=%s dir=%s \n"  \
+        ${devices[$devnum]} \
+        ${netconf_ssh_port[$devnum]} \
+        ${snmp_port[$devnum]} \
+        ${ipc_port[$devnum]} \
+        ${cli_ssh_port[$devnum]} \
+        "${dest}/${devicedirs[$devnum]}"
+}
+
+function do-status () {
+    local device=$1
+    echo "DEVICE ${device}"
+    get-dev-num $device
+    local dir=${devicedirs[$devnum]}
+    (cd "$dir" && ./status.sh)
+}
+
+function do-is-alive () {
+    local device=$1
+    get-dev-num $device
+    local IPC=${ipc_port[$devnum]}
+    CONFD_IPC_PORT=${IPC} ${CONFD} --status  > /dev/null 2>&1
+    if [ $? = 0 ]; then
+        echo  "DEVICE ${device} OK"
+    else
+        echo  "DEVICE ${device} FAIL"
+    fi
+}
+
+function do-stop () {
+    local device=$1
+    get-dev-num $device
+    local dir=${devicedirs[$devnum]}
+    (cd "$dir" && ./stop.sh)
+    local ret=$?
+    if [ $ret = 0 ]; then
+        echo "DEVICE ${device} STOPPED";
+    else
+        echo "DEVICE ${device} already STOPPED";
+    fi
+
+}
+
+function do-start() {
+    cd "$p"; cd "$dest"
+    local device=$1
+    get-dev-num $device
+    local dir=${devicedirs[$devnum]}
+    cd "$dir"
+    ./start.sh
+    local ret=$?
+    echo -n "DEVICE ${device}"
+    if [ $ret = 0 ];  then
+        echo " OK STARTED";
+    else
+        echo " FAIL"
+    fi
+}
+
+function do-reset() {
+    cd "$p"; cd "$dest"
+    local device=$1
+    get-dev-num $device
+    local dir=${devicedirs[$devnum]}
+    cd "$dir"
+    rm -f global.data cdb/*.cdb cdb/*.db logs/* *.log
+    echo "DEVICE ${device} RESET"
+}
+
+eval $cmd
+ret=$?
+rm_tmps
+exit $ret
+
+#  LocalWords:  cli

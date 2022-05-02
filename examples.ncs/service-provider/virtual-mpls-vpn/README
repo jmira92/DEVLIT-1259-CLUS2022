@@ -1,0 +1,205 @@
+== Virtual MPLS Layer3 VPN Example
+
+=== Example Overview
+
+This is an extension to the mpls-VPN example and will only describe how
+virtual routers are launched using ESC (Elastic Services Controller). Please
+refer to the mpls-VPN example for details other than virtualization.
+
+Caution! Please be advised that this example contains example NED's
+and should not be used for production use.
+
+==== Example Network
+
+The example network consists of an MPLS network where layer3 VPN tunnels will
+be provisioned.
+
+The Layer3 VPN service configures the CE/PE routers for all endpoints
+in the VPN. Virtual PE routers (vPE) are launched as they are requested by a CE
+device configured to be on a virtual PE.
+
+There is a list telling which CEs that are to be connected to a vPE. This information is preloaded into NSO:
+
+----
+onvpe [ ce7 ce8 ]
+----
+
+When a VPN is created with CE devices in the onvpe list a virtual device is
+created. The virtual devices is named as <VPN name>_vpn_CSR_esc0. E.g.
+volvo_vpn_CSR_esc0.
+
+In this example all vPE:s will be connected to core router P3.
+
+When a CE on a vPE is added as a VPN endpoint the corresponding topology
+connections, P-vPE-CE, will be created as part of the service configuration.
+
+The virtual device is added to the topology by allocating IP addresses from the
+virtual_pe address pool and vlan link ids from the virtual_pe id pool:
+
+----
+show full-configuration resource-pools ip-address-pool virtual_pe
+show full-configuration resource-pools id-pool virtual_pe
+----
+
+When creating the VPN it is possible to select an ESC template, to set what type
+of router the vPE will be, by setting the esc_service references:
+
+----
+esc_service name vbranch-csr-service
+esc_service version 1.0
+esc_service vm_group CSR
+----
+
+For the service definitions please check the esc device. This configuration is
+preloaded into ncs:
+----
+show full-configuration devices device esc0 config esc:esc_datamodel services
+service_definition vbranch-csr-service 1.0
+----
+
+
+=== Running The Example in the CLI
+
+Make sure you start clean, i.e. no old configuration data is present.
+If you have been running this or some other example before, make sure
+to stop any NCS or simulated network nodes (ncs-netsim) that you may have
+running.  Output like 'connection refused (stop)' means no previous
+NCS was running and 'DEVICE ce0 connection refused (stop)...' no
+simulated network was running, which is good.
+
+You may look at the service creation progress in the web log. Here you will see
+the reactive fastmap service creation and re-deployments. Look at the log before
+and after service creation and re-deployment:
+
+----
+do show logs web
+----
+
+Please read README.dev to get a better understanding what happens under hood:
+
+
+----
+make stop clean all start
+ncs_cli -u admin -C
+----
+
+This will setup the environment and start the simulated network.
+
+
+==== VPN Service Configuration in the CLI
+
+Before creating a new L3VPN service we must sync the configuration
+from all network devices and then enter config mode.
+
+----
+devices sync-from
+----
+
+Lets start by configuring a VPN network.
+
+----
+config
+top
+!
+vpn l3vpn volvo
+as-number 65101
+endpoint main-office
+ce-device    ce0
+ce-interface GigabitEthernet0/1
+ip-network   10.10.1.0/24
+bandwidth    12000000
+!
+endpoint branch-office1
+ce-device    ce1
+ce-interface GigabitEthernet0/1
+ip-network   10.7.7.0/24
+bandwidth    6000000
+!
+endpoint branch-office2
+ce-device    ce7
+ce-interface GigabitEthernet0/1
+ip-network   10.8.8.0/24
+bandwidth    300000
+!
+esc_service name vbranch-csr-service
+esc_service version 1.0
+esc_service vm_group CSR
+!
+----
+
+Before we send anything to the network, lets see what would be sent if
+we committed.
+----
+commit dry-run outformat native
+----
+
+The output is too large to include here but as you can see each CE
+device and the PE router it is connected to will be configured.
+At this point the configuration of the vPE:s with connected CE:s are not
+yet subject to be configured. They are future steps in the reactive fastmap
+sequence.
+
+Lets commit the configuration to the network
+
+----
+commit
+----
+
+At this point all physical PE:s with connected CE:s are configured and the vPE
+is booted with a day0 configuration. The log informs that a service re-deploy
+is needed to complete the VPN deployment.
+
+Please look at the device modifications done so far. The output is too
+big to be included here. Please notice the vm-manager/start part of
+the configuration and the and the vm-manager/esc created as a result.
+
+---
+request vpn l3vpn get-modifications
+request vm-service volvo_vpn_CSR get-modifications
+---
+
+If you are logged into the cli you will see the launched vPE in the l3vpn
+topology map. The second part of the demo will create the connections to link
+the P - vPE - CE together. You may add device ce7 to the map for the full
+visualization of the link creation.
+
+Re-deploy the service to proceed.
+
+----
+vpn l3vpn volvo re-deploy
+----
+
+
+=== Decommissioning VPNs
+
+An important aspect in a service provider network is of course to be
+able to decommission a VPN and be sure that all configured associated
+with that VPN is cleaned up from the network, including the launched vPE:s.
+This requires the deletion to be performed in two steps, to ensure that
+the device configuration is deleted before the device it-self.
+
+The process is as follows:
+1. vpn l3vpn volvo is removed, includes the vm-start request
+2. removal of vm-start request is detected by the vm-manager and 
+   the vm-service instance is removed
+3. removal of the vm-service instance removes the esc tenant
+4. removal of the esc tenent stops the virtual router
+
+----
+top
+no vpn l3vpn volvo
+----
+
+Lets test this with one of our VPNs and see what would happen to the
+network.
+
+----
+commit dry-run outformat cli
+----
+
+All is good and our VPN configuration is removed from the network.
+Lets commit the changes.
+
+----
+commit
+----

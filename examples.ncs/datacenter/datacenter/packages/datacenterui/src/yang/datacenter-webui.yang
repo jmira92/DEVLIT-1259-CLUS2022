@@ -1,0 +1,39 @@
+module datacenter-webui {
+
+  namespace "http://com/example/datacenter-webui";
+  prefix dc-webui;
+
+  import tailf-ncs {
+    prefix ncs;
+  }
+
+  typedef static-map-coordinate {
+    description "Normalized relative coordinate";
+
+    type decimal64 {
+      fraction-digits 18;
+      range "0 .. 1";
+    }
+  }
+
+  grouping static-map-coordinates {
+    container map-coord {
+      leaf x {
+        type static-map-coordinate;
+      }
+
+      leaf y {
+        type static-map-coordinate;
+      }
+    }
+  }
+
+  augment "/ncs:devices/ncs:device/ncs:location"
+  {
+
+      uses static-map-coordinates;
+
+  }
+}
+
+

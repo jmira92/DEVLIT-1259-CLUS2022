@@ -1,0 +1,2068 @@
+#!/usr/bin/env bash
+
+prgname=ncs-make-package
+
+# -----------------------------------------------------------------------------
+function usage()
+{
+    TMP=`find $NCS_DIR/packages/lsa/ -maxdepth 1 -name 'cisco-nso-nc-*' |
+              xargs -n 1 basename | sort`
+    TMP=`echo $TMP`
+    cat <<EOF
+Usage: ${prgname} [options] package-name
+
+  ${prgname} --netconf-ned DIR package-name
+  ${prgname} --lsa-netconf-ned DIR package-name
+  ${prgname} --generic-ned-skeleton package-name
+  ${prgname} --snmp-ned DIR package-name
+  ${prgname} --service-skeleton TYPE package-name
+  ${prgname} --data-provider-skeleton package-name
+  ${prgname} --erlang-skeleton package-name
+
+      where TYPE is one of:
+          java                  Java based service
+          java-and-template     Java service with template
+          python                Python based service
+          python-and-template   Python service with template
+          template              Template service (no code)
+
+  ADDITIONAL OPTIONS
+  --dest DIR
+  --build
+  --verbose
+  --no-test
+  --no-fail-on-warnings
+  -h | --help
+
+  SERVICE specific options:
+    --augment PATH
+    --root-container NAME
+
+  JAVA specific options:
+    --java-package NAME
+
+  NED specific options:
+    --no-java
+    --no-netsim
+    --no-python
+    --no-template
+    --vendor STRING
+    --package-version STRING
+
+  NETCONF NED specific options:
+    --ncs-depend-package DIR
+    --pyang-sanitize
+    --confd-netsim-db-mode candidate | startup | running-only
+
+  LSA NETCONF NED specific options:
+    --lsa-lower-nso PKG | DIR
+      where PKG can be one of: $TMP
+
+  PYTHON specific options:
+    --component-class NAME (default main.Main)
+    --action-example
+    --subscriber-example
+
+  ERLANG specific options:
+    --erlang-application-name NAME (uses package name as default)
+
+See manpage for ncs-make-package(1) for more info.
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function abspath() {
+    if [[ -d "$1" ]]; then
+        pushd "$1" >/dev/null
+        pwd -P
+        popd >/dev/null
+    elif [[ -e $1 ]]; then
+        pushd $(dirname $1) >/dev/null
+        echo `pwd -P`/$(basename $1)
+        popd >/dev/null
+    else
+        echo $1 does not exist! >&2
+        return 127
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function debug()
+{
+    echo "[DEBUG]: $*"
+}
+
+# -----------------------------------------------------------------------------
+function missing_cmd()
+{
+    which_cmd=`which $1 2>&1`
+    if [ $? -eq 0 -a `echo "${which_cmd}" | wc -w` -eq 1 ]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function error()
+{
+    if [ ! -z "$1" ]; then
+        echo >&2 "${prgname}: error: $1"
+        echo >&2
+    fi
+    echo >&2 "Try ${prgname} --help to get usage text"
+    exit 1
+}
+
+# -----------------------------------------------------------------------------
+function verbose() {
+    if [ "${verbose}" = true ]; then
+        echo $1
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function check_err()
+{
+    if [ $1 != 0 ]; then
+        error "$2"
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function confdconflogs()
+{
+    cat <<EOF
+  <logs>
+    <syslogConfig>
+      <udp>
+        <enabled>false</enabled>
+        <host>syslogsrv.example.com</host>
+        <port>514</port>
+      </udp>
+    </syslogConfig>
+    <confdLog>
+      <enabled>true</enabled>
+      <file>
+        <enabled>true</enabled>
+        <name>./logs/confd.log</name>
+      </file>
+      <syslog>
+        <enabled>false</enabled>
+      </syslog>
+    </confdLog>
+    <developerLog>
+      <enabled>true</enabled>
+      <file>
+        <enabled>true</enabled>
+        <name>./logs/devel.log</name>
+      </file>
+      <syslog>
+        <enabled>false</enabled>
+      </syslog>
+    </developerLog>
+    <auditLog>
+      <enabled>true</enabled>
+      <file>
+        <enabled>true</enabled>
+        <name>./logs/audit.log</name>
+      </file>
+      <syslog>
+        <enabled>false</enabled>
+      </syslog>
+    </auditLog>
+   <netconfLog>
+      <enabled>true</enabled>
+      <file>
+        <enabled>true</enabled>
+        <name>./logs/netconf.log</name>
+      </file>
+      <syslog>
+        <enabled>false</enabled>
+      </syslog>
+    </netconfLog>
+    <netconfTraceLog>
+      <enabled>true</enabled>
+      <filename>./logs/netconf.trace</filename>
+      <format>pretty</format>
+    </netconfTraceLog>
+    <errorLog>
+      <enabled>true</enabled>
+      <filename>./logs/confderr.log</filename>
+      <maxSize>S1M</maxSize>
+    </errorLog>
+    <snmpLog>
+      <enabled>true</enabled>
+      <file>
+        <enabled>true</enabled>
+        <name>./logs/snmp.log</name>
+      </file>
+      <syslog>
+        <enabled>false</enabled>
+      </syslog>
+    </snmpLog>
+  </logs>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function confdconf_head()
+{
+    cat <<EOF
+<confdConfig xmlns="http://tail-f.com/ns/confd_cfg/1.0">
+  <confdIpcAddress>
+    <ip>127.0.0.1</ip>
+    <port>%IPC_PORT%</port>
+  </confdIpcAddress>
+  <loadPath>
+    <dir>.</dir>
+  </loadPath>
+  <stateDir>.</stateDir>
+  <commitRetryTimeout>PT45S</commitRetryTimeout>
+  <cdb>
+    <enabled>true</enabled>
+    <dbDir>./cdb</dbDir>
+    <operational>
+      <enabled>true</enabled>
+    </operational>
+  </cdb>
+  <rollback>
+    <enabled>true</enabled>
+    <directory>./logs</directory>
+  </rollback>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function encrypted_strings()
+{
+    cat <<EOF
+  <encryptedStrings>
+    <DES3CBC>
+      <key1>0123456789abcdef</key1>
+      <key2>0123456789abcdef</key2>
+      <key3>0123456789abcdef</key3>
+      <initVector>0123456789abcdef</initVector>
+    </DES3CBC>
+    <AESCFB128>
+      <key>0123456789abcdef0123456789abcdef</key>
+      <initVector>0123456789abcdef0123456789abcdef</initVector>
+    </AESCFB128>
+    <AES256CFB128>
+      <key>0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef</key>
+    </AES256CFB128>
+  </encryptedStrings>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function no_netconf()
+{
+    cat <<EOF
+  <netconf>
+    <enabled>false</enabled>
+  </netconf>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function netconf_transport()
+{
+    cat <<EOF
+  <netconf>
+    <enabled>true</enabled>
+    <transport>
+      <ssh>
+        <enabled>true</enabled>
+        <ip>0.0.0.0</ip>
+        <port>%NETCONF_SSH_PORT%</port>
+      </ssh>
+      <tcp>
+        <enabled>false</enabled>
+      </tcp>
+    </transport>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function netconf_capas()
+{
+    if [ ${dbmode} = "candidate" ]; then
+        cat <<EOF
+    <capabilities>
+      <startup>
+        <enabled>false</enabled>
+      </startup>
+      <candidate>
+        <enabled>true</enabled>
+      </candidate>
+      <confirmed-commit>
+        <enabled>true</enabled>
+      </confirmed-commit>
+      <writable-running>
+        <enabled>false</enabled>
+      </writable-running>
+      <rollback-on-error>
+        <enabled>true</enabled>
+      </rollback-on-error>
+      <actions>
+        <enabled>true</enabled>
+      </actions>
+    </capabilities>
+  </netconf>
+EOF
+    elif [ ${dbmode} = "startup" ]; then
+	cat <<EOF
+    <capabilities>
+      <startup>
+        <enabled>true</enabled>
+      </startup>
+      <candidate>
+        <enabled>false</enabled>
+      </candidate>
+      <confirmed-commit>
+        <enabled>false</enabled>
+      </confirmed-commit>
+      <writable-running>
+        <enabled>true</enabled>
+      </writable-running>
+      <rollback-on-error>
+        <enabled>true</enabled>
+      </rollback-on-error>
+      <actions>
+        <enabled>true</enabled>
+      </actions>
+    </capabilities>
+  </netconf>
+EOF
+    elif [ ${dbmode} = "running-only" ]; then
+	cat <<EOF
+    <capabilities>
+      <startup>
+        <enabled>false</enabled>
+      </startup>
+      <candidate>
+        <enabled>false</enabled>
+      </candidate>
+      <confirmed-commit>
+        <enabled>false</enabled>
+      </confirmed-commit>
+      <writable-running>
+        <enabled>true</enabled>
+      </writable-running>
+      <rollback-on-error>
+        <enabled>true</enabled>
+      </rollback-on-error>
+      <actions>
+        <enabled>true</enabled>
+      </actions>
+    </capabilities>
+  </netconf>
+EOF
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function cli()
+{
+    cat <<EOF
+  <cli>
+    <prompt1>\u@%NAME%></prompt1>
+    <prompt2>\u@%NAME%%</prompt2>
+    <cPrompt1>%NAME%#</cPrompt1>
+    <cPrompt2>%NAME%(\m)#</cPrompt2>
+
+    <enabled>true</enabled>
+    <ssh>
+      <enabled>true</enabled>
+      <port>%CLI_SSH_PORT%</port>
+    </ssh>
+    <spaceCompletion>
+      <enabled>false</enabled>
+    </spaceCompletion>
+    <style>$1</style>
+    <historyRemoveDuplicates>true</historyRemoveDuplicates>
+    <cHelp>false</cHelp>
+    <docWrap>false</docWrap>
+    <wrapInfo>true</wrapInfo>
+    <showKeyName>false</showKeyName>
+  </cli>
+</confdConfig>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function aaa()
+{
+    cat <<EOF
+  <aaa>
+    <sshServerKeyDir>./ssh</sshServerKeyDir>
+  </aaa>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function running_only()
+{
+    cat <<EOF
+  <datastores>
+    <startup>
+      <enabled>false</enabled>
+    </startup>
+    <candidate>
+      <enabled>false</enabled>
+    </candidate>
+ </datastores>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function startup()
+{
+    cat <<EOF
+  <datastores>
+    <startup>
+      <enabled>true</enabled>
+    </startup>
+    <candidate>
+      <enabled>false</enabled>
+    </candidate>
+ </datastores>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function candidate()
+{
+    cat <<EOF
+  <datastores>
+    <startup>
+      <enabled>false</enabled>
+    </startup>
+    <candidate>
+      <enabled>true</enabled>
+      <implementation>confd</implementation>
+      <storage>auto</storage>
+      <filename>./cdb/confd_candidate.db</filename>
+    </candidate>
+    <running>
+      <access>writable-through-candidate</access>
+    </running>
+  </datastores>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function snmp()
+{
+    cat <<EOF
+  <snmpAgent>
+    <enabled>true</enabled>
+    <ip>0.0.0.0</ip>
+    <port>%SNMP_PORT%</port>
+    <mibs>
+      <file>SNMPv2-MIB.bin</file>
+      <fromLoadPath>true</fromLoadPath>
+    </mibs>
+    <snmpVersions>
+      <v1>true</v1>
+      <v2c>true</v2c>
+      <v3>true</v3>
+    </snmpVersions>
+    <snmpEngine>
+      <snmpEngineID>80:00:61:81:05:%TWO_DIGIT_COUNTER%</snmpEngineID>
+    </snmpEngine>
+    <system>
+      <sysDescr>Tail-f ConfD agent - %NAME%</sysDescr>
+      <sysObjectID>1.3.6.1.4.1.24961</sysObjectID>
+    </system>
+  </snmpAgent>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function netconf_confdconf()
+{
+    confdconf_head
+    encrypted_strings
+    confdconflogs
+    if [ ${dbmode} = "candidate" ]; then
+        candidate
+    elif [ ${dbmode} = "startup" ]; then
+        startup
+    elif [ ${dbmode} = "running-only" ]; then
+        running_only
+    fi
+    aaa
+    netconf_transport
+    netconf_capas
+    cli j
+}
+
+# -----------------------------------------------------------------------------
+function cli_confdconf()
+{
+    confdconf_head
+    encrypted_strings
+    confdconflogs
+    startup
+    aaa
+    no_netconf
+    cli i
+}
+
+# -----------------------------------------------------------------------------
+function snmp_confdconf()
+{
+    confdconf_head
+    encrypted_strings
+    confdconflogs
+    running_only
+    aaa
+    no_netconf
+    snmp
+    cli j
+}
+
+# -----------------------------------------------------------------------------
+function snmp_community_init()
+{
+    cat <<EOF
+ <SNMP-COMMUNITY-MIB xmlns="http://tail-f.com/ns/mibs/SNMP-COMMUNITY-MIB/200308060000Z">
+  <snmpCommunityTable>
+    <!--
+        Define a single community 'public'.  See vacm_init.xml for
+        how the security name 'public' gets full access.
+    -->
+    <snmpCommunityEntry>
+      <snmpCommunityIndex>public</snmpCommunityIndex>
+      <snmpCommunityName>public</snmpCommunityName>
+      <snmpCommunitySecurityName>public</snmpCommunitySecurityName>
+      <snmpCommunityContextEngineID>80:00:61:81:05:%TWO_DIGIT_COUNTER%</snmpCommunityContextEngineID>
+    </snmpCommunityEntry>
+
+  </snmpCommunityTable>
+</SNMP-COMMUNITY-MIB>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function snmp_vacm_init()
+{
+    cat <<EOF
+<SNMP-VIEW-BASED-ACM-MIB xmlns="http://tail-f.com/ns/mibs/SNMP-VIEW-BASED-ACM-MIB/200210160000Z">
+  <vacmSecurityToGroupTable>
+    <!-- The 'public' security name is mapped to the group 'all-rights' -->
+
+   <vacmSecurityToGroupEntry>
+      <vacmSecurityModel>1</vacmSecurityModel>
+      <vacmSecurityName>public</vacmSecurityName>
+      <vacmGroupName>all-rights</vacmGroupName>
+    </vacmSecurityToGroupEntry>
+
+    <vacmSecurityToGroupEntry>
+      <vacmSecurityModel>2</vacmSecurityModel>
+      <vacmSecurityName>public</vacmSecurityName>
+      <vacmGroupName>all-rights</vacmGroupName>
+    </vacmSecurityToGroupEntry>
+
+    <vacmSecurityToGroupEntry>
+      <vacmSecurityModel>3</vacmSecurityModel>
+      <vacmSecurityName>admin</vacmSecurityName>
+      <vacmGroupName>all-rights</vacmGroupName>
+    </vacmSecurityToGroupEntry>
+
+    <vacmSecurityToGroupEntry>
+      <vacmSecurityModel>3</vacmSecurityModel>
+      <vacmSecurityName>xadmin</vacmSecurityName>
+      <vacmGroupName>all-rights</vacmGroupName>
+    </vacmSecurityToGroupEntry>
+
+  </vacmSecurityToGroupTable>
+
+  <vacmAccessTable>
+
+    <!-- The group 'all-rights' has full access to everything -->
+
+    <vacmAccessEntry>
+      <vacmGroupName>all-rights</vacmGroupName>
+      <vacmAccessContextPrefix></vacmAccessContextPrefix>
+      <vacmAccessSecurityModel>0</vacmAccessSecurityModel>
+      <vacmAccessSecurityLevel>noAuthNoPriv</vacmAccessSecurityLevel>
+      <vacmAccessContextMatch>exact</vacmAccessContextMatch>
+      <vacmAccessReadViewName>internet</vacmAccessReadViewName>
+      <vacmAccessWriteViewName>internet</vacmAccessWriteViewName>
+      <vacmAccessNotifyViewName>internet</vacmAccessNotifyViewName>
+    </vacmAccessEntry>
+
+  </vacmAccessTable>
+
+  <vacmViewTreeFamilyTable>
+
+    <vacmViewTreeFamilyEntry>
+      <vacmViewTreeFamilyViewName>internet</vacmViewTreeFamilyViewName>
+      <vacmViewTreeFamilySubtree>1.3.6.1</vacmViewTreeFamilySubtree>
+      <vacmViewTreeFamilyMask></vacmViewTreeFamilyMask>
+      <vacmViewTreeFamilyType>included</vacmViewTreeFamilyType>
+    </vacmViewTreeFamilyEntry>
+
+  </vacmViewTreeFamilyTable>
+</SNMP-VIEW-BASED-ACM-MIB>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function snmp_usm_init()
+{
+    cat <<EOF
+<SNMP-USER-BASED-SM-MIB xmlns="http://tail-f.com/ns/mibs/SNMP-USER-BASED-SM-MIB/200210160000Z">
+EOF
+
+    # create a user 'admin' with passphrase 'admin'
+    ${NCSC} --snmpuser 80:00:61:81:05:%TWO_DIGIT_COUNTER% admin md5 des admin
+
+    # create a user 'xadmin' with passphrase 'admin' different algorithms
+    ${NCSC} --snmpuser 80:00:61:81:05:%TWO_DIGIT_COUNTER% xadmin sha aes admin
+
+    cat <<EOF
+</SNMP-USER-BASED-SM-MIB>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function src_makefile_head()
+{
+    cat <<EOF
+# Include standard NCS examples build definitions and rules
+include \$(NCS_DIR)/src/ncs/build/include.ncs.mk
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function src_makefile_head_no_java()
+{
+    if [ -z "${no_netsim}" ]; then
+        cat <<EOF
+all:	fxs
+	\$(MAKE) -C ../netsim  all
+.PHONY: all
+
+EOF
+    else
+cat <<EOF
+all:	fxs
+.PHONY: all
+
+EOF
+        fi
+    src_makefile_head
+}
+
+# -----------------------------------------------------------------------------
+function src_makefile_head_java()
+{
+    cat <<EOF
+all: javac
+EOF
+    if [ -z "${no_netsim}" ]; then
+        cat <<EOF
+	\$(MAKE) -C ../netsim  all
+EOF
+    fi
+    src_makefile_head
+    cat <<EOF
+
+NS  = namespaces
+
+JAVA_PACKAGE = ${java_package}
+JDIR = \$(shell echo \$(JAVA_PACKAGE) | sed 's/\./\//g')
+
+JFLAGS = --java-disable-prefix \\
+         --exclude-enums \\
+         ${fail_on_warnings} \\
+         --java-package \$(JAVA_PACKAGE).\$(NS) \\
+         --emit-java java/src/\$(JDIR)/\$(NS)
+
+javac: fxs
+	cd java && ant -q all
+
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function src_makefile_ned_netconf()
+{
+    cat << EOF
+
+SRC = \$(wildcard yang/*.yang)
+FXS = \$(SRC:yang/%.yang=ncsc-out/modules/fxs/%.fxs)
+DIRS =  ncsc-out ../load-dir
+EOF
+
+    if [ ! "${no_java}" ]; then
+cat <<EOF
+DIRS += ../shared-jar ../private-jar java/src/\$(JDIR)/\$(NS)
+EOF
+    fi
+
+    if [ ! "${no_python}" ]; then
+cat <<EOF
+DIRS += ../python/${python_package_name}
+EOF
+    fi
+
+    if [ "${no_template}" ]; then
+cat <<EOF
+NCSC_EXTRA_FLAGS += --ncs-skip-template
+EOF
+    fi
+
+    if [ "X${netconf_id}" != "Xlsa-netconf" ]; then
+        cat <<EOF
+NED_ID_ARG = \$(shell [ -x \${NCS_DIR}/support/ned-ncs-ned-id-arg ] && \\
+               \${NCS_DIR}/support/ned-ncs-ned-id-arg package-meta-data.xml.in)
+
+## Uncomment and patch the line below if you have a dependency to
+## other YANG files
+# YANGPATH += ../../<pkg-name>/src/yang
+
+NCSCPATH   = \$(YANGPATH:%=--yangpath %)
+
+fxs: \$(DIRS) ../package-meta-data.xml ncsc-out/.done
+.PHONY: fxs
+
+\$(DIRS):
+	mkdir -p \$@
+
+../package-meta-data.xml: package-meta-data.xml.in
+	rm -rf \$@
+	if [ -x \${NCS_DIR}/support/ned-make-package-meta-data ]; then \\
+	    \${NCS_DIR}/support/ned-make-package-meta-data \$<;         \\
+	else                                                          \\
+	    grep -v 'to be replaced by build' \$< > \$@;                \\
+	fi
+	chmod -w \$@
+EOF
+    else
+        # If we have a ned-id lsa-netconf it means we are not tied to a
+        # specific version. For other cases we are so generate Makefile
+        # for that version.
+        if [ "${lsa_lower_nso_ned_id}" = "lsa-netconf" ]; then
+            cat <<EOF
+
+NCSVER     = \$(shell \$(NCS) --version | sed 's/\([0-9]*\.[0-9]*\).*/\1/')
+CISCO_NSO  = \$(NCS_DIR)/packages/lsa/cisco-nso-nc-\$(NCSVER)
+NED_ID_ARG = --ncs-ned-id tailf-ncs-ned:lsa-netconf
+
+YANGPATH   =\$(CISCO_NSO)/src/yang
+EOF
+        else
+            cat <<EOF
+
+MNAME      = ${lsa_lower_nso_ned_id_mod}
+CISCO_NSO  = ${lsa_lower_nso}
+NED_ID_ARG = --ncs-ned-id \$(MNAME):\$(MNAME)
+
+YANGPATH   =\$(CISCO_NSO)/src
+EOF
+            ncs_depend_lsa_package="--ncs-depend-package \$(CISCO_NSO)"
+        fi
+
+        cat <<EOF
+
+NCSCPATH   = \$(YANGPATH:%=--yangpath %)
+
+fxs: \$(DIRS) ../package-meta-data.xml ncsc-out/.done
+.PHONY: fxs
+
+\$(DIRS):
+	mkdir -p \$@
+
+../package-meta-data.xml: package-meta-data.xml.in
+	rm -rf \$@
+	cp \$< \$@;                                                \\
+	chmod -w \$@
+EOF
+        fi
+
+cat <<EOF
+
+ncsc-out/.done:	\$(SRC)
+	\$(NCSC) --ncs-compile-bundle yang                   \\
+	    --ncs-device-dir ncsc-out                        \\
+	    ${fail_on_warnings}                              \\
+	    ${ncs_depend_lsa_package}                        \\
+	    ${ncs_depend_package}                            \\
+	    --ncs-device-type netconf                        \\
+	    \$(NCSCPATH)                                     \\
+	    \$(NED_ID_ARG)                                   \\
+	    \$(NCSC_EXTRA_FLAGS)
+	cp ncsc-out/modules/fxs/*.fxs ../load-dir
+	for f in \`echo ../load-dir/*.fxs\`; do \\
+EOF
+
+    if [ ! "${no_java}" ]; then
+        cat <<EOF
+	    n=\`basename \$\$f | sed 's/\.fxs//'\`; \\
+	    \$(NCSC) \$(JFLAGS)/\$\${n}.java \$\$f  || exit 1; \\
+EOF
+    fi
+    if [ ! "${no_python}" ]; then
+        cat <<EOF
+	    \$(NCSC) ${fail_on_warnings}                                 \\
+	        --emit-python ../python/${python_package_name} \$\$f  || \\
+	    exit 1;                                                      \\
+EOF
+    fi
+    cat <<EOF
+	   true; \\
+	done
+	touch ncsc-out/.done
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function src_makefile_ned_snmp()
+{
+    cat <<EOF
+
+SRC = \$(wildcard mibs/*.mib)
+FXS = \$(SRC:mibs/%.mib=ncsc-out/modules/fxs/%.fxs)
+DIRS = ncsc-out ../load-dir
+NED_ID_ARG = \$(shell [ -x \${NCS_DIR}/support/ned-ncs-ned-id-arg ] && \\
+               \${NCS_DIR}/support/ned-ncs-ned-id-arg package-meta-data.xml.in)
+
+fxs: \$(DIRS) ../package-meta-data.xml ncsc-out/.done
+
+\$(DIRS):
+	mkdir -p \$@
+
+../package-meta-data.xml: package-meta-data.xml.in
+	rm -rf \$@
+	if [ -x \${NCS_DIR}/support/ned-make-package-meta-data ]; then \\
+	    \${NCS_DIR}/support/ned-make-package-meta-data \$<;         \\
+	else                                                          \\
+	    grep -v 'to be replaced by build' \$< > \$@;                \\
+	fi
+	chmod -w \$@
+
+ncsc-out/.done: \$(SRC)
+	\$(NCSC) --ncs-compile-mib-bundle mibs \\
+	    \$(NED_ID_ARG)                         \\
+	    --ncs-device-dir ncsc-out
+	cp ncsc-out/modules/fxs/*.fxs ../load-dir
+	for f in \`echo ../load-dir/*.fxs\`; do \\
+EOF
+    if [ ! "${no_java}" ]; then
+        cat <<EOF
+           n=\`basename \$\$f | sed 's/\.fxs//'\`; \\
+	   \$(NCSC) \$(JFLAGS)/\$\${n}.java \$\$f  || exit 1; \\
+EOF
+    else
+        cat <<EOF
+           n=\`basename \$\$f | sed 's/\.fxs//'\` || exit 1; \\
+EOF
+    fi
+    cat <<EOF
+        done
+	touch ncsc-out/.done
+
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function src_makefile()
+{
+    if [ "${no_java}" ]; then
+        src_makefile_head_no_java
+    else
+        src_makefile_head_java
+    fi
+
+    if [ ${device_type} = "netconf" ]; then
+        src_makefile_ned_netconf
+    elif [ ${device_type} = "snmp" ]; then
+        src_makefile_ned_snmp
+    fi
+
+    cat <<EOF
+
+clean:
+	rm -rf \$(DIRS)
+EOF
+    if [ -f ${dest}/src/package-meta-data.xml.in ]; then
+        cat <<EOF
+	rm -rf ../package-meta-data.xml
+EOF
+    fi
+
+    if [ -z "${no_netsim}" ]; then
+        cat <<EOF
+	\$(MAKE) -C ../netsim clean
+EOF
+    fi
+
+    if [ ! "${no_java}" ]; then
+    cat <<EOF
+	cd java && ant -q clean || true
+EOF
+    fi
+
+    cat <<EOF
+.PHONY: clean
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function build_xml()
+{
+    cat <<EOF
+<project name="package" basedir="." default="all">
+  <property environment="env"/>
+  <property name="build.dir" value="build"/>
+  <property name="classes.dir" value="\${build.dir}/classes"/>
+  <property name="src.dir" value="src"/>
+  <property name="rsc.dir" value="src/resources"/>
+  <property name="doc.dir" value="\${build.dir}/javadoc"/>
+  <property name="ncs.dir" value="\${env.NCS_DIR}/java/jar"/>
+  <property name="ncs.topdir" value="\${env.NCS_DIR}"/>
+  <property name="sharedjar.dir" value="../../shared-jar"/>
+  <property name="privatejar.dir" value="../../private-jar"/>
+  <property name="package" value="${java_name}"/>
+
+  <!-- Retrieving compilation compability parameters from NCS
+       Remove the following row if this is not desired  -->
+  <property file="\${env.NCS_DIR}/etc/ncs/java.properties" />
+  <!-- Set defaults if not set, if the above directive is removed
+       or the property file us missing these values will be used -->
+  <property name="ncs_java_source_ver" value="1.6"/>
+  <property name="ncs_java_target_ver" value="1.6"/>
+
+
+  <path id="core-libs">
+    <fileset dir="\${ncs.dir}">
+      <include name="*.jar"/>
+    </fileset>
+  </path>
+
+  <target name="all" depends="package" />
+
+  <target name="package" depends="compile">
+    <jar destfile="\${sharedjar.dir}/\${package}-ns.jar"
+         basedir="\${classes.dir}"
+         includes="**/namespaces/*.class"/>
+    <jar destfile="\${privatejar.dir}/\${package}.jar"
+         basedir="\${classes.dir}"
+         excludes="**/namespaces/*.class"
+         includes="**/*.class"/>
+    <jar update="true" destfile="\${privatejar.dir}/\${package}.jar"
+         basedir="../.."
+         includes="package-meta-data.xml"/>
+  </target>
+
+  <target name="clean">
+    <delete dir="\${build.dir}"/>
+    <delete file="\${sharedjar.dir}/\${package}-ns.jar"/>
+    <delete file="\${privatejar.dir}/\${package}.jar"/>
+  </target>
+
+  <target name="compile">
+    <mkdir dir="\${classes.dir}"/>
+    <javac srcdir="\${src.dir}"
+           destdir="\${classes.dir}"
+           source="\${ncs_java_source_ver}"
+           target="\${ncs_java_target_ver}"
+           debug="on"
+           includeantruntime="false"
+           debuglevel="lines,vars,source"  >
+      <compilerarg value="-Xlint:unchecked"/>
+      <compilerarg value="-Xlint:deprecation"/>
+      <classpath refid="core-libs" />
+    </javac>
+  </target>
+</project>
+
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function netsim_makefile()
+{
+    cat <<'EOF'
+include $(NCS_DIR)/src/ncs/build/include.netsim.mk
+
+## If you need additional init xml files, put them in
+## the current directory, and they will be picked up here.
+
+XML = $(wildcard *.xml)
+XML += $(NCS_DIR)/netsim/confd/var/confd/cdb/aaa_init.xml
+
+EXTRA_FILES = confd.conf.netsim
+
+EOF
+    if [ ${device_type} = "netconf" ]; then
+    cat <<'EOF'
+YANG = $(wildcard ../src/yang/*.yang)
+SUBMODULES          = $(shell grep -l belongs-to ../src/yang/*.yang \
+                        | xargs grep -l submodule)
+ANNOTATION_MODULES  = $(wildcard ../src/yang/*-ann.yang)
+YANG_MODULES = $(filter-out $(SUBMODULES) $(ANNOTATION_MODULES),$(YANG))
+
+BUILTIN_FXS = $(subst $(NCS_DIR)/netsim/confd/etc/confd/,, \
+                      $(wildcard $(NCS_DIR)/netsim/confd/etc/confd/*fxs))
+BUILTIN_FXS += ietf-netconf.fxs ietf-netconf-with-defaults.fxs
+
+FXS = $(filter-out $(BUILTIN_FXS), \
+	$(YANG_MODULES:../src/yang/%.yang=%.fxs))
+
+FLAGS = --yangpath ../src/yang
+
+all: $(FXS)
+
+EOF
+    elif [ ${device_type} = "snmp" ]; then
+    cat << 'EOF'
+ALL_MIBS    = $(wildcard ../src/mibs/*.mib)
+# filter out all std mibs
+STD_MIB_FXS = $(wildcard $(NCS_DIR)/netsim/confd/etc/confd/snmp/*.fxs)
+STD_MIBS    = $(STD_MIB_FXS:$(NCS_DIR)/netsim/confd/etc/confd/snmp/%.fxs=../src/mibs/%.mib)
+MIBS        = $(filter-out $(STD_MIBS), $(ALL_MIBS))
+FXS         = $(MIBS:../src/mibs/%.mib=%.fxs)
+BIN         = $(MIBS:../src/mibs/%.mib=%.bin)
+YANG         = $(MIBS:../src/mibs/%.mib=%.yang)
+
+all:
+	$(MAKE) $(FXS) $(BIN)
+
+%.yang: ../src/mibs/%.mib
+	env SMIPATH=../src/mibs $(CONFDC) --mib2yang $< > $@
+
+%.fxs: %.yang
+	a=$*-ann.yang; \
+	$(CONFDC) --yangpath $(CONFD_DIR)/src/confd/snmp/yang \
+	  -c -o $@  `[ -e $$a ] && echo "-a $$a"` $<
+
+%.bin:  %.fxs
+	$(CONFDC) -c ../src/mibs/$*.mib  \
+	$*.fxs -f . -f $(CONFD_DIR)/etc/confd -f $(CONFD_DIR)/etc/confd/snmp
+EOF
+    fi
+
+    cat << 'EOF'
+
+%.fxs:  ../src/yang/%.yang
+	$(CONFDC) $(FLAGS) \
+          `ls ../src/yang/$*-ann.yang  > /dev/null 2>&1 && \
+              echo "-a ../src/yang/$*-ann.yang"` \
+          -c -o $@  $<
+
+
+# Invoked by netsim, who will sed substitute the %var% PORT variables
+# in the confd.conf.netsim file
+# The install target here will be invoked multiple times by ncs-netsim,
+# once for each device in the simulation network
+# The following env variable will be set when ncs-netsim invokes this
+# install target
+# - DEST_DIR this is where all the files shall go, it's the directory
+#   that will be used as execution environment for this ConfD instance
+# - NAME this is the name of the managed device
+# - COUNTER this is the number of the managed device
+
+install:
+	@if [ -z "$${DEST_DIR}" ]; then echo "No DEST_DIR  var"; exit 1; fi
+	@if [ ! -d "$${DEST_DIR}" ]; then "echo No DEST_DIR"; exit 1; fi
+	mkdir $${DEST_DIR}/cdb 2>/dev/null || true
+	mkdir $${DEST_DIR}/logs 2>/dev/null || true
+	for i in $(XML); do \
+		sed -e 's/%NAME%/$(NAME)/g' -e 's/%COUNTER%/$(COUNTER)/g' -e 's/%TWO_DIGIT_COUNTER%/$(TWO_DIGIT_COUNTER)/g' \
+		  $$i > $${DEST_DIR}/cdb/`basename $$i`; \
+	done
+	for f in $(FXS); do cp $$f $${DEST_DIR}; done
+	cp -f $(EXTRA_FILES) $${DEST_DIR}
+	cp -af $(NCS_DIR)/netsim/confd/etc/confd/ssh $${DEST_DIR}
+EOF
+
+    if [ ${device_type} = "snmp" ]; then
+        # The USM init file must be generated for each device b/c the
+        # passphrases must be converted to localized keys, which depend
+        # on the engine-id
+        cat <<'EOF'
+	cp -f $(BIN) $${DEST_DIR}
+
+	@echo '<SNMP-USER-BASED-SM-MIB xmlns="http://tail-f.com/ns/mibs/SNMP-USER-BASED-SM-MIB/200210160000Z"><usmUserTable>' > $${DEST_DIR}/cdb/usm_init.xml
+	- # create a user 'admin' with passphrase 'admin'
+	$(CONFDC) --snmpuser 80:00:61:81:05:$(TWO_DIGIT_COUNTER) admin md5 des admin \
+	  >> $${DEST_DIR}/cdb/usm_init.xml
+	- # create a user 'xadmin' with passphrase 'admin' but different algorithms
+	$(CONFDC) --snmpuser 80:00:61:81:05:$(TWO_DIGIT_COUNTER) xadmin sha aes admin \
+	  >> $${DEST_DIR}/cdb/usm_init.xml
+	@echo '</usmUserTable></SNMP-USER-BASED-SM-MIB>' >> $${DEST_DIR}/cdb/usm_init.xml
+EOF
+    fi
+
+    cat <<'EOF'
+clean:
+	@rm -f *.fxs
+EOF
+
+    if [ ${device_type} = "snmp" ]; then
+        cat << 'EOF'
+	@rm -rf $(YANG) $(BIN) *.d
+
+# include the automatic dependency files
+-include $(MIBS:../src/mibs/%.mib=%.d)
+
+# generate the automatic dependency files
+#   the .bin file depends on all IMPORTED .bin and .fxs files
+#   the .fxs file depends on all IMPORTED .fxs files
+#   the .d file depends on all IMPORTED .mib files
+
+SKIPMIBS=$(shell echo $(STD_MIBS:../src/mibs/%.mib=%) | sed s'/ /:/g')
+
+SMIDUMP=env SMIPATH=../src/mibs smidump -c $(NCS_DIR)/etc/ncs/smi.conf -l 0 -f depend --depend-skip $(SKIPMIBS)
+
+
+%.d: ../src/mibs/%.mib
+	@set -e; 						\
+	$(SMIDUMP)						\
+		--depend-target $(<:../src/mibs/%.mib=%.bin)	\
+		--depend-extension .fxs $< > $@;		\
+	$(SMIDUMP)						\
+		--depend-target $(<:../src/mibs/%.mib=%.bin)	\
+		--depend-extension .bin $< >> $@;		\
+	$(SMIDUMP)						\
+		--depend-target $(<:../src/mibs/%.mib=%.yang)	\
+		--depend-extension .yang $< >> $@;		\
+	$(SMIDUMP)						\
+		--depend-target $(<:../src/mibs/%.mib=%.fxs)	\
+		--depend-extension .fxs $< >> $@;		\
+	$(SMIDUMP)						\
+		--depend-target $(<:../src/mibs/%.mib=%.d)	\
+		--depend-dir ../src/mibs			\
+		--depend-extension .mib $< >> $@;
+EOF
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function netsim_start_sh()
+{
+    cat <<'EOF'
+#!/bin/sh
+
+# The following variables will be set before this script
+# is invoked.
+
+# CONFD_IPC_PORT     - The port this ConfD instance is listening to for IPC
+# NETCONF_SSH_PORT   - The port this ConfD instance is listening to for NETCONF
+# NETCONF_TCP_PORT
+# CLI_SSH_PORT       - The port this ConfD instance is listening to for CLI/ssh
+# SNMP_PORT          - The port this ConfD instance is listening to for SNMP
+# NAME               - The name of this ConfD instance
+# COUNTER            - The number of this ConfD instance
+# CONFD              - Path to the confd executable
+# CONFD_DIR          - Path to the ConfD installation
+# PACKAGE_NETSIM_DIR - Path to the netsim directory in the package which
+#                      was used to produce this netsim network
+
+## If you need to start additional things, like C code etc in the
+## netsim environment, this is the place to add that
+
+test -f  cdb/O.cdb
+first_time=$?
+
+env sname=${NAME} ${CONFD} -c confd.conf ${CONFD_FLAGS} \
+EOF
+
+    if [ ${device_type} = "snmp" ]; then
+        cat << 'EOF'
+    --addloadpath ${CONFD_DIR}/etc/confd/snmp \
+EOF
+    fi
+    cat << 'EOF'
+    --addloadpath ${CONFD_DIR}/etc/confd
+ret=$?
+
+if [ ! $first_time = 0 ]; then
+   true;
+   ## If there is anything we want to do after the
+   ## first initial start, this is the place. An example could be
+   ## to load CDB operational data from xml files
+fi
+
+exit $ret
+
+EOF
+
+}
+
+
+# -----------------------------------------------------------------------------
+function smkdir()
+{
+    [[ `mkdir -p "$1" 2>&1 > /dev/null` ]] && error "failed to create directory '$1'"
+}
+
+# -----------------------------------------------------------------------------
+function cpc()
+{
+    [[ `cp $* 2>&1 > /dev/null` ]] && error "failed to copy file(s)"
+}
+
+## macos sed -i requires templ arg
+# -----------------------------------------------------------------------------
+function sedi() {
+    sed "$1" "$2" > tmp.$$
+    mv tmp.$$ "$2"
+}
+
+
+# -----------------------------------------------------------------------------
+function make_erlang_skeleton()
+{
+    if [ -z "${erlang_application_name}" ]; then
+        erlang_application_name=${name}
+        verbose "Using package name ${name} as --erlang-application-name"
+    fi
+
+    set -e
+
+    local from="app_skel"
+    local to="${erlang_application_name}"
+
+    # cp -af $skeleton_dir/erlang-skeleton/* ${dest}/
+    (cd $skeleton_dir/erlang-skeleton && tar cf - *) | (cd ${dest} && tar xf -)
+    sedi "s/%NAME%/${name}/g" ${dest}/package-meta-data.xml
+    sedi "s/%NCSVER%/${ncs_ver}/g" ${dest}/package-meta-data.xml
+    mv ${dest}/erlang-lib/$from ${dest}/erlang-lib/$to
+    for f in `find ${dest}/erlang-lib/$to \( ! -regex '.*/\..*' \) -type f` ; do
+        local tmp=`echo $f | sed s/${from}/${to}/g`
+
+        sedi "s/${from}/${to}/g" $f
+        if [ "$f" != "$tmp" ]; then
+            mv $f $tmp
+        fi
+    done
+
+    if [ "${no_test}" ]; then
+        rm -rf ${dest}/test
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function make_skeleton()
+{
+    verbose "Using skeleton from $skeleton_dir"
+
+    case "${service_skeleton}" in
+        java)
+            make_java_skeleton
+            ;;
+        java-and-template)
+            make_java_and_template_skeleton
+            ;;
+        python)
+            make_python_skeleton
+            ;;
+        python-and-template)
+            make_python_skeleton template
+            ;;
+        template)
+            make_template_skeleton
+            ;;
+        *)
+            if [ "${data_provider_skeleton}" = true ]; then
+                make_data_provider_skeleton
+            elif [ "${generic_ned_skeleton}" = true ]; then
+                make_generic_ned_skeleton
+            else
+                error "don't know what to do"
+            fi
+            ;;
+    esac
+
+    if [ "${no_test}" ]; then
+        rm -rf ${dest}/test
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function make_java_skeleton()
+{
+    cpc -a ${skeleton_dir}/java-service/* ${dest}
+    setup_java_code "RFS"
+    setup_package ${retval}
+    setup_yang
+    copy_yang
+    patch_java_makefile
+}
+
+# -----------------------------------------------------------------------------
+function make_java_and_template_skeleton()
+{
+    cpc -a ${skeleton_dir}/java-and-template-service/* ${dest}
+    sedi "s/%NAME%/${name}/g" ${dest}/templates/NAME-template.xml
+    mv ${dest}/templates/NAME-template.xml ${dest}/templates/${name}-template.xml
+    setup_java_code "RFS"
+    setup_package ${retval}
+    setup_yang
+    copy_yang
+    patch_java_makefile
+}
+
+# -----------------------------------------------------------------------------
+function make_python_skeleton()
+{
+    cpc -a ${skeleton_dir}/python-skeleton/* ${dest}
+
+    local template=$1
+    local pclass="${component_class##*.}"
+    local fname="${component_class%.*}"
+
+    sedi "s/%NAME%/${name}/g" ${dest}/package-meta-data.xml
+    sedi "s/%NCSVER%/${ncs_ver}/g" ${dest}/package-meta-data.xml
+    sedi "s/%COMPONENT%/${fname}/g" ${dest}/package-meta-data.xml
+    sedi "s/%CLASS%/${python_package_name}.${component_class}/g" ${dest}/package-meta-data.xml
+
+    # Prepare the Python code
+    if [[ "foo" != "${fname}" ]]; then
+        mv ${dest}/python/foo.py ${dest}/python/${fname}.py
+    fi
+    sedi "s/%CLASS%/${pclass}/g" ${dest}/python/${fname}.py
+    sedi "s/%NAME%/${name}/g" ${dest}/python/${fname}.py
+
+    # FIXME: do we want this?
+    # always do service code for now
+    local service_example=true
+
+    if [ "${service_example}" == true ]; then
+        sedi "/#BEGIN-SERVICE-IMPORT/d" ${dest}/python/${fname}.py
+        sedi "/#END-SERVICE-IMPORT/d" ${dest}/python/${fname}.py
+        sedi "/#BEGIN-SERVICE-EXAMPLE/d" ${dest}/python/${fname}.py
+        sedi "/#END-SERVICE-EXAMPLE/d" ${dest}/python/${fname}.py
+        sedi "/#BEGIN-SERVICE-REGISTER/d" ${dest}/python/${fname}.py
+        sedi "/#END-SERVICE-REGISTER/d" ${dest}/python/${fname}.py
+        if [ -z "${template}" ]; then
+            sedi "/#BEGIN-SERVICE-TEMPLATE/,/#END-SERVICE-TEMPLATE/d" ${dest}/python/${fname}.py
+        else
+            sedi "/#BEGIN-SERVICE-TEMPLATE/d" ${dest}/python/${fname}.py
+            sedi "/#END-SERVICE-TEMPLATE/d" ${dest}/python/${fname}.py
+        fi
+    else
+        sedi "/#BEGIN-SERVICE-IMPORT/,/#END-SERVICE-IMPORT/d" ${dest}/python/${fname}.py
+        sedi "/#BEGIN-SERVICE-EXAMPLE/,/#END-SERVICE-EXAMPLE/d" ${dest}/python/${fname}.py
+        sedi "/#BEGIN-SERVICE-REGISTER/,/#END-SERVICE-REGISTER/d" ${dest}/python/${fname}.py
+    fi
+
+    if [ "${action_example}" == true ]; then
+        sedi "/#BEGIN-ACTION-IMPORT/d" ${dest}/python/${fname}.py
+        sedi "/#END-ACTION-IMPORT/d" ${dest}/python/${fname}.py
+        sedi "/#BEGIN-ACTION-EXAMPLE/d" ${dest}/python/${fname}.py
+        sedi "/#END-ACTION-EXAMPLE/d" ${dest}/python/${fname}.py
+        sedi "/#BEGIN-ACTION-REGISTER/d" ${dest}/python/${fname}.py
+        sedi "/#END-ACTION-REGISTER/d" ${dest}/python/${fname}.py
+    else
+        sedi "/#BEGIN-ACTION-IMPORT/,/#END-ACTION-IMPORT/d" ${dest}/python/${fname}.py
+        sedi "/#BEGIN-ACTION-EXAMPLE/,/#END-ACTION-EXAMPLE/d" ${dest}/python/${fname}.py
+        sedi "/#BEGIN-ACTION-REGISTER/,/#END-ACTION-REGISTER/d" ${dest}/python/${fname}.py
+    fi
+
+    if [ "${subscriber_example}" == true ]; then
+        sedi "/#BEGIN-SUBSCRIBER-EXAMPLE/d" ${dest}/python/${fname}.py
+        sedi "/#END-SUBSCRIBER-EXAMPLE/d" ${dest}/python/${fname}.py
+        sedi "/#BEGIN-SUBSCRIBER-REGISTER/d" ${dest}/python/${fname}.py
+        sedi "/#END-SUBSCRIBER-REGISTER/d" ${dest}/python/${fname}.py
+        sedi "/#BEGIN-SUBSCRIBER-DEREGISTER/d" ${dest}/python/${fname}.py
+        sedi "/#END-SUBSCRIBER-DEREGISTER/d" ${dest}/python/${fname}.py
+    else
+        sedi "/#BEGIN-SUBSCRIBER-EXAMPLE/,/#END-SUBSCRIBER-EXAMPLE/d" ${dest}/python/${fname}.py
+        sedi "/#BEGIN-SUBSCRIBER-REGISTER/,/#END-SUBSCRIBER-REGISTER/d" ${dest}/python/${fname}.py
+        sedi "/#BEGIN-SUBSCRIBER-DEREGISTER/,/#END-SUBSCRIBER-DEREGISTER/d" ${dest}/python/${fname}.py
+    fi
+
+    # Prepare the Yang code
+    if [[ "foo" != "${name}" ]]; then
+        mv ${dest}/src/yang/foo.yang ${dest}/src/yang/${name}.yang
+    fi
+
+    sedi "s/%NAME%/${name}/g" ${dest}/src/yang/${name}.yang
+
+    if [ -z "${augment}" ]; then
+        sedi "/\/\/AUGMENT_BEGIN/d" ${dest}/src/yang/${name}.yang
+        sedi "/\/\/AUGMENT_END/d" ${dest}/src/yang/${name}.yang
+    else
+        sedi "s|//AUGMENT_BEGIN|${augment}|g" ${dest}/src/yang/${name}.yang
+        sedi "s|//AUGMENT_END|} // ${augment}|g" ${dest}/src/yang/${name}.yang
+    fi
+
+    if [ "${action_example}" == true ]; then
+        sedi "/\/\/BEGIN-ACTION/d" ${dest}/src/yang/${name}.yang
+        sedi "/\/\/END-ACTION/d" ${dest}/src/yang/${name}.yang
+    else
+        sedi "/\/\/BEGIN-ACTION/,/\/\/END-ACTION/d" ${dest}/src/yang/${name}.yang
+    fi
+
+    if [ "${service_example}" == true ]; then
+        sedi "/\/\/BEGIN-SERVICE/d" ${dest}/src/yang/${name}.yang
+        sedi "/\/\/END-SERVICE/d" ${dest}/src/yang/${name}.yang
+    else
+        sedi "/\/\/BEGIN-SERVICE/,/\/\/END-SERVICE/d" \
+            ${dest}/src/yang/${name}.yang
+    fi
+
+    # Prepare the test
+    sedi "s/%NAME%/${name}/g" ${dest}/test/internal/lux/service/run.lux
+    sedi "s/%NAME%/${name}/g" \
+        ${dest}/test/internal/lux/service/dummy-service.xml
+
+    if [ "${action_example}" != true ]; then
+        rm -rf ${dest}/test/internal/lux/action
+        sedi "s/%ACTION%//g" ${dest}/test/internal/lux/Makefile
+    else
+        sedi "s/%ACTION%/action/g" ${dest}/test/internal/lux/Makefile
+    fi
+
+    if [ "${service_example}" != true ]; then
+        rm -rf ${dest}/test/internal/lux/service
+        sedi "s/%SERVICE%//g" ${dest}/test/internal/lux/Makefile
+    else
+        sedi "s/%SERVICE%/service/g" ${dest}/test/internal/lux/Makefile
+    fi
+
+    if [ -z "${template}" ]; then
+        rm ${dest}/templates/foo.xml
+    else
+        mv ${dest}/templates/foo.xml ${dest}/templates/${name}-template.xml
+    fi
+
+    # Move Python files to submodule named as package
+    # (with '-' replaced by '_')
+    smkdir ${dest}/python/${python_package_name}
+    mv ${dest}/python/${fname}.py ${dest}/python/${python_package_name}/.
+    mv ${dest}/python/__init__.py ${dest}/python/${python_package_name}/.
+
+    # Prepare the README
+    sedi "s/%COMP_CLASS%/${component_class}/g" ${dest}/README
+    sedi "s/%NAME%/${name}/g" ${dest}/README
+    if [ -z "${template}" ]; then
+        sedi "s/%SERVICE_TYPE%/python/g" ${dest}/README
+    else
+        sedi "s/%SERVICE_TYPE%/python\-and\-template/g" ${dest}/README
+    fi
+    copy_yang
+    patch_makefile
+}
+
+# -----------------------------------------------------------------------------
+function make_template_skeleton()
+{
+    cpc -a ${skeleton_dir}/template-service/* ${dest}
+    sedi "s/%NAME%/${name}/g" ${dest}/templates/NAME-template.xml
+    mv ${dest}/templates/NAME-template.xml \
+        ${dest}/templates/${name}-template.xml
+
+    setup_package
+    setup_yang
+    copy_yang
+    patch_makefile
+}
+
+# -----------------------------------------------------------------------------
+#
+# Four comments in the skeletons Makefiles needs to be patched.
+#
+# %FXS%    the dependicies for fxs files.
+# %FXSTRG% The target for FXS files
+#
+function patch_makefile()
+{
+    local file=${dest}/src/Makefile
+    local tmp=/tmp/patch_template_makefile.$$
+
+    awk '
+  /#%FXS%/      \
+    {print "FXS = $(SRC:yang/%.yang=../load-dir/%.fxs)";}
+  /#%FXSTRG%/   \
+    {print "../load-dir/%.fxs: yang/%.yang"}
+  !/#%[A-Z_]*%/ \
+    {print}' $file > $tmp
+    mv -f $tmp $file
+}
+
+# -----------------------------------------------------------------------------
+function patch_java_makefile()
+{
+    local file=${dest}/src/Makefile
+    local tmp=/tmp/patch_template_makefile.$$
+
+    awk '
+  /#%FXS%/     \
+    {print "FXS = $(SRC:yang/%.yang=../load-dir/%.fxs)";}
+  /#%FXSTRG%/   \
+    {print "../load-dir/%.fxs: yang/%.yang"}
+  !/#%[A-Z_]*%/ \
+    {print}' $file > $tmp
+    mv -f $tmp $file
+}
+
+
+# -----------------------------------------------------------------------------
+function copy_yang()
+{
+    smkdir ${dest}/src/yang
+    if [ -n "${yang_files}" ]; then
+        rm -f ${dest}/src/yang/*
+        [[ `cp ${yang_files} ${dest}/src/yang 2>&1 > /dev/null` ]] &&
+        error "failed to copy YANG file(s)"
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function make_data_provider_skeleton()
+{
+    cpc -a $skeleton_dir/dp-skeleton/* ${dest}
+    setup_java_code "Dp"
+    setup_package ${retval}
+    setup_yang
+}
+
+# -----------------------------------------------------------------------------
+function make_generic_ned_skeleton()
+{
+    cpc -a $skeleton_dir/generic-ned/* ${dest}
+    setup_java_code "Ned"
+    setup_package ${retval}
+    setup_yang
+}
+
+# -----------------------------------------------------------------------------
+function setup_java_code()
+{
+    local jcpostfix=$1
+    local class=${java_name}${jcpostfix}
+
+    smkdir ${dest}/src/java/src/${jpd}
+
+    mv ${dest}/src/java/src/NAME/NAME.java ${dest}/src/java/src/${jpd}/${class}.java
+
+    rm -rf  ${dest}/src/java/src/NAME
+
+    sedi "s/%NAME%/${name}/g" \
+        ${dest}/src/java/src/${jpd}/${class}.java
+    sedi "s/%JAVANAME%/${java_name}/g" \
+        ${dest}/src/java/src/${jpd}/${class}.java
+    sedi "s/%CLASS%/${java_name}${jcpostfix}/g" \
+        ${dest}/src/java/src/${jpd}/${class}.java
+    sedi "s|%DIR%|${jpd}|g" \
+        ${dest}/src/java/src/${jpd}/${class}.java
+    sedi "s/%JAVAPACKAGE%/${java_package}/g" \
+        ${dest}/src/java/src/${jpd}/${class}.java
+    sedi "s/%NAME%/${name}/g" ${dest}/src/java/build.xml
+
+    retval=${class}
+}
+
+# -----------------------------------------------------------------------------
+function setup_package()
+{
+    local class=$1
+
+    # If NED change package-meta-data.xml.in else package-meta-data.xml
+    # For NEDs the  package-meta-data.xml will be constructed from
+    # package-meta-data.xml.in through the use of the script
+    # $NCS_DIR/support/ned-make-package-meta-data
+    PMD_IN=${dest}/src/package-meta-data.xml.in
+    if [[ -f ${PMD_IN} ]]; then
+        PMD=${PMD_IN}
+    else
+        PMD=${dest}/package-meta-data.xml
+    fi
+    MAKEFILE=${dest}/src/Makefile
+
+    sedi "s/%YANGNAME%/${name}/g"                     ${MAKEFILE}
+    sedi "s/%NAME%/${java_name}/g"                    ${MAKEFILE}
+    sedi "s/%JAVAPACKAGE%/${java_package}/g"          ${MAKEFILE}
+
+    if [ -z "${fail_on_warnings}" ]; then
+       sedi "s/--fail-on-warnings//g" ${MAKEFILE}
+    fi
+
+    sedi "s/%NAME%/${lsa_prefix}${name}/g"   ${PMD}
+    sedi "s/%NCSVER%/${ncs_ver}/g"           ${PMD}
+    sedi "s/%VENDOR%/${vendor}/g"            ${PMD}
+    sedi "s/%CLASS%/${class}/g"              ${PMD}
+    sedi "s/%JAVAPACKAGE%/${java_package}/g" ${PMD}
+    sedi "s|%DIR%|${jpd}|g"                  ${PMD}
+    sedi "s/%VERSION%/${package_version}/g"  ${PMD}
+}
+
+# -----------------------------------------------------------------------------
+function setup_yang()
+{
+    # *.yang exists for all packages
+    mv ${dest}/src/yang/NAME.yang  ${dest}/src/yang/${name}.yang
+    sedi "s/%NAME%/${name}/g" ${dest}/src/yang/${name}.yang
+    sedi "s|%DIR%|${jpd}|g" ${dest}/src/yang/${name}.yang
+
+    if [ -z "${augment}" ]; then
+        sedi "/\/\/AUGMENT_BEGIN/d" ${dest}/src/yang/${name}.yang
+        sedi "/\/\/AUGMENT_END/d" ${dest}/src/yang/${name}.yang
+    else
+        sedi "s|//AUGMENT_BEGIN|${augment}|g" ${dest}/src/yang/${name}.yang
+        sedi "s|//AUGMENT_END|} // ${augment}|g" ${dest}/src/yang/${name}.yang
+    fi
+
+    # *-stats.yang exits only for NEDs
+    if [ -f ${dest}/src/yang/NAME-stats.yang ]; then
+        mv ${dest}/src/yang/NAME-stats.yang  \
+            ${dest}/src/yang/${name}-stats.yang
+        sedi "s/%NAME%/${name}/g" ${dest}/src/yang/${name}-stats.yang
+        sedi "s|%DIR%|${jpd}|g" ${dest}/src/yang/${name}-stats.yang
+    fi
+}
+
+
+# -----------------------------------------------------------------------------
+function make_ned_skeleton()
+{
+    [ -z "${device_type}" ] && error "no device type given"
+
+    if [ -z "${no_netsim}" ]; then
+        smkdir ${dest}/netsim
+    fi
+
+    if [ ! "$no_java" ]; then
+        smkdir ${dest}/src/java/src/${jpd}/namespaces
+        build_xml > ${dest}/src/java/build.xml
+    fi
+
+    if [ ! "$no_python" ]; then
+        smkdir ${dest}/python/${python_package_name}
+    fi
+
+    if [ "$device_type" = netconf ]; then
+        smkdir ${dest}/src/yang
+        ned_package_meta_data > ${dest}/src/package-meta-data.xml.in
+        sedi "s/%NCSVER%/${ncs_ver}/g" ${dest}/src/package-meta-data.xml.in
+        if [ -z "$pyang_sanitize" ]; then
+            copy_yang
+        else
+            for yf in ${yang_files}; do
+                ${NCS_DIR}/bin/pyang -p ${yang_dir} -p ${NCS_DIR}/src/ncs/yang \
+                    --tailf-sanitize \
+                    --tailf-keep-actions \
+                    --tailf-keep-info \
+                    --tailf-keep-dependency \
+                    --tailf-keep-tailf-typedefs \
+                    -f yang -o ${dest}/src/yang/`basename ${yf}`   ${yf}
+                check_err $? "Sanitize failed"
+            done
+        fi
+        src_makefile > ${dest}/src/Makefile
+        if [ -z "$no_netsim" ]; then
+            cp ${yang_dir}/*.xml ${dest}/netsim 2>/dev/null || true
+            netsim_makefile > ${dest}/netsim/Makefile
+            netsim_start_sh > ${dest}/netsim/start.sh
+            netconf_confdconf > ${dest}/netsim/confd.conf.netsim
+        fi
+    elif [ "$device_type" = snmp ]; then
+        smkdir ${dest}/src/mibs
+        ned_package_meta_data > ${dest}/src/package-meta-data.xml.in
+        sedi "s/%NCSVER%/${ncs_ver}/g" ${dest}/src/package-meta-data.xml.in
+        cp ${mib_dir}/*.{mib,miba} ${dest}/src/mibs 2>/dev/null || true
+        src_makefile > ${dest}/src/Makefile
+        if [ -z "$no_netsim" ]; then
+            cp ${mib_dir}/*.xml ${dest}/netsim 2>/dev/null || true
+            netsim_makefile > ${dest}/netsim/Makefile
+            netsim_start_sh > ${dest}/netsim/start.sh
+            snmp_confdconf > ${dest}/netsim/confd.conf.netsim
+            snmp_community_init > ${dest}/netsim/community_init.xml
+            snmp_vacm_init > ${dest}/netsim/vacm_init.xml
+        fi
+    else
+        echo "NOT YET IMPLEMENTED"
+        exit 1
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function ned_package_meta_data()
+{
+    cat << EOF
+<ncs-package xmlns="http://tail-f.com/ns/ncs-packages">
+  <name>${lsa_prefix}${name}</name>
+  <package-version>${package_version}</package-version>
+  <description>Generated ${device_type} package</description>
+  <ncs-min-version>${ncs_ver}</ncs-min-version>
+  <component>
+    <name>${name}</name>
+EOF
+    ned_package_meta_data_specific
+    cat << EOF
+  </component>
+</ncs-package>
+EOF
+}
+
+# -----------------------------------------------------------------------------
+function ned_package_meta_data_specific()
+{
+    if [ ${device_type} = "netconf" ]; then
+        if [ "X${netconf_id}" = "Xlsa-netconf" ]; then
+            cat << EOF
+    <ned>
+      <netconf>
+        <ned-id xmlns:id="${lsa_lower_nso_ned_id_ns}">id:${lsa_lower_nso_ned_id}</ned-id>
+      </netconf>
+      <device>
+        <vendor>${vendor}</vendor>
+      </device>
+    </ned>
+EOF
+        else
+            cat << EOF
+    <ned>
+      <netconf>
+        <ned-id>to be replaced by build</ned-id>
+      </netconf>
+      <device>
+        <vendor>${vendor}</vendor>
+      </device>
+    </ned>
+EOF
+        fi
+    elif [ ${device_type} = "snmp" ]; then
+    cat << EOF
+    <ned>
+      <snmp/>
+      <device>
+        <vendor>${vendor}</vendor>
+      </device>
+    </ned>
+EOF
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function setup_globals()
+{
+    nmp_cmd_line="${prgname} $*"
+    skeleton_dir=$NCS_DIR/src/ncs/package-skeletons
+    local full_ver=`$NCS_DIR/bin/ncs --version`
+    ncs_ver=`echo "${full_ver%_*}" | \
+        sed -n 's/^\([0-9][0-9]*.[0-9][0-9]*\).*$/\1/p'`
+
+    lsa_lower_nso_ned_id_ns="http://tail-f.com/ns/ncs-ned"
+    lsa_lower_nso_ned_id_mod="tailf-ncs-ned"
+    lsa_lower_nso_ned_id="lsa-netconf"
+
+    if missing_cmd gmake; then
+        MAKE=make
+    else
+        MAKE=gmake
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function setup_default_arguments()
+{
+    # General defaults
+    vendor='Acme'
+    # NED defaults
+    dbmode=candidate
+    # Python defaults
+    component_class='main.Main'
+    # NED package version
+    package_version="1.0"
+    # Default to fail on warnings when executing ncsc
+    fail_on_warnings="--fail-on-warnings"
+}
+
+# -----------------------------------------------------------------------------
+function parse_arguments()
+{
+    setup_default_arguments
+
+    while [ $# -gt 0 ]; do
+        arg="$1"
+        shift
+        case "$arg" in
+            -h | --help)
+                usage
+                exit 0
+                ;;
+            --dest)
+                dest="$1"
+                shift
+                ;;
+            --build)
+                build=true;;
+            --verbose)
+                verbose=true;;
+            --vendor)
+                vendor="$1";
+                shift
+                ;;
+            --package-version)
+                package_version="$1";
+                shift
+                ;;
+            --pyang-flags)
+                pyang_flags="-p "
+                shift
+                while [ $1 != "--" -a $# -gt 0 ]; do
+                    pyang_flags="$pyang_flags $1"
+                    shift
+                done
+                shift;;
+            --netconf-ned | --lsa-netconf-ned)
+                [ ! -d "$1" ] && error "need YANG directory for ${arg}"
+                yang_path="$1"
+                if [ "$arg" = "--lsa-netconf-ned" ]; then
+                    netconf_id=lsa-netconf
+                fi
+                shift
+                [ ! -z "${device_type}" ] && \
+                    error "can only create one NED type"
+                device_type=netconf
+                ;;
+            --lsa-lower-nso)
+                case "$1" in
+                    cisco-nso-nc-*)
+                        CISCO_NSO=$NCS_DIR/packages/lsa/"$1"
+                        lsa_lower_nso="\$(NCS_DIR)/packages/lsa/\$(MNAME)"
+                        ;;
+                    *)
+                        CISCO_NSO="$1"
+                        lsa_lower_nso=`abspath "$CISCO_NSO" 2>/dev/null |
+                          sed "s%^${NCS_DIR}/%\$\(NCS_DIR\)/%"`
+                esac
+                [ ! -d "$CISCO_NSO" ] && \
+                    error "package directory for lsa-lower-nso does not exist"
+                Y=`find "$CISCO_NSO" -name 'cisco-nso-nc-*.*.yang' | \
+                   sort | head -1`
+                V=`echo "${Y}"|sed 's/.*cisco-nso-nc-\([0-9]*\.[0-9]*\).*/\1/'`
+                [ "$V" = "." ] || [ "x$V" = "x" ] && \
+                    error "cannot find cisco-nso-nc-<m>.<n>.yang for lower nso"
+                mname="cisco-nso-nc-$V"
+                lsa_lower_nso_ned_id_ns="http://tail-f.com/ns/ned-id/$mname"
+                lsa_lower_nso_ned_id_mod="$mname"
+                lsa_lower_nso_ned_id="$mname"
+                shift
+                ;;
+
+            --snmp-ned)
+                [ ! -d "$1" ] && error "need MIB directory for ${arg}"
+                mib_dir="$1"
+                shift
+                [ ! -z "${device_type}" ] && error "can only create one NED type"
+                device_type=snmp
+                ;;
+            --service-skeleton)
+                service_skeleton="$1"
+                shift
+                case "${service_skeleton}" in
+                    java | java-and-template | python | python-and-template | template)
+                        true;;
+                    template-based)
+                        # accept old syntax "template-based"
+                        service_skeleton="template";;
+                    *)
+                        error "unknown ${arg} argument '${service_skeleton}'"
+                esac
+                skeleton=true;;
+            --data-provider-skeleton)
+                skeleton=true;
+                data_provider_skeleton=true;;
+            --generic-ned-skeleton)
+                skeleton=true;
+                generic_ned_skeleton=true;;
+            --erlang-skeleton)
+                erlang_skeleton=true;;
+            --erlang-application-name)
+                erlang_application_name=$1
+                shift
+                ;;
+            --no-netsim)
+                no_netsim=true
+                ;;
+            --no-pyang-sanitize)
+                # no-op
+                ;;
+            --pyang-sanitize)
+                pyang_sanitize=true
+                ;;
+            --confd-netsim-db-mode)
+                dbmode="$1"
+                shift
+                case "${dbmode}" in
+                    candidate | startup | running-only)
+                        true;;
+                    *)
+                        error "unknown ${arg} argument '${dbmode}'"
+                esac
+                ;;
+            --java-package)
+                [ -z "$1" ] && error "need package name for ${arg}"
+                java_package="$1"
+                shift
+                ;;
+            --no-java)
+                no_java=true
+                ;;
+            --no-python)
+                no_python=true
+                ;;
+            --no-template)
+                no_template=true
+                ;;
+            --no-fail-on-warnings)
+                fail_on_warnings=""
+                ;;
+            --ncs-depend-package)
+                [ ! -d "$1" ] && error "need dependent package for ${arg}"
+                ncs_depend_package="--ncs-depend-package $1"
+                shift
+                ;;
+            --component-class)
+                component_class=$1
+                shift
+                ;;
+            --action-example)
+                action_example=true
+                ;;
+            --subscriber-example)
+                subscriber_example=true
+                ;;
+            --augment)
+                [ -z "$1" ] && error "need path for ${arg}"
+                [ ! -z "${augment}" ] && error "can only specify --augment or --root-container once"
+                augment="augment $1 {"
+                shift
+                ;;
+            --root-container)
+                [ -z "$1" ] && error "need name for ${arg}"
+                [ ! -z "${augment}" ] && error "can only specify --augment or --root-container once"
+                augment="container $1 {"
+                shift
+                ;;
+            --no-test)
+                no_test=true
+                ;;
+            -*)
+                error "no such option $arg"
+                ;;
+            *)
+                [ ! -z "${name}" ] && error "unexpected argument ${arg}"
+                name=${arg}
+        esac
+    done
+
+    if [ -n "${yang_path}" ]; then
+        if [ -d "${yang_path}" ]; then
+            yang_files=`echo ${yang_path}/*.yang`
+            yang_dir="${yang_path}"
+        else
+            yang_files="${yang_path}"
+            yang_dir=`dirname ${yang_path}`
+        fi
+    fi
+
+    if [ -z "${lsa_lower_nso}" ]; then
+        lsa_lower_nso_ned_id_ns="http://tail-f.com/ns/ncs-ned"
+        lsa_lower_nso_ned_id_mod="tailf-ncs-ned"
+        lsa_lower_nso_ned_id="lsa-netconf"
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function process_arguments()
+{
+    vendor=`echo ${vendor} | sed 's/ /_/g'`
+
+    if [ -z "${dest}" ]; then
+        dest="${name}"
+    fi
+
+    process_arguments_java
+    process_arguments_python
+}
+
+# -----------------------------------------------------------------------------
+function process_arguments_java()
+{
+    java_name=`echo $name | sed 's/-//g' | sed 's/\./_/g'`
+
+    if [ -z ${java_package} ] ; then
+        java_package=com.example.${java_name}
+    fi
+
+    jpd=`echo ${java_package} | sed 's/\./\//g'`
+}
+
+# -----------------------------------------------------------------------------
+function process_arguments_python()
+{
+    python_package_name=`echo $name | sed 's/-/_/g'`
+}
+
+# -----------------------------------------------------------------------------
+function validate_arguments()
+{
+    validate_arguments_general
+}
+
+# -----------------------------------------------------------------------------
+function validate_arguments_general()
+{
+    [ -z "$name" ] && error "expected package name"
+
+    echo "${name}" | grep '[ |/|\\]' >/dev/null
+    [ $? = 0 ] && error "illegal package name chars in name ${name}"
+
+    if ! [[ ${device_type} || ${skeleton} || ${erlang_skeleton} ]]; then
+        error "don't know what to do"
+    fi
+
+    case "${service_skeleton}" in
+        python | python-and-template)
+            if [[ "${component_class}" != *.* ]]; then
+                error "component-class needs to be specified as module.Class"
+            fi
+            ;;
+        *)
+            ;;
+    esac
+}
+
+# -----------------------------------------------------------------------------
+function create_skeleton()
+{
+    smkdir ${dest}
+
+    if [ "$skeleton" = true ]; then
+        make_skeleton
+    elif [ "$erlang_skeleton" = true ]; then
+        make_erlang_skeleton
+    else
+        make_ned_skeleton
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function main()
+{
+    setup_globals $*
+    parse_arguments $*
+    process_arguments
+    validate_arguments
+    create_skeleton
+
+    if [ "$build" = true ]; then
+        cd ${dest}/src; $MAKE all || exit 1
+    fi
+
+    verbose "Wrote package to ${dest}"
+}
+
+main $*

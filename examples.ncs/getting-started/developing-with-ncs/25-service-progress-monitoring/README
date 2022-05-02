@@ -1,0 +1,304 @@
+
+This example illustrates how
+
+- Service Progress Monitoring (SPM) interacts with plans and services.
+
+- To write Python user code that invokes SPM actions depending on plan
+  progression.
+
+This example uses two NCS packages. The router package introduced
+in ../0-router-network and a package called 'myserv' which is
+a Python example implementing an example plan.
+
+$ ls ./packages
+myserv  router
+
+To build the two packages, do
+
+$ make all
+
+To start the ncs-netsim network, follow the instructions in
+../0-router-network, it's the same network here.
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+
+All the code for this example resides in
+./packages/myserv
+
+A log of the Python VM is kept in logs/ncs-python-vm-myserv.log
+
+There will be one log-file for each Python VM started, in this example
+there is only one VM started.
+
+To study this example, first take a look at the file
+packages/myserv/package-meta-data.xml, it defines one component
+which is
+
+  <component>
+    <name>myserv</name>
+    <application>
+      <python-class-name>myserv.Main</python-class-name>
+    </application>
+  </component>
+
+Further, see the yang file of the 'myserv' package
+./packages/myserv/src/yang/myserv.yang where the service and action points
+are defined. Specifically, for using SPM with timeout support, two uses
+constructs are necessary:
+
+..
+
+ uses ncs:service-progress-monitoring-data;
+
+..
+
+ container timeout-test {
+    uses ncs:service-progress-monitoring-trigger-action {
+      refine timeout {
+        tailf:actionpoint myserv-timeout-point;
+      }
+    }
+  }
+
+Consulting the corresponding Python code packages/myserv/python/myserv.py
+we find that myserv.Main registers a service and two actions, the latter action
+corresponding to 'myserv-timeout-point'.
+
+class Main(ncs.application.Application):
+    def setup(self):
+        self.log.info('--- myserv.Main setup')
+        self.register_service('myserv-servicepoint', MyService)
+        self.register_action('myserv-self-test', SelfTest)
+        self.register_action('myserv-timeout-point', TimeoutHandler)
+
+In myserv.py you can see that the TimeoutHandler simply logs what service
+and what type of SPM timeout has occurred: jeopardy, violation or success.
+Logging is done in the abovementioned file logs/ncs-python-vm-myserv.log
+
+To put a SPM on a service, a policy and a trigger is needed.
+The policy configures a jeopardy and a violation timeout, what
+conditions to put on the plan and, if you want one, a timeout action.
+For this example we will use the 'service-ready' policy defined in
+self_policy_plus_action.xml
+
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <service-progress-monitoring xmlns="http://tail-f.com/ns/ncs">
+    <policy>
+      <name>service-ready</name>
+      <jeopardy-timeout>600</jeopardy-timeout>
+      <violation-timeout>1200</violation-timeout>
+      <condition>
+        <name>self-ready</name>
+        <component-type>
+          <!-- The actual component name is specified in self_trigger.xml -->
+          <type>component-name</type>
+          <what>at-least-one</what>
+          <plan-state>ready</plan-state>
+          <status>reached</status>
+        </component-type>
+      </condition>
+      <action>
+        <action-path xmlns:myserv="http://com/tailf/examples/myserv">/myserv:timeout-test/myserv:timeout</action-path>
+        <always-call>true</always-call>
+      </action>
+    </policy>
+  </service-progress-monitoring>
+</config>
+
+You can find a trigger tying the 'service-ready' policy to the myserv service
+instance and the 'self' component in self_trigger.xml
+
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <service-progress-monitoring xmlns="http://tail-f.com/ns/ncs">
+    <trigger>
+      <name>self</name>
+      <policy>service-ready</policy>
+      <target xmlns:myserv="http://com/tailf/examples/myserv">/myserv:myserv[myserv:name='m1']</target>
+      <component>self</component>
+    </trigger>
+  </service-progress-monitoring>
+</config>
+
+I.e. all together we specify that the service plan 'self' component need to
+reach the 'ready' state within ..
+- 600 seconds to avoid putting the service instance SPM in jeopardy.
+- 1200 seconds to avoid considering the service instance SPM violated.
+
+Now, to run the example we do:
+
+$ ncs
+
+This will start ncs, and ncs will load the two packages, load the
+data models defined by the two packages and start the Python code defined
+by the packages.
+
+We start a CLI session, and sync with the netsim devices:
+
+$ ncs_cli -u admin
+admin@ncs> request devices sync-from
+sync-result {
+    device ex0
+    result true
+}
+sync-result {
+    device ex1
+    result true
+}
+sync-result {
+    device ex2
+    result true
+}
+[ok][2018-05-07 15:20:36]
+
+..we enter configuration mode and create a service instance:
+
+admin@ncs% set myserv m1 dummy 1.1.1.1
+[ok][2018-05-08 13:02:48]
+admin@ncs% commit
+Commit complete.
+[ok][2018-05-08 13:03:34]
+
+..now our Python myserv package has created a plan for this service, lets
+check it out:
+
+admin@ncs% run show myserv m1 plan
+NAME     TYPE    STATE               STATUS       WHEN                 ref
+----------------------------------------------------------------------------
+self     self    init                reached      2018-05-08T11:03:34  -
+                 ready               not-reached  -                    -
+router   router  init                reached      2018-05-08T11:03:34  -
+                 syslog-initialized  not-reached  -                    -
+                 ntp-initialized     not-reached  -                    -
+                 dns-initialized     not-reached  -                    -
+                 ready               not-reached  -                    -
+router2  router  init                reached      2018-05-08T11:03:34  -
+                 ready               not-reached  -                    -
+
+[ok][2018-05-08 13:03:36]
+
+..we see that the init states has been reached for all three components, now
+we load our policy:
+
+admin@ncs% load merge self_policy_plus_action.xml
+[ok][2018-05-08 13:14:06]
+
+..and our trigger:
+
+admin@ncs% load merge self_trigger.xml
+[ok][2018-05-08 13:14:16]
+admin@ncs% commit
+Commit complete.
+[ok][2018-05-08 13:14:18]
+
+..our SPM will be fulfilled when the self's ready state has been reached:
+
+admin@ncs% run show myserv m1 service-progress-monitoring
+                                                               JEOPARDY                       VIOLATION           SUCCESS
+NAME  POLICY         START TIME           JEOPARDY TIME        RESULT    VIOLATION TIME       RESULT     STATUS   TIME
+---------------------------------------------------------------------------------------------------------------------------
+self  service-ready  2018-05-08T13:14:18  2018-05-08T13:24:18  -         2018-05-08T13:34:18  -          running  -
+
+[ok][2018-05-08 13:16:20]
+
+As we can see we are not there yet, lets change that:
+
+admin@ncs% request myserv m1 self-test syslog true
+success true
+message m1
+[ok][2018-05-08 13:18:08]
+
+[edit]
+admin@ncs%
+System message at 2018-05-08 13:18:08...
+Commit performed by admin via console using cli.
+admin@ncs% request myserv m1 self-test ntp true
+success true
+message m1
+[ok][2018-05-08 13:18:19]
+
+[edit]
+admin@ncs%
+System message at 2018-05-08 13:18:19...
+Commit performed by admin via console using cli.
+admin@ncs% request myserv m1 self-test dns true
+success true
+message m1
+[ok][2018-05-08 13:18:27]
+
+[edit]
+admin@ncs%
+System message at 2018-05-08 13:18:28...
+Commit performed by admin via console using cli.
+
+..almost there:
+
+[edit]
+admin@ncs% run show myserv m1 plan
+NAME     TYPE    STATE               STATUS       WHEN                 ref
+----------------------------------------------------------------------------
+self     self    init                reached      2018-05-08T11:03:34  -
+                 ready               not-reached  -                    -
+router   router  init                reached      2018-05-08T11:03:34  -
+                 syslog-initialized  reached      2018-05-08T11:18:08  -
+                 ntp-initialized     reached      2018-05-08T11:18:19  -
+                 dns-initialized     reached      2018-05-08T11:18:27  -
+                 ready               reached      2018-05-08T11:18:27  -
+router2  router  init                reached      2018-05-08T11:03:34  -
+                 ready               not-reached  -                    -
+
+admin@ncs% set myserv m1 router2ready true
+[ok][2018-05-08 13:18:56]
+admin@ncs% commit
+Commit complete.
+[ok][2018-05-08 13:19:10]
+
+..done:
+
+admin@ncs% run show myserv m1 plan
+NAME     TYPE    STATE               STATUS   WHEN                 ref
+------------------------------------------------------------------------
+self     self    init                reached  2018-05-08T11:03:34  -
+                 ready               reached  2018-05-08T11:19:10  -
+router   router  init                reached  2018-05-08T11:03:34  -
+                 syslog-initialized  reached  2018-05-08T11:18:08  -
+                 ntp-initialized     reached  2018-05-08T11:18:19  -
+                 dns-initialized     reached  2018-05-08T11:18:27  -
+                 ready               reached  2018-05-08T11:18:27  -
+router2  router  init                reached  2018-05-08T11:03:34  -
+                 ready               reached  2018-05-08T11:19:10  -
+
+[ok][2018-05-08 13:19:13]
+
+[edit]
+admin@ncs% run show myserv m1 service-progress-monitoring
+                                                               JEOPARDY                       VIOLATION
+NAME  POLICY         START TIME           JEOPARDY TIME        RESULT    VIOLATION TIME       RESULT     STATUS      SUCCESS TIME
+------------------------------------------------------------------------------------------------------------------------------------------
+self  service-ready  2018-05-08T13:14:18  2018-05-08T13:24:18  passed    2018-05-08T13:34:18  passed     successful  2018-05-08T13:19:10
+
+I.e we managed to complete the plan ~5 minutes before our SPM would be put
+in jeopardy and ~15 minutes before it being violated.
+
+You can also find a log entry, in logs/ncs-python-vm-myserv.log, from the
+timeout action indicating success from a SPM point of view, as we succeeded
+in completing the plan before any timeout triggered:
+
+.. timeout(service=/myserv:myserv[myserv:name='m1'], result=success)
+
+If you like, you could rerun the example, first editing
+self_policy_plus_action.xml, changing violation and jeopardy timeouts to small
+values and restarting:
+
+- To restart NSO from scratch, ncs-setup --reset
+    this will ensure NCS is reinitialized from the ncs-cdb/*.xml files
+    when restarted
+
+- To restart the netsim network from scratch, do
+    ncs-netsim stop
+    ncs-netsim reset
+    ncs-netsim start
+       or in one swoop
+    ncs-netsim restart

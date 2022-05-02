@@ -1,0 +1,29 @@
+<config xmlns="http://tail-f.com/ns/config/1.0">
+
+  <onvpe xmlns="http://com/example/l3vpn">ce7</onvpe>
+  <onvpe xmlns="http://com/example/l3vpn">ce8</onvpe>
+
+  <resource-pools xmlns="http://cisco.com/yang/nso/resource-allocator">
+    <id-pool>
+      <name>virtual_pe</name>
+      <range xmlns="http://cisco.com/yang/nso/id-allocator">
+        <start>1000</start>
+        <end>1200</end>
+      </range>
+    </id-pool>
+    <ip-address-pool>
+      <name>p_net</name>
+      <subnet xmlns="http://cisco.com/yang/nso/ipaddress-allocator">
+        <address>10.1.1.0</address>
+        <cidrmask>24</cidrmask>
+      </subnet>
+    </ip-address-pool>
+    <ip-address-pool>
+      <name>ce_net</name>
+      <subnet xmlns="http://cisco.com/yang/nso/ipaddress-allocator">
+        <address>10.2.2.0</address>
+        <cidrmask>24</cidrmask>
+      </subnet>
+    </ip-address-pool>
+  </resource-pools>
+</config>

@@ -1,0 +1,12 @@
+logs/
+ncs-cdb/A.cdb
+ncs-cdb/C.cdb
+ncs-cdb/O.cdb
+netsim/
+packages/c7200
+packages/syslog/src/java/src/com/example/syslog/namespaces/
+running.DB
+state/
+ncs-events.1
+ncs-events.idx
+ncs-events.siz

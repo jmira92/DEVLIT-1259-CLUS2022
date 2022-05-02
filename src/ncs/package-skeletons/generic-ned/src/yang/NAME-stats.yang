@@ -1,0 +1,28 @@
+module %NAME%-stats {
+
+  namespace "http://%DIR%-stats";
+  prefix %NAME%stats;
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  // This is the skeleton for a made-up device that is used
+  // in the generic-ned skeleton generator
+
+
+  container test-stats {
+    config false;
+    list item {
+      key name;
+      leaf name {
+        type string;
+      }
+      leaf i {
+        type int32;
+      }
+    }
+  }
+}
+
+

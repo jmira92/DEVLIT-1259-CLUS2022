@@ -1,0 +1,31 @@
+Loading crypto keys from an external application
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This example demonstrates how to use an external application to
+configure the encryption keys used by the built in NSO crypto types.
+
+The application external_crypto_keys.py will read the encryption keys
+from the file pointed to by the environment variable
+NCS_EXTERNAL_KEYS_ARGUMENT. NCS_EXTERNAL_KEYS_ARGUMENT contains the
+/ncs-config/encrypted-strings/external-keys/command-argument value
+from ncs.conf.
+
+Try "make test" and follow what it does to get the idea. Then if you
+want to experiment on your own you can:
+
+
+    make all                       - build everything
+
+    ncs                            - start NSO
+
+    ncs_load -lm example_clear.xml - store some secrets in the database
+
+    ncs_load -Fp -p /strings       - show database contents
+
+    ncs --stop                     - stop NSO
+
+
+To create new configuration keys try
+
+    rm -f ncs.encryptedStrings
+    make ncs.encryptedStrings

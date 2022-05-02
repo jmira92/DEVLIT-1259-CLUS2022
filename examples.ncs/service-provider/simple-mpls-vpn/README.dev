@@ -1,0 +1,79 @@
+
+== Simple MPLS Layer3 VPN Example
+
+=== Example Overview
+
+This example illustrates Layer3 VPNs in a service provider MPLS
+network.
+
+==== Example Network
+
+The example network consists of Cisco ASR 9k core routers (P and PE)
+and Cisco IOS based CE routers.
+
+=== Service Development Process
+
+This section outlines a the development process that was used when
+creating this example.
+
+==== Step 1 - Define correct device configurations
+Start by creating/defining the device configurations you want to have
+in your network for a correctly provisioned service. This is typically
+something that is done together with the network engineers.
+
+Look in directory STEP1 for config snippets
+
+==== Step 2 - Create service model
+Analyze the device configurations to see what parameters can be
+abstracted to a service model, use that together with the knowledge of
+how requests will come to NCS to create the service.
+
+Create your service YANG model.
+
+Look in packages/l3vpn/src/yang/l3vpn.yang
+
+==== Step 3 - Create service template
+
+Use the config snippets created in step1 and configure either a
+ncs-netsim simulated device or a real device. 
+If you use a netsim simulated device do "show running-config | display
+xml" to get the template output. 
+If you use a real device, connect it to NCS, run device sync-from and
+do "show running-config device device <mydevice> | display xml"
+
+Add all the xml snippets to the file:
+packages/l3vpn/templates/l3vpn.xml
+
+Replace the values you configured with references to the parameters
+from service model.
+
+=== Service Config
+
+vpn l3vpn volvo
+ endpoint c1
+  as-number 65001
+  ce device ce0
+  ce local interface-name GigabitEthernet
+  ce local interface-number 0/9
+  ce local ip-address 192.168.0.1
+  ce link interface-name GigabitEthernet
+  ce link interface-number 0/2
+  ce link ip-address 10.1.1.1
+  pe device pe2
+  pe link interface-name GigabitEthernet
+  pe link interface-number 0/0/0/1
+  pe link ip-address 10.1.1.2
+  exit
+ endpoint c2
+  as-number 65001
+  ce device ce2
+  ce local interface-name GigabitEthernet
+  ce local interface-number 0/3
+  ce local ip-address 192.168.1.1
+  ce link interface-name GigabitEthernet
+  ce link interface-number 0/1
+  ce link ip-address 10.2.1.1
+  pe device pe2
+  pe link interface-name GigabitEthernet
+  pe link interface-number 0/0/0/2
+  pe link ip-address 10.2.1.2

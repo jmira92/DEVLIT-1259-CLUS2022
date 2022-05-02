@@ -1,0 +1,35 @@
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <devices xmlns="http://tail-f.com/ns/ncs">
+    <device>
+      <name>esc0</name>
+      <config>
+        <esc_datamodel xmlns="http://www.cisco.com/esc/esc">
+          <services>
+            <service_definition>
+              <name>vbranch-csr-service</name>
+              <version>1.0</version>
+              <vm_group>
+                <name>CSR</name>
+                <disk>
+                  <src>http://10.51.35.120/media/csr1000v-universalk9.03.14.01.S.155-1.S1-std.qcow2</src>
+                  <disk_format>qcow2</disk_format>
+                  <container_format>bare</container_format>
+                  <serial_console>true</serial_console>
+                  <e1000_net>true</e1000_net>
+                  <disk_bus>virtio</disk_bus>
+                </disk>
+                <vm_flavor>
+                  <vcpus>1</vcpus>
+                  <memory_mb>4096</memory_mb>
+                  <root_disk_mb>8192</root_disk_mb>
+                  <ephemeral_disk_mb>0</ephemeral_disk_mb>
+                  <swap_disk_mb>0</swap_disk_mb>
+                </vm_flavor>
+              </vm_group>
+            </service_definition>
+          </services>
+        </esc_datamodel>
+      </config>
+    </device>
+  </devices>
+</config>

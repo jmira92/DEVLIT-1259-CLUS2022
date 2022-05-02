@@ -1,0 +1,86 @@
+
+This example illustrates how to
+
+- define a user defined tailf:action and how to
+  attach user code behind that action
+
+- write Python user code that invokes actions from Python
+
+This example uses two NCS packages. The router package introduced
+in ../0-router-network and a package called 'actions' with some
+Python code examples
+
+$ ls ./packages
+actions  router
+
+To build the two packages, do
+
+$ make all
+
+To start the ncs-netsim network, follow the instructions in
+../0-router-network, it's the same network here.
+
+$ ncs-netsim start
+DEVICE ex0 OK STARTED
+DEVICE ex1 OK STARTED
+DEVICE ex2 OK STARTED
+
+All the code for this example resides in
+./packages/actions
+
+To run the example we do:
+
+$ ncs
+
+This will start ncs, and ncs will load the two packages, load the
+data models defined by the two packages and start the Python code defined
+by the packages.
+
+
+$ ncs_cli -u admin
+admin@iron> request action-test system restart mode xx data { debug }
+time Fri Jul 06 10:54:45 CEST 2012
+[ok][2012-07-06 10:54:45]
+
+View the log output in logs/ncs-python-vm-actions.log
+
+There will be one log-file for each Python VM started, in this example
+there is only one VM started.
+
+To study this example, first take a look at the file
+packages/actions/package-meta-data.xml, it defines one component
+which is
+
+  <component>
+    <name>actions</name>
+    <callback>
+      <python-class-name>Action</python-class-name>
+    </callback>
+  </component>
+
+This means that the class Action has callbacks of some type, and
+we want them registered. Study the file. The yang files in the
+'actions' package reside under ./packages/actions/src/yang
+The file action-test.yang defines a number of actions and the code in
+action.py implements the actions.
+
+Invoke the user defined action from the CLI as:
+
+
+- To start the emulated network, do ncs-netsim start | help
+- To start NCS, do ncs  [--verbose --foreground]
+- To stop NCS, do ncs --stop
+- To get a Juniper CLI into NCS, do ncs_cli -u admin
+
+- To restart NCS from scratch, ncs-setup --reset
+    this will ensure NCS is reinitialized from the ncs-cdb/*.xml files
+    when restarted
+
+- To restart the netsim network from scratch, do
+    ncs-netsim stop
+    ncs-netsim reset
+    ncs-netsim start
+       or in one swoop
+    ncs-netsim restart
+
+

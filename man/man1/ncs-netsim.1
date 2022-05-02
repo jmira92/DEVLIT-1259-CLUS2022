@@ -1,0 +1,441 @@
+'\" t
+.\"     Title: ncs-netsim
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 01/26/2022
+.\"    Manual: NCS Manual
+.\"    Source: Cisco Systems, Inc.
+.\"  Language: English
+.\"
+.TH "NCS\-NETSIM" "1" "01/26/2022" "Cisco Systems, Inc." "NCS Manual"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+ncs-netsim \- Command to create and manipulate a simulated network
+.SH "SYNOPSIS"
+.HP \w'\fBncs\-netsim\fR\ 'u
+\fBncs\-netsim\fR create\-network\ \fINcsPackage\ \fR\fINumDevices\ \fR\fIPrefix\fR [\fI\-\-dir\ NetsimDir\fR]
+.HP \w'\fBncs\-netsim\fR\ 'u
+\fBncs\-netsim\fR create\-device\ \fINcsPackage\ \fR\fIDeviceName\fR [\fI\-\-dir\ NetsimDir\fR]
+.HP \w'\fBncs\-netsim\fR\ 'u
+\fBncs\-netsim\fR add\-to\-network\ \fINcsPackage\ \fR\fINumDevices\ \fR\fIPrefix\fR [\fI\-\-dir\ NetsimDir\fR]
+.HP \w'\fBncs\-netsim\fR\ 'u
+\fBncs\-netsim\fR add\-device\ \fINcsPackage\ \fR\fIDeviceName\fR [\fI\-\-dir\ NetsimDir\fR]
+.HP \w'\fBncs\-netsim\fR\ 'u
+\fBncs\-netsim\fR delete\-network [\fI\-\-dir\ NetsimDir\fR]
+.HP \w'\fBncs\-netsim\fR\ 'u
+\fBncs\-netsim\fR start\ |\ stop\ |\ is\-alive\ |\ reset\ |\ restart\ |\ status [\fIDevicename\fR] [\fI\-\-dir\ NetsimDir\fR] [\fI\-\-async\ |\ \-a\ \fR]
+.HP \w'\fBncs\-netsim\fR\ 'u
+\fBncs\-netsim\fR netconf\-console \fIDevicename\fR [\fIXPathFilter\fR] [\fI\-\-dir\ NetsimDir\fR]
+.HP \w'\fBncs\-netsim\fR\ 'u
+\fBncs\-netsim\fR \-w\ |\ \-\-window cli\ |\ cli\-c\ |\ cli\-i \fIDevicename\fR [\fI\-\-dir\ NetsimDir\fR]
+.HP \w'\fBncs\-netsim\fR\ 'u
+\fBncs\-netsim\fR get\-port \fIDevicename\fR [ipc\ |\ netconf\ |\ cli\ |\ snmp] [\fI\-\-dir\ NetsimDir\fR]
+.HP \w'\fBncs\-netsim\fR\ 'u
+\fBncs\-netsim\fR ncs\-xml\-init [\fIDeviceName\fR] [\fI\-\-dir\ NetsimDir\fR]
+.HP \w'\fBncs\-netsim\fR\ 'u
+\fBncs\-netsim\fR ncs\-xml\-init\-remote \fIRemoteNodeName\fR [\fIDeviceName\fR] [\fI\-\-dir\ NetsimDir\fR]
+.HP \w'\fBncs\-netsim\fR\ 'u
+\fBncs\-netsim\fR list\ |\ packages\ |\ whichdir [\fI\-\-dir\ NetsimDir\fR]
+.SH "DESCRIPTION"
+.PP
+\fBncs\-netsim\fR
+is a script to create, control and manipulate simulated networks of managed devices\&. It is a tool targeted at NCS application developers\&. Each network element is simulated by ConfD, a Tail\-f tool that acts as a NETCONF server, a Cisco CLI engine, or an SNMP agent\&.
+.SH "OPTIONS"
+.SS "Commands"
+.PP
+\fBcreate\-network\fR \fINcsPackage \fR \fINumDevices \fR \fIPrefix\fR
+.RS 4
+Is used to create a new simulation network\&. The simulation network is written into a directory\&. This directory contains references to NCS packages that are used to emulate the network\&. These references are in the form of relative filenames, thus the simulation network can be moved as long as the packages that are used in the network are also moved\&.
+.sp
+This command can be given multiple times in one invocation of
+\fBncs\-netsim\fR\&. The mandatory parameters are:
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 1.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  1." 4.2
+.\}
+\fBNcsPackage\fR
+is a either directory where an NCS NED package (that supports netsim) resides\&. Alternatively, just the name of one of the packages in
+$NCS_DIR/packages/neds
+can be used\&. Alternatively the
+\fBNcsPackage\fR
+is tar\&.gz package\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 2.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  2." 4.2
+.\}
+\fBNumDevices\fR
+indicates how many devices we wish to have of the type that is defined by the NED package\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04' 3.\h'+01'\c
+.\}
+.el \{\
+.sp -1
+.IP "  3." 4.2
+.\}
+\fBPrefix\fR
+is a string that will be used as prefix for the name of the devices
+.RE
+.RE
+.PP
+\fBcreate\-device\fR \fINcsPackage \fR \fIDeviceName\fR
+.RS 4
+Just like create\-network, but creates only one device with the specific name (no suffix at the end)
+.RE
+.PP
+\fBadd\-to\-network\fR \fINcsPackage \fR \fINumDevices \fR \fIPrefix\fR
+.RS 4
+Is used to add additional devices to a previously existing simulation network\&. This command can be given multiple times\&. The mandatory parameters are the same as for
+\fBcreate\-network\fR\&.
+.if n \{\
+.sp
+.\}
+.RS 4
+.it 1 an-trap
+.nr an-no-space-flag 1
+.nr an-break-flag 1
+.br
+.ps +1
+\fBNote\fR
+.ps -1
+.br
+If we have already started NCS with an XML initialization file for the existing network, an updated initialization file will not take effect unless we remove the CDB database files, loosing all NCS configuration\&. But we can replace the original initialization data with data for the complete new network when we have run
+\fBadd\-to\-network\fR, by using
+\fBncs_load\fR
+while NCS is running, e\&.g\&. like this:
+.sp .5v
+.RE
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ ncs\-netsim ncs\-xml\-init > devices\&.xml
+$ ncs_load \-l \-m devices\&.xml
+              
+.fi
+.if n \{\
+.RE
+.\}
+.RE
+.PP
+\fBadd\-device\fR \fINcsPackage \fR \fIDeviceName\fR
+.RS 4
+Just like add\-to\-network, but creates only one device with the specific name (no suffix at the end)
+.RE
+.PP
+\fBdelete\-network\fR
+.RS 4
+Completely removes an existing simulation network\&. The devices are stopped, and the network directory is removed along with all files and directories inside it\&.
+.sp
+This command does not do any search for the network directory, but only uses
+\&./netsim
+unless the
+\fB\-\-dir NetsimDir\fR
+option is given\&. If the directory does not exist, the command does nothing, and does not return an error\&. Thus we can use it in e\&.g\&. scripts or Makefiles to make sure we have a clean starting point for a subsequent
+\fBcreate\-network\fR
+command\&.
+.RE
+.PP
+\fBstart\fR \fI [DeviceName] \fR
+.RS 4
+Is used to start the entire network, or optionally the individual device called
+\fBDeviceName\fR
+.RE
+.PP
+\fBstop\fR \fI [DeviceName] \fR
+.RS 4
+Is used to stop the entire network, or optionally the individual device called
+\fBDeviceName\fR
+.RE
+.PP
+\fBis\-alive\fR \fI [DeviceName] \fR
+.RS 4
+Is used to query the \*(Aqliveness\*(Aq of the entire network, or optionally the individual device called
+\fBDeviceName\fR
+.RE
+.PP
+\fBstatus\fR \fI [DeviceName] \fR
+.RS 4
+Is used to check the status of the entire network, or optionally the individual device called
+\fBDeviceName\fR\&.
+.RE
+.PP
+\fBreset\fR \fI [DeviceName] \fR
+.RS 4
+Is used to reset the entire network back into the state it was before it was started for the first time\&. This means that the devices are stopped, and all cdb files, log files and state files are removed\&. The command can also be performed on an individual device
+\fBDeviceName\fR\&.
+.RE
+.PP
+\fBrestart\fR \fI [DeviceName] \fR
+.RS 4
+This is the equivalent of \*(Aqstop\*(Aq, \*(Aqreset\*(Aq, \*(Aqstart\*(Aq
+.RE
+.PP
+\fB\-w | \-window\fR, \fBcli | cli\-c | cli\-i \fR \fI DeviceName \fR
+.RS 4
+Invokes the ConfD CLI on the device called
+\fBDeviceName\fR\&. The flavor of the CLI will be either of Juniper (default) Cisco IOS (cli\-i) or Cisco XR (cli\-c)\&. The \-w option creates a new window for the CLI
+.RE
+.PP
+\fBwhichdir \fR
+.RS 4
+When we create the netsim environment with the
+\fBcreate\-network\fR
+command, the data will by default be written into the
+\&./netsim
+directory unless the
+\fB\-\-dir NetsimDir\fR
+is given\&.
+.sp
+All the control commands to stop, start, etc\&., the network need access to the netsim directory where the netsim data resides\&. Unless the
+\fB\-\-dir NetsimDir\fR
+option is given we will search for the netsim directory in $PWD, and if not found there go upwards in the directory hierarchy until we find a netsim directory\&.
+.sp
+This command prints the result of that netsim directory search\&.
+.RE
+.PP
+\fBlist\fR
+.RS 4
+The netsim directory that got created by the
+\fBcreate\-network\fR
+command contains a static file (by default
+\&./netsim/\&.netsiminfo) \- this command prints the file content formatted\&. This command thus works without the network running\&.
+.RE
+.PP
+\fBnetconf\-console\fR \fIDeviceName\fR \fI[XpathFilter]\fR
+.RS 4
+Invokes the
+\fBnetconf\-console\fR
+NETCONF client program towards the device called
+\fBDeviceName\fR\&. This is an easy way to get the configuration from a simulated device in XML format\&.
+.RE
+.PP
+\fBget\-port\fR \fIDeviceName\fR \fB[ipc | netconf | cli | snmp]\fR
+.RS 4
+Prints the port number that the device called
+\fBDeviceName\fR
+is listening on for the given protocol \- by default, the ipc port is printed\&.
+.RE
+.PP
+\fBncs\-xml\-init\fR \fI [DeviceName] \fR
+.RS 4
+Usually the purpose of running
+\fBncs\-netsim\fR
+is that we wish to experiment with running NCS towards that network\&. This command produces the XML data that can be used as initialization data for NCS and the network defined by this ncs\-netsim installation\&.
+.RE
+.PP
+\fBncs\-xml\-init\-remote\fR \fI RemoteNodeName \fR \fI [DeviceName] \fR
+.RS 4
+Just like ncs\-xml\-init, but creates initialization data for service NCS node in a device cluster\&. The RemoteNodeName parameter specifies the device NCS node in cluster that has the corresponding device(s) configured in its /devices/device tree\&.
+.RE
+.PP
+\fBpackages\fR
+.RS 4
+List the NCS NED packages that were used to produce this ncs\-netsim network\&.
+.RE
+.SS "Common options"
+.PP
+\fB\-\-dir\fR \fINetsimDir\fR
+.RS 4
+When we create a network, by default it\*(Aqs created in
+\&./netsim\&. When we invoke the control commands, the netsim directory is searched for in the current directory and then upwards\&. The
+\fB\-\-dir\fR
+option overrides this and creates/searches and instead uses
+\fBNetsimDir\fR
+for the netsim directory\&.
+.RE
+.PP
+\fB\-\-async | \-a\fR
+.RS 4
+The start, stop, restart and reset commands can use this additional flag that runs everything in the background\&. This typically reduces the time to start or stop a netsim network\&.
+.RE
+.SH "EXAMPLES"
+.PP
+To create a simulation network we need at least one NCS NED package that supports netsim\&. An NCS NED package supports netsim if it has a
+netsim
+directory at the top of the package\&. The NCS distribution contains a number of packages in $NCS_DIR/packages/neds\&. So given those NED packages, we can create a simulation network that use ConfD, together with the YANG modules for the device to emulate the device\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ ncs\-netsim create\-network $NCS_DIR/packages/neds/c7200 3 c \e
+             create\-network $NCS_DIR/packages/neds/nexus 3 n
+    
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+The above command creates a test network with 6 routers in it\&. The data as well the execution environment for the individual ConfD devices reside in (by default) directory \&./netsim\&. At this point we can start/stop/control the network as well as the individual devices with the ncs\-netsim control commands\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ ncs\-netsim \-a start
+DEVICE c0 OK STARTED
+DEVICE c1 OK STARTED
+DEVICE c2 OK STARTED
+DEVICE n0 OK STARTED
+DEVICE n1 OK STARTED
+DEVICE n2 OK STARTED
+    
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Starts the entire network\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ ncs\-netsim stop c0
+    
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Stops the simulated router named
+\fIc0\fR\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ ncs\-netsim cli n1
+    
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Starts a Juniper CLI towards the device called
+\fIn1\fR\&.
+.SH "ENVIRONMENT VARIABLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fINETSIM_DIR\fR
+if set, the value will be used instead of the
+\fB\-\-dir Netsimdir\fR
+option to search for the netsim directory containing the environment for the emulated network
+.sp
+Thus, if we always use the same netsim directory in a development project, it may make sense to set this environment variable, making the netsim environment available regardless of where we are in the directory structure\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fIIPC_PORT\fR
+if set, the ConfD instances will use the indicated number and upwards for the local IPC port\&. Default is 5010\&. Use this if your host occupies some of the ports from 5010 and upwards\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fINETCONF_SSH_PORT\fR
+if set, the ConfD instances will use the indicated number and upwards for the NETCONF ssh (if configured in confd\&.conf) Default is 12022\&. Use this if your host occupies some of the ports from 12022 and upwards\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fINETCONF_TCP_PORT\fR
+if set, the ConfD instances will use the indicated number and upwards for the NETCONF tcp (if configured in confd\&.conf) Default is 13022\&. Use this if your host occupies some of the ports from 13022 and upwards\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fISNMP_PORT\fR
+if set, the ConfD instances will use the indicated number and upwards for the SNMP udp traffic\&. (if configured in confd\&.conf) Default is 11022\&. Use this if your host occupies some of the ports from 11022 and upwards\&.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+\fICLI_SSH_PORT\fR
+if set, the ConfD instances will use the indicated number and upwards for the CLI ssh traffic\&. (if configured in confd\&.conf) Default is 10022\&. Use this if your host occupies some of the ports from 10022 and upwards\&.
+.RE
+.PP
+The
+ncs\-setup
+tool will use these numbers as well when it generates the init XML for the network in the
+ncs\-netsim
+network\&.
+.SH "AUTHOR"
+.br
+.RS 4
+Author.
+.RE
+.SH "COPYRIGHT"
+.br
+Copyright \(co 2021, 2022 Cisco Systems, Inc. All rights reserved.
+.br

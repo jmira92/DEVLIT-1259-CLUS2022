@@ -1,0 +1,608 @@
+#!/bin/sh
+
+bindir=`dirname $0`
+case $bindir in
+    /*) ncs_dir=`dirname $bindir`;;
+    *)  ncs_dir=`(cd $bindir/..; pwd)`;;
+esac
+libdir=$ncs_dir/lib
+conffile="`pwd`/ncs.conf"
+if [ ! -e ${conffile} ]; then
+    conffile="${ncs_dir}/etc/ncs/ncs.conf"
+fi
+
+ncsversion=5.7.1
+
+# Default max time for connect attempts in --wait-xxx
+WAIT_TRY_TIME=5
+
+# Use default no. of threads for async I/O ("+A0" disables)
+async=""
+
+
+usage()
+{
+    cat <<EOF
+Usage: ncs [--conf ConfFile] [--addloadpath Dir] [--nolog]
+           [--smp Nr] [--dns-resolvers Nr]
+           [--foreground [-v | --verbose ] [--stop-on-eof ]]
+           [--with-package-reload] [--with-package-reload-force]
+           [--ignore-initial-validation] [--full-upgrade-validation]
+           [--start-phase0] [--epoll {true|false}] [--cd Dir]
+
+Usage: ncs {--wait-phase0 [ TryTime]  | --start-phase1 | --start-phase2 |
+            --wait-started [ TryTime]  |  --reload |
+            --areload | --status | --check-callbacks [ Namespace | Path ] |
+            --loadfile File |
+            --rollback Nr | --debug-dump File | --cli-j-dump File |
+            --loadxmlfiles File... |
+            --mergexmlfiles File... | --stop}
+           [--timeout MaxTime]
+
+Usage: ncs {--version |
+            --cdb-debug-dump Directory | --cdb-compact Directory}
+
+ -c, --conf ConfFile
+     ConfFile is the absolute path to a ncs.conf file;
+     default is ${conffile}
+
+ --nolog
+     Don't log inital startup messages to syslog.
+
+ --smp Nr
+     Number of threads to run for Symmetric Multiprocessing
+     (SMP). The default is to use as many threads as the system
+     has logical processors.
+
+ --dns-resolvers Nr
+     Number of threads to run hostname lookups on. The default
+     is to use as many threads as the system has logical processors.
+
+ --cd Dir
+     Change working directory
+
+ --with-package-reload
+     Reload all packages, i.e. copy packages from the load-path to
+     the NCS daemon's private directory tree, as part of the startup
+     procedure.
+
+ --with-package-reload-force
+     Reload all packages in an unsafe manner and override warnings if any.
+     Refer to Loading Packages section in NSO Administration Guide for more
+     information.
+
+ --ignore-initial-validation
+     Do not invoke validation callpoints in the (CDB initiated)
+     init and upgrade transactions.
+
+ --full-upgrade-validation
+     Perform a full validation of the entire database if the data models
+     have been upgraded.  This is useful in order to trigger external
+     validation to run even if the database content has not been modified.
+
+ --start-phase0
+     Start the daemon, but only bring up CDB (used to control
+     the NCS daemon when upgrading database layout).
+
+ --start-phase1
+     Finish start phase0, do not start the subsystems that
+     listens to the management ip address.
+
+ --start-phase2
+     Must be called after the management interface has been
+     brought up, if --start-phase1 has been used. Starts
+     the subsystems that listens to the management ip address.
+
+ --foreground [ -v | --verbose ] [ --stop-on-eof ]
+     Do not daemonize. Can be used to start ncsd from a
+     process manager. In combination with -v or --verbose,
+     all log messages are printed to stdout. Useful during
+     development. In combination with --stop-on-eof, ncsd
+     will stop if it receives EOF (ctrl-d) on standard input.
+     Note that to stop ncsd when run in foreground, send EOF
+     (if --stop-on-eof was used) or use ncs --stop. Do not
+     terminate with ctrl-c, since ncsd in that case won't
+     have the chance to close the database files.
+
+ --addloadpath Dir
+     Add Dir to the ncsd load-path. Convenient way to make
+     ncsd load some additional fxs/ccl files
+
+ --epoll {true|false}
+     Determines whether ncsd should use an enhanced poll()
+     function (e.g. Linux epoll(7)). The default is true.
+
+ --wait-phase0 [ TryTime ]
+     This call hangs until ncsd has initialized start phase0.
+     After this call has returned, it is safe to register
+     validation callbacks, upgrade CDB etc.
+     This function is useful when ncsd has been started with
+     --foreground and --start-phase0.
+     It will keep trying the initial connection to ncsd
+     for at most TryTime seconds (default 5)
+
+ --wait-started [ TryTime ]
+     This call hangs until ncsd is completely started.
+     This function is useful when ncsd has been started with
+     --foreground.
+     It will keep trying the initial connection to ncsd
+     for at most TryTime seconds (default 5)
+
+ --status
+     Print status about the NCS daemon.
+
+ --debug-dump File
+     Write internal ncsd information to File for troubleshooting purposes.
+     Client can extend collect timeout by using --collect-timeout option and
+     then provides the timeout in second (default timeout is 10 seconds).
+     Client can compress debug dump by using --compress option, the debug dump
+     will be compressed to File.gz.
+
+ --cli-j-dump File
+     Write CLI structure of Juniper style CLI on XML-format to File.
+
+ --stop
+     Stop the NCS daemon.
+
+ --reload
+     Reload the NCS daemon configuration. All log files are
+     closed and reopened, which means that ncs --reload can
+     be used from e.g. logrotate(8). Note: If you update a .fxs
+     file it is not enough to do a reload; the "packages reload"
+     action must be invoked, or the dameon must be restarted
+     with the --with-package-reload option.
+
+ --areload
+     Asynchronously reload the NCS daemon configuration.
+
+ --loadfile File
+     Load configuration from File in curly bracket format.
+
+ --rollback Nr
+     Load saved configuration from rollback file Nr.
+
+ --loadxmlfiles File ...
+     Replace configuration with data from Files in XML format.
+
+ --mergexmlfiles File ...
+     Merge configuration with data from Files in XML format.
+
+ --check-callbacks [ Namespace | Path ]
+     Walks through the entire data tree (config and stat), or only the
+     Namespace or Path, and verifies that all read-callbacks are
+     implemented for all elements, and verifies their return values.
+
+ --timeout MaxTime
+     Specify the maximum time to wait for the NCS daemon to
+     complete the command, in seconds. If this option is not given,
+     no timeout is used.
+
+ --cdb-debug-dump Directory
+     Dumps information about CDB files in Directory as text to stdout
+     (runs standalone and does not require a running NCS).
+
+ --cdb-compact Directory
+     Compacts the CDB files in Directory
+     (runs standalone and does not require a running NCS).
+
+ --version
+     Report version without communicating with the NCS daemon
+
+ --help
+     Print help text
+
+EOF
+}
+
+is_numeric()
+{
+    test "`echo $1 | grep '^[0-9][0-9]*$'`"
+}
+
+is_arg()
+{
+    test "`echo $1 | grep '^[^-].*$'`"
+}
+
+error()
+{
+    if [ ! -z "$1" ]; then
+        echo >&2
+        echo >&2 "*** $1"
+    fi
+    echo >&2 " Try ncs --help to get usage text"
+    exit 1
+}
+
+# Linux
+logical_processors=`getconf _NPROCESSORS_ONLN 2>/dev/null`
+# FreeBSD
+[ -z "$logical_processors" ] && logical_processors=`getconf NPROCESSORS_ONLN`
+
+# Default values
+cd=""
+heart=""
+cmd=""
+cmd_opts=""
+phase=""
+nolog=""
+daemon=" -delayed-detach "
+fg_args=""
+smp_opt=""
+addloadpath=""
+epoll="+K true"
+pkg_reload=""
+iiv=""
+fuv=""
+st_depth="-stacktrace_depth 24"
+noinput="-noinput"
+yaws_embedded="-yaws embedded true"
+dns_resolvers=""
+if [ ! -z "$logical_processors" ]; then
+    dns_resolvers="-kernel gethost_poolsize $logical_processors"
+fi
+
+while [ $# -gt 0 ]; do
+    arg="$1"
+    shift
+    case "$arg" in
+        --addloadpath)
+            if [ -z "${addloadpath}" ]; then
+                addloadpath="-addloadpath $1"
+            else
+                addloadpath="${addloadpath} $1"
+            fi
+            shift;;
+        --version)
+            echo ${ncsversion}
+            exit 0;;
+        -c|--conf)
+            conffile=$1
+            if [ ! -f "${conffile}" ]; then
+                error "bad file ${conffile} to option -c"
+            fi
+            shift;;
+        --cd)
+            cd="-cd $1"
+            shift;;
+        --start-phase0)
+            phase="-start_phase0";;
+        --wait-phase0)
+            if is_numeric $1; then
+                cmd="wait_phase0 $1"
+                shift
+            else
+                cmd="wait_phase0 $WAIT_TRY_TIME"
+            fi;;
+        --start-phase1)
+            cmd="start_phase1";;
+        --start-phase2)
+            cmd="start_phase2";;
+        --wait-started)
+            if is_numeric $1; then
+                cmd="wait_started $1"
+                shift
+            else
+                cmd="wait_started $WAIT_TRY_TIME"
+            fi;;
+        --check-callbacks)
+            if is_arg $1; then
+                cmd="check_callbacks $1"
+                shift
+            else
+                cmd="check_callbacks"
+            fi;;
+        --cdb-debug-dump)
+            cmd_opts="$1" ; shift
+            while :; do
+                case "$1" in
+                    "") break ;;
+                    -*) break ;;
+                    *)  cmd_opts="$cmd_opts $1" ; shift ;;
+                esac
+            done
+            cmd="cdb_debug_dump"
+            ;;
+        --cdb-compact)
+            cmd_opts="$1" ; shift
+            while :; do
+                case "$1" in
+                    "") break ;;
+                    -*) break ;;
+                    *)  cmd_opts="$cmd_opts $1" ; shift ;;
+                esac
+            done
+            cmd="cdb_compact_files"
+            ;;
+        -r|--reload)
+            cmd="reload";;
+        --areload)
+            cmd="areload";;
+        --stop)
+            cmd="stop";;
+        --status)
+            cmd="status";;
+        --debug-dump)
+            if [ $# -lt 1 ]; then
+                error "Need a file to dump to"
+            fi
+            dumpfile=$1
+            shift
+            while :; do
+                case "$1" in
+                    --collect-timeout)
+                        if [ -z "$2" ]; then
+                            error "missing argument to --collect-timeout"
+                        elif is_numeric "$2"; then
+                            collect_timeout="$2";
+                            shift 2
+                        else
+                            error "bad argument $2 to option --collect-timeout"
+                        fi;;
+                    --compress)
+                        compress="compress";
+                        shift;;
+                    *)
+                        break;;
+                esac
+            done
+            cmd="debug_dump ${dumpfile} ${collect_timeout} ${compress}";;
+        --cli-j-dump)
+            dumpfile=$1
+            shift
+            cmd="cli_juniper_dump ${dumpfile}";;
+        --loadfile)
+            loadfile=$1;
+            if [ ! -f "${loadfile}" ]; then
+                error "bad file ${loadfile} to option --loadfile"
+            fi
+            cmd="loadfile ${loadfile}"
+            shift
+            ;;
+        --rollback)
+            if [ -z "$1" ]; then
+                error "bad rollback number to option --rollback"
+            fi
+            cmd="rollback $1"
+            shift
+            ;;
+        --loadxmlfiles)
+            while [ $# -gt 0 ]; do
+                case $1 in
+                    --)
+                        shift
+                        break;;
+                    -*)
+                        break;;
+                    /*)
+                        f=$1
+                        if [ ! -f $f ]; then
+                            error "bad file $1 to option --loadxmlfiles"
+                        fi
+                        files="${files} $f"
+                        shift
+                        ;;
+                    *)
+                        f=`pwd`/$1
+                        if [ ! -f $f ]; then
+                            error "bad file $1 to option --loadxmlfiles"
+                        fi
+                        files="${files} $f"
+                        shift
+                        ;;
+                esac
+            done
+            if [ -z "${files}" ]; then
+                error "missing argument to --loadxmlfiles"
+            fi
+            cmd="loadxmlfiles replace ${files}"
+            ;;
+        --mergexmlfiles)
+            while [ $# -gt 0 ]; do
+                case $1 in
+                    --)
+                        shift
+                        break;;
+                    -*)
+                        break;;
+                    /*)
+                        f=$1
+                        if [ ! -f $f ]; then
+                            error "bad file $1 to option --mergexmlfiles"
+                        fi
+                        files="${files} $f"
+                        shift
+                        ;;
+                    *)
+                        f=`pwd`/$1
+                        if [ ! -f $f ]; then
+                            error "bad file $1 to option --mergexmlfiles"
+                        fi
+                        files="${files} $f"
+                        shift
+                        ;;
+                esac
+            done
+            if [ -z "${files}" ]; then
+                error "missing argument to --mergexmlfiles"
+            fi
+            cmd="loadxmlfiles merge ${files}"
+            ;;
+        --heart)
+            heart="-delayed-heart";;
+        --nolog)
+            nolog="-nolog";;
+        --foreground)
+            daemon="-noinput -foreground";;
+        --stop-on-eof)
+            fg_args="$fg_args -stop_on_eof";;
+        -v | --verbose)
+            fg_args="$fg_args -verbose";;
+        --with-package-reload)
+            pkg_reload="-with_package_reload" ;;
+        --with-package-reload-force)
+            pkg_reload="-with_package_reload_force" ;;
+        --ignore-initial-validation)
+            iiv="-ignore_initial_validation" ;;
+        --full-upgrade-validation)
+            fuv="-full_upgrade_validation" ;;
+        --stacktrace-depth)
+            if is_numeric $1; then
+                st_depth="-stacktrace_depth $1"
+                shift
+            else
+                error "bad argument $1 to option --stacktrace-depth"
+            fi;;
+        --timeout)
+            if is_numeric $1; then
+                cmd_opts="$cmd_opts -timeout $1"
+                shift
+            else
+                error "bad argument $1 to option --timeout"
+            fi;;
+        --smp)
+            case $1 in
+                [1-9]|[1-9][0-9]|[1-9][0-9][0-9])
+                    smp_opt=$1
+                    shift;;
+                *)
+                    error "bad argument $1 to option --smp";;
+            esac;;
+        --dns-resolvers)
+            case $1 in
+                [1-9]|[1-9][0-9])
+                    dns_resolvers="-kernel gethost_poolsize $1"
+                    shift;;
+                *)
+                    error "bad argument $1 to option --dns-resolvers";;
+            esac;;
+        --epoll)
+            case $1 in
+                true)
+                    epoll="+K true"
+                    shift;;
+                false)
+                    epoll="+K false"
+                    shift;;
+                *)
+                    error "bad argument $1 to option --epoll";;
+            esac;;
+        --printlog)
+            logfile=$1
+            shift
+            cmd="printlog ${logfile}";;
+        --show-debug-dump)
+            dumpfile=$1
+            shift
+            cmd="show_debug_dump ${dumpfile}";;
+        --patch-file-info)
+            patchfile="$1"
+            shift
+            cmd="patch_file_info ${patchfile}"
+            while [ $# -gt 0 ]; do
+                case "$1" in
+                    -*)
+                        break
+                        ;;
+                    *)
+                        cmd="${cmd} $1"
+                        shift
+                        ;;
+                esac
+            done
+            ;;
+        --crypt-hash)
+            case $1 in
+                -*|'')
+                    algorithm=""
+                    rounds=""
+                    ;;
+                *)
+                    algorithm=$1
+                    shift
+                    case $1 in
+                        -*|'')
+                            rounds=""
+                            ;;
+                        *)
+                            rounds=$1
+                            shift
+                            ;;
+                    esac
+                    ;;
+            esac
+            cmd="crypt_hash ${algorithm} ${rounds}"
+            noinput="-noshell"
+            ;;
+        -h | --help)
+            usage
+            exit;;
+        *)
+            error "${arg}: Unknown option";;
+    esac
+done
+
+ROOTDIR=${libdir}/ncs
+BINDIR=${ROOTDIR}/erts/bin
+PROGNAME=ncs
+EMU=ncs
+HOME=${HOME-"/"}
+TOPDIR=${ncs_dir}
+patchdir=${ROOTDIR}/patches
+export ROOTDIR BINDIR PROGNAME EMU HOME TOPDIR
+
+case ${smp_opt} in
+    '')
+        smp=""
+        ;;
+    *)
+        smp="+S $smp_opt"
+        ;;
+esac
+
+
+util_cmd="${BINDIR}/ncsexec ${smp} +B ${async} -pa ${patchdir} -boot confdc ${noinput} -ncs true -run confd_rcmd"
+daemon_cmd="${BINDIR}/ncsexec ${cd} ${smp} ${async} -pa ${patchdir} ${epoll} -boot ncs -ncs true ${daemon} ${pkg_reload} ${yaws_embedded} ${dns_resolvers} ${iiv} ${fuv} ${st_depth} ${fg_args} ${addloadpath} -shutdown_time 30000"
+
+max_fds=`ulimit -n`
+if [ "${max_fds}" -gt 1024 ]; then
+    ERL_MAX_ETS_TABLES=`expr ${max_fds} + 1000`
+    export ERL_MAX_ETS_TABLES
+fi
+max_procs=""
+if [ "${max_fds}" -gt 5000 ]; then
+    max_procs=`expr 4 '*' ${max_fds} + 15000`
+    if [ ${max_procs} -gt 4000000 ]; then
+        max_procs=4000000
+    fi
+    max_procs="+P ${max_procs}"
+fi
+
+# If DISABLE_NCS_DUMP is not set, NSO will generate a crash dump file should it crash.
+# The default crash dump file name is "ncs_crash.dump" if NCS_DUMP is not set.
+if [ -z "$DISABLE_NCS_DUMP" ]
+then
+    if [ -z "$NCS_DUMP" ]; then
+        NCS_DUMP="ncs_crash.dump"
+    fi
+else
+    unset NCS_DUMP
+fi
+export NCS_DUMP
+
+
+if [ "${cmd}" = "areload" ]; then
+    echo "running in background"
+    ${util_cmd} reload > /dev/null &
+    exit 0
+fi
+
+if [ "${cmd}" != "" ]; then
+    exec ${util_cmd} ${cmd} ${cmd_opts}
+    exit $?
+fi
+
+cmd="${daemon_cmd} ${max_procs} ${heart} -conffile ${conffile} ${nolog} ${phase} -max_fds ${max_fds}"
+HEART_COMMAND="${cmd}"
+export HEART_COMMAND
+exec ${cmd}

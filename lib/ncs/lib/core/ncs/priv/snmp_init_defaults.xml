@@ -1,0 +1,20 @@
+<!-- Minimal SNMP config, with the SNMP agent disabled. -->
+<snmp xmlns="http://tailf.com/ns/snmp">
+  <agent>
+    <enabled>false</enabled>
+
+    <udp-port>4000</udp-port>
+
+    <version>
+      <v1/>
+      <v2c/>
+      <v3/>
+    </version>
+    <engine-id>
+      <enterprise-number>32473</enterprise-number>
+      <from-text>testing</from-text>
+    </engine-id>
+  </agent>
+
+</snmp>
+

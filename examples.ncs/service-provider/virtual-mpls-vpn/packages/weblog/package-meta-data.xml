@@ -1,0 +1,11 @@
+<ncs-package xmlns="http://tail-f.com/ns/ncs-packages">
+  <name>weblog</name>
+  <package-version>1.0</package-version>
+  <description>Web UI logging feature</description>
+  <ncs-min-version>3.0</ncs-min-version>
+
+
+  <!-- It's possible to add more components to the -->
+  <!-- same package, multiple services, data providers etc -->
+
+</ncs-package>

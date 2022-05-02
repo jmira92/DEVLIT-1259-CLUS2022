@@ -1,0 +1,48 @@
+module qinq-webui {
+
+  namespace "http://com/example/qinq-webui";
+  prefix qinq-webui;
+
+  import tailf-ncs {
+    prefix ncs;
+  }
+
+  typedef static-map-coordinate {
+    description "Normalized relative coordinate";
+
+    type decimal64 {
+      fraction-digits 18;
+      range "0 .. 1";
+    }
+  }
+
+  grouping static-map-coordinates {
+    container coord {
+      leaf x {
+        type static-map-coordinate;
+      }
+
+      leaf y {
+        type static-map-coordinate;
+      }
+    }
+  }
+
+  container static-map {
+
+    list device {
+      key name;
+
+      leaf name {
+        type leafref {
+          path /ncs:devices/ncs:device/ncs:name;
+        }
+      }
+
+      uses static-map-coordinates;
+    }
+  }
+
+}
+
+
