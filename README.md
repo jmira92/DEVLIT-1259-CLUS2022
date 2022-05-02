@@ -1,1 +1,1 @@
-# DEVLIT-1259---The-World-of-NSO-Web-UI
+Repository that will hold session files
