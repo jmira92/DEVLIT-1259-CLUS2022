@@ -1,4 +1,0 @@
-<interface xmlns="http://acme.com/if">
-  <name>eth0</name>
-  <macaddr>aa:bb:cc:11:22:33</macaddr>
-</interface>

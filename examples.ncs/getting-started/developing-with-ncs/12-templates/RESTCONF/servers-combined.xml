@@ -1,7 +1,0 @@
-<apply-template>
-  <template-name>servers-combined</template-name>
-  <variable>
-    <name>master</name>
-    <value>'ex0'</value>
-  </variable>
-</apply-template>

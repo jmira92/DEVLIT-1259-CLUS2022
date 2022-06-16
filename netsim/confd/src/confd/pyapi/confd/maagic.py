@@ -1,1 +1,0 @@
-../pysrc/maagic.py

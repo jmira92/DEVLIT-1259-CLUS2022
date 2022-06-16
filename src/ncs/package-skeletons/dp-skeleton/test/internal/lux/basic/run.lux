@@ -1,5 +1,0 @@
-[shell abc]
-    !echo "Hello World"
-    ?Hello World
-
-[cleanup]

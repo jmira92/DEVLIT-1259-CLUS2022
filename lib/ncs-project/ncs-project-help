@@ -1,7 +1,0 @@
-#!/bin/sh
-
-if [ -z "$1" ]; then
-    man ncs-project
-else
-    man ncs-project-${1}
-fi

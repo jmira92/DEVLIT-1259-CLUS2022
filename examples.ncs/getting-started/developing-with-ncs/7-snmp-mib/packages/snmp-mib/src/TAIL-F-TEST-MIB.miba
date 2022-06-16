@@ -1,5 +1,0 @@
-# Tell the agent to not implement these objects
-
-extraName   behavior = noSuchInstance
-extraId     behavior = noSuchObject
-extraDescr  max_access = read_only

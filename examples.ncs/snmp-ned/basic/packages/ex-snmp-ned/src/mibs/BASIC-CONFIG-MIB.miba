@@ -1,4 +1,0 @@
-## NCS Annotation module for BASIC-CONFIG-MIB
-
-bscActAdminState  ned-set-before-row-modification = locked
-bscActFlow        ned-modification-dependent
